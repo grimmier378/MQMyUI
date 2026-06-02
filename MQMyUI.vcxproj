@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectGuid>{56711ED7-5FE8-4B02-B416-1ECB2EA7C18A}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), src\Plugin.props))\src\Plugin.props" Condition=" '$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), src\Plugin.props))' != '' " />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <MyUIAbseilLibs>utf8_range.lib;utf8_validity.lib;absl_base.lib;absl_borrowed_fixup_buffer.lib;absl_city.lib;absl_civil_time.lib;absl_cord.lib;absl_cord_internal.lib;absl_cordz_functions.lib;absl_cordz_handle.lib;absl_cordz_info.lib;absl_cordz_sample_token.lib;absl_crc_cord_state.lib;absl_crc_cpu_detect.lib;absl_crc_internal.lib;absl_crc32c.lib;absl_debugging_internal.lib;absl_decode_rust_punycode.lib;absl_demangle_internal.lib;absl_demangle_rust.lib;absl_die_if_null.lib;absl_examine_stack.lib;absl_exponential_biased.lib;absl_failure_signal_handler.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_generic_printer_internal.lib;absl_graphcycles_internal.lib;absl_hash.lib;absl_hashtable_profiler.lib;absl_hashtablez_sampler.lib;absl_int128.lib;absl_kernel_timeout_internal.lib;absl_leak_check.lib;absl_log_entry.lib;absl_log_flags.lib;absl_log_globals.lib;absl_log_initialize.lib;absl_log_internal_check_op.lib;absl_log_internal_conditions.lib;absl_log_internal_fnmatch.lib;absl_log_internal_format.lib;absl_log_internal_globals.lib;absl_log_internal_log_sink_set.lib;absl_log_internal_message.lib;absl_log_internal_nullguard.lib;absl_log_internal_proto.lib;absl_log_internal_structured_proto.lib;absl_log_severity.lib;absl_log_sink.lib;absl_malloc_internal.lib;absl_periodic_sampler.lib;absl_poison.lib;absl_profile_builder.lib;absl_random_distributions.lib;absl_random_internal_distribution_test_util.lib;absl_random_internal_entropy_pool.lib;absl_random_internal_platform.lib;absl_random_internal_randen.lib;absl_random_internal_randen_hwaes.lib;absl_random_internal_randen_hwaes_impl.lib;absl_random_internal_randen_slow.lib;absl_random_internal_seed_material.lib;absl_random_seed_gen_exception.lib;absl_random_seed_sequences.lib;absl_raw_hash_set.lib;absl_raw_logging_internal.lib;absl_scoped_set_env.lib;absl_spinlock_wait.lib;absl_stacktrace.lib;absl_status.lib;absl_statusor.lib;absl_str_format_internal.lib;absl_strerror.lib;absl_strings.lib;absl_strings_internal.lib;absl_symbolize.lib;absl_synchronization.lib;absl_throw_delegate.lib;absl_time.lib;absl_time_zone.lib;absl_tracing_internal.lib;absl_utf8_for_code_point.lib;absl_vlog_config_internal.lib</MyUIAbseilLibs>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command>if exist "$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), tools\build_scripts\Plugin_Versioning.ps1))\tools\build_scripts\Plugin_Versioning.ps1" powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), tools\build_scripts\Plugin_Versioning.ps1))\tools\build_scripts\Plugin_Versioning.ps1" -ProjectName "$(MSBuildProjectName)" -ProjectDirectory "$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))\"</Command>
+      <Message>Updating version resource for $(MSBuildProjectName)...</Message>
+    </PreBuildEvent>
+    <Link>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">sqlite3.lib;libprotobuf.lib;$(MyUIAbseilLibs);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">sqlite3.lib;libprotobufd.lib;$(MyUIAbseilLibs);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="MQMyUI.cpp" />
+    <ClCompile Include="Core\SettingsStore.cpp" />
+    <ClCompile Include="Core\ThemeManager.cpp" />
+    <ClCompile Include="Core\CharData.cpp" />
+    <ClCompile Include="Core\ChatBridge.cpp" />
+    <ClCompile Include="Core\IconHelper.cpp" />
+    <ClCompile Include="Core\ActorManager.cpp" />
+    <ClCompile Include="Core\ModuleManager.cpp" />
+    <ClCompile Include="Modules\PlayerModule.cpp" />
+    <ClCompile Include="Modules\HudModule.cpp" />
+    <ClCompile Include="Modules\PetModule.cpp" />
+    <ClCompile Include="Modules\BuffsModule.cpp" />
+    <ClCompile Include="Modules\SongsModule.cpp" />
+    <ClCompile Include="Modules\CastingModule.cpp" />
+    <ClCompile Include="Modules\SpellsModule.cpp" />
+    <ClCompile Include="Modules\SpellPicker.cpp" />
+    <ClCompile Include="Modules\GroupModule.cpp" />
+    <ClCompile Include="Modules\XpBarsModule.cpp" />
+    <ClCompile Include="Modules\MyAAModule.cpp" />
+    <ClCompile Include="Modules\ThemeZModule.cpp" />
+    <ClCompile Include="Modules\SettingsModule.cpp" />
+    <ClCompile Include="Modules\CopyModule.cpp" />
+    <ClCompile Include="Core\UiConfig.cpp" />
+    <ClCompile Include="Core\Widgets.cpp" />
+    <ClCompile Include="Core\BarEngine.cpp" />
+    <ClCompile Include="Core\Actions.cpp" />
+    <ClCompile Include="Core\HotkeyCombo.cpp" />
+    <ClCompile Include="Core\AAData.cpp" />
+    <ClCompile Include="Core\SpellInfo.cpp" />
+    <ClCompile Include="Core\InventoryData.cpp" />
+    <ClCompile Include="Modules\MyInventoryModule.cpp" />
+    <ClCompile Include="Modules\BigBagModule.cpp" />
+    <ClCompile Include="Modules\ITrackModule.cpp" />
+    <ClCompile Include="Modules\ToolbarModule.cpp" />
+    <ClCompile Include="Proto\myui.pb.cc">
+      <DependentUpon>myui.proto</DependentUpon>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProtocolBuffer Include="Proto\myui.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Core\ModuleBase.h" />
+    <ClInclude Include="Core\ColorUtil.h" />
+    <ClInclude Include="Core\SettingsStore.h" />
+    <ClInclude Include="Core\ThemeManager.h" />
+    <ClInclude Include="Core\CharData.h" />
+    <ClInclude Include="Core\ChatBridge.h" />
+    <ClInclude Include="Core\IconHelper.h" />
+    <ClInclude Include="Core\UiHelpers.h" />
+    <ClInclude Include="Core\PeerData.h" />
+    <ClInclude Include="Core\ActorManager.h" />
+    <ClInclude Include="Core\ModuleManager.h" />
+    <ClInclude Include="Modules\PlayerModule.h" />
+    <ClInclude Include="Modules\HudModule.h" />
+    <ClInclude Include="Modules\PetModule.h" />
+    <ClInclude Include="Modules\BuffsModule.h" />
+    <ClInclude Include="Modules\SongsModule.h" />
+    <ClInclude Include="Modules\CastingModule.h" />
+    <ClInclude Include="Modules\SpellsModule.h" />
+    <ClInclude Include="Modules\SpellPicker.h" />
+    <ClInclude Include="Modules\GroupModule.h" />
+    <ClInclude Include="Modules\XpBarsModule.h" />
+    <ClInclude Include="Modules\MyAAModule.h" />
+    <ClInclude Include="Modules\ThemeZModule.h" />
+    <ClInclude Include="Modules\SettingsModule.h" />
+    <ClInclude Include="Modules\CopyModule.h" />
+    <ClInclude Include="Core\UiConfig.h" />
+    <ClInclude Include="Core\Widgets.h" />
+    <ClInclude Include="Core\BarEngine.h" />
+    <ClInclude Include="Core\Actions.h" />
+    <ClInclude Include="Core\HotkeyCombo.h" />
+    <ClInclude Include="Core\AAData.h" />
+    <ClInclude Include="Core\SpellInfo.h" />
+    <ClInclude Include="Core\InventoryData.h" />
+    <ClInclude Include="Modules\MyInventoryModule.h" />
+    <ClInclude Include="Modules\BigBagModule.h" />
+    <ClInclude Include="Modules\ITrackModule.h" />
+    <ClInclude Include="Modules\ToolbarModule.h" />
+    <ClInclude Include="Proto\myui.pb.h">
+      <DependentUpon>myui.proto</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="MQMyUI.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

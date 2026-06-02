@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package mq.proto.myui;
+
+message CharVitals {
+    string server = 1;
+    string character = 2;
+    string class_short = 3;
+    int32 level = 4;
+    int32 cur_hp = 5;
+    int32 max_hp = 6;
+    int32 cur_mana = 7;
+    int32 max_mana = 8;
+    int32 cur_end = 9;
+    int32 max_end = 10;
+    int32 zone_id = 11;
+    string zone_name = 12;
+    int32 pct_aggro = 13;
+    int32 stand_state = 14;
+    float velocity = 15;
+    int32 pet_id = 16;
+    int32 pet_pct_hp = 17;
+    string pet_name = 18;
+    string group_leader = 19;
+    int32 role_mask = 20;
+}
+
+message AAInfo {
+    string server = 1;
+    string character = 2;
+    int32 level = 3;
+    int32 aa_spent = 4;
+    int32 aa_total = 5;
+    int32 aa_available = 6;
+    float pct_aa_exp = 7;
+    float pct_exp = 8;
+    float pct_air = 9;
+    string state = 10;
+    string allocation = 11;
+    string group_leader = 12;
+}
+
+message BuffEntry {
+    string name = 1;
+    int32 spell_id = 2;
+    int32 duration_ms = 3;
+    int32 icon_id = 4;
+    bool beneficial = 5;
+    string caster = 6;
+    int32 slot = 7;
+    bool is_empty = 8;
+}
+
+message BuffList {
+    string server = 1;
+    string character = 2;
+    repeated BuffEntry buffs = 3;
+}
+
+message Command {
+    string from_server = 1;
+    string from_char = 2;
+    string to_char = 3;
+    string action = 4;
+    int32 arg = 5;
+    string arg_str = 6;
+}
+
+message InventoryItemCount {
+    string name = 1;
+    int32 inventory = 2;
+    int32 bank = 3;
+}
+
+message InventorySnapshot {
+    string server = 1;
+    string character = 2;
+    repeated InventoryItemCount items = 3;
+    repeated string tracking = 4;
+    string remove = 5;
+}
+
+message MyUIEnvelope {
+    oneof payload {
+        CharVitals vitals = 1;
+        AAInfo aa = 2;
+        BuffList buffs = 3;
+        Command command = 4;
+        InventorySnapshot inventory = 5;
+    }
+}
