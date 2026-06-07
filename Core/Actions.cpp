@@ -37,6 +37,17 @@ int         s_kickSpawnId = 0;
 std::string s_kickName;
 std::chrono::steady_clock::time_point s_kickDeadline;
 
+enum class SetPhase { Sit, Steps, Stand };
+std::vector<SpellSetStep> s_setSteps;
+size_t      s_setIdx = 0;
+bool        s_setActive = false;
+bool        s_setIssued = false;
+bool        s_setNeedsStand = false;
+SetPhase    s_setPhase = SetPhase::Steps;
+int         s_setMemorized = 0;
+int         s_setSkipped = 0;
+std::chrono::steady_clock::time_point s_setSlotDeadline;
+
 bool WindowVisible(const char* name)
 {
 	CXWnd* w = FindMQ2Window(name);
@@ -510,6 +521,164 @@ void PulseKick()
 	}
 }
 
+void StartSpellSetLoad(const std::vector<SpellSetStep>& steps)
+{
+	if (s_setActive)
+	{
+		return;
+	}
+	s_setSteps = steps;
+	s_setIdx = 0;
+	s_setIssued = false;
+	s_setMemorized = 0;
+	s_setSkipped = 0;
+	s_setActive = !s_setSteps.empty();
+
+	bool anyMemorize = false;
+	for (const SpellSetStep& step : s_setSteps)
+	{
+		if (step.spellId > 0)
+		{
+			anyMemorize = true;
+			break;
+		}
+	}
+	s_setNeedsStand = anyMemorize;
+	s_setPhase = anyMemorize ? SetPhase::Sit : SetPhase::Steps;
+}
+
+bool SpellSetLoadActive()
+{
+	return s_setActive;
+}
+
+void FinishSpellSetLoad()
+{
+	WriteChatf("[MyUI] Loaded spell set: %d memorized, %d skipped.", s_setMemorized, s_setSkipped);
+	s_setActive = false;
+	s_setSteps.clear();
+}
+
+void PulseSpellSet()
+{
+	if (!s_setActive)
+	{
+		return;
+	}
+	if (!pLocalPC || !pLocalPlayer)
+	{
+		s_setActive = false;
+		s_setSteps.clear();
+		return;
+	}
+
+	auto now = std::chrono::steady_clock::now();
+
+	// Sit once before memorizing so the client doesn't sit/stand for every gem.
+	if (s_setPhase == SetPhase::Sit)
+	{
+		if (pLocalPlayer->StandState == STANDSTATE_SIT)
+		{
+			s_setPhase = SetPhase::Steps;
+			s_setIssued = false;
+			return;
+		}
+		if (!s_setIssued)
+		{
+			EzCommand("/sit on");
+			s_setIssued = true;
+			s_setSlotDeadline = now + std::chrono::seconds(2);
+			return;
+		}
+		if (now > s_setSlotDeadline)
+		{
+			s_setPhase = SetPhase::Steps;
+			s_setIssued = false;
+		}
+		return;
+	}
+
+	// Stand once after the last spell is memorized.
+	if (s_setPhase == SetPhase::Stand)
+	{
+		EzCommand("/stand");
+		FinishSpellSetLoad();
+		return;
+	}
+
+	if (s_setIdx >= s_setSteps.size())
+	{
+		if (s_setNeedsStand)
+		{
+			s_setPhase = SetPhase::Stand;
+		}
+		else
+		{
+			FinishSpellSetLoad();
+		}
+		return;
+	}
+
+	const SpellSetStep& step = s_setSteps[s_setIdx];
+	int current = pLocalPC->GetMemorizedSpell(step.slot);
+	auto advance = [&]()
+	{
+		++s_setIdx;
+		s_setIssued = false;
+	};
+
+	if (step.spellId > 0)
+	{
+		if (current == step.spellId)
+		{
+			++s_setMemorized;
+			advance();
+			return;
+		}
+		if (!s_setIssued)
+		{
+			EQ_Spell* spell = GetSpellByID(step.spellId);
+			if (!spell || spell->Name[0] == 0)
+			{
+				++s_setSkipped;
+				advance();
+				return;
+			}
+			DoCommandf("/memspell %d \"%s\"", step.slot + 1, spell->Name);
+			s_setIssued = true;
+			s_setSlotDeadline = now + std::chrono::seconds(3);
+			return;
+		}
+		if (now > s_setSlotDeadline)
+		{
+			++s_setSkipped;
+			advance();
+		}
+	}
+	else
+	{
+		if (current <= 0)
+		{
+			advance();
+			return;
+		}
+		if (!s_setIssued)
+		{
+			if (pCastSpellWnd)
+			{
+				pCastSpellWnd->ForgetMemorizedSpell(step.slot);
+			}
+			s_setIssued = true;
+			s_setSlotDeadline = now + std::chrono::seconds(2);
+			return;
+		}
+		if (now > s_setSlotDeadline)
+		{
+			advance();
+		}
+	}
+}
+
 void PulseActions()
 {
 	PulseGive();
@@ -517,5 +686,6 @@ void PulseActions()
 	PulseCoin();
 	PulseTrade();
 	PulseKick();
+	PulseSpellSet();
 }
 } // namespace myui

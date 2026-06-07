@@ -27,6 +27,12 @@ struct SettingRow
 	std::string value;
 };
 
+struct SpellSetRow
+{
+	int gemSlot = 0;
+	int spellId = 0;
+};
+
 class SettingsStore
 {
 public:
@@ -72,6 +78,11 @@ public:
 	std::vector<ThemeRow> LoadTheme(const std::string& themeName);
 	std::vector<std::string> GetThemeNames();
 	void DeleteTheme(const std::string& themeName);
+
+	void SaveSpellSet(const std::string& setName, const std::vector<SpellSetRow>& rows);
+	std::vector<SpellSetRow> LoadSpellSet(const std::string& setName);
+	std::vector<std::string> GetSpellSetNames();
+	void DeleteSpellSet(const std::string& setName);
 
 private:
 	void ExecSQL(const char* sql);

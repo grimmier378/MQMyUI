@@ -289,7 +289,6 @@ void UiConfig::SeedDefaults()
 	SetColor("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
 
 	Window("Raid");
-	SetFlag("Raid", "ShowRaidWindow", false);
 	bar("Raid", "HP", MQColor(190, 75, 75), MQColor(190, 75, 75), 10.0f);
 	bar("Raid", "Mana", MQColor(66, 18, 128), MQColor(32, 151, 235), 10.0f);
 	bar("Raid", "End", MQColor(16, 99, 30), MQColor(210, 185, 1), 10.0f);

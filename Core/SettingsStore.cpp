@@ -129,6 +129,15 @@ void SettingsStore::RunMigrations()
 		ExecSQL("UPDATE settings SET module='XPBars' WHERE module='AAParty'");
 		SetSchemaVersion(3);
 	}
+	if (currentVersion < 4)
+	{
+		ExecSQL(
+			"CREATE TABLE IF NOT EXISTS spell_sets ("
+			"server TEXT NOT NULL, character TEXT NOT NULL, set_name TEXT NOT NULL, "
+			"gem_slot INTEGER NOT NULL, spell_id INTEGER NOT NULL, "
+			"PRIMARY KEY (server, character, set_name, gem_slot))");
+		SetSchemaVersion(4);
+	}
 }
 
 void SettingsStore::InitSchema()
@@ -152,6 +161,12 @@ void SettingsStore::InitSchema()
 		"theme TEXT NOT NULL, name TEXT NOT NULL, "
 		"type TEXT NOT NULL CHECK(type IN ('imvec4','imvec2','float','int','bool')), value TEXT NOT NULL, "
 		"PRIMARY KEY (theme, name))");
+
+	ExecSQL(
+		"CREATE TABLE IF NOT EXISTS spell_sets ("
+		"server TEXT NOT NULL, character TEXT NOT NULL, set_name TEXT NOT NULL, "
+		"gem_slot INTEGER NOT NULL, spell_id INTEGER NOT NULL, "
+		"PRIMARY KEY (server, character, set_name, gem_slot))");
 }
 
 void SettingsStore::SetContext(const std::string& server, const std::string& character)
@@ -559,6 +574,115 @@ void SettingsStore::DeleteTheme(const std::string& themeName)
 	}
 
 	sqlite3_bind_text(stmt, 1, themeName.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+}
+
+void SettingsStore::SaveSpellSet(const std::string& setName, const std::vector<SpellSetRow>& rows)
+{
+	if (!m_db)
+	{
+		return;
+	}
+
+	ExecSQL("BEGIN");
+
+	sqlite3_stmt* del = nullptr;
+	if (PrepareAndStep("DELETE FROM spell_sets WHERE server=? AND character=? AND set_name=?", del))
+	{
+		sqlite3_bind_text(del, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(del, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(del, 3, setName.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_step(del);
+		sqlite3_finalize(del);
+	}
+
+	for (const SpellSetRow& row : rows)
+	{
+		sqlite3_stmt* stmt = nullptr;
+		if (!PrepareAndStep(
+			"INSERT INTO spell_sets (server, character, set_name, gem_slot, spell_id) VALUES (?, ?, ?, ?, ?)", stmt))
+		{
+			continue;
+		}
+
+		sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(stmt, 3, setName.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_int(stmt, 4, row.gemSlot);
+		sqlite3_bind_int(stmt, 5, row.spellId);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	}
+
+	ExecSQL("COMMIT");
+}
+
+std::vector<SpellSetRow> SettingsStore::LoadSpellSet(const std::string& setName)
+{
+	std::vector<SpellSetRow> rows;
+
+	sqlite3_stmt* stmt = nullptr;
+	if (!PrepareAndStep(
+		"SELECT gem_slot, spell_id FROM spell_sets WHERE server=? AND character=? AND set_name=? ORDER BY gem_slot", stmt))
+	{
+		return rows;
+	}
+
+	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 3, setName.c_str(), -1, SQLITE_TRANSIENT);
+
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+	{
+		SpellSetRow row;
+		row.gemSlot = sqlite3_column_int(stmt, 0);
+		row.spellId = sqlite3_column_int(stmt, 1);
+		rows.push_back(row);
+	}
+
+	sqlite3_finalize(stmt);
+	return rows;
+}
+
+std::vector<std::string> SettingsStore::GetSpellSetNames()
+{
+	std::vector<std::string> names;
+
+	sqlite3_stmt* stmt = nullptr;
+	if (!PrepareAndStep(
+		"SELECT DISTINCT set_name FROM spell_sets WHERE server=? AND character=? ORDER BY set_name", stmt))
+	{
+		return names;
+	}
+
+	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
+
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+	{
+		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+		if (text)
+		{
+			names.emplace_back(text);
+		}
+	}
+
+	sqlite3_finalize(stmt);
+	return names;
+}
+
+void SettingsStore::DeleteSpellSet(const std::string& setName)
+{
+	sqlite3_stmt* stmt = nullptr;
+	if (!PrepareAndStep("DELETE FROM spell_sets WHERE server=? AND character=? AND set_name=?", stmt))
+	{
+		return;
+	}
+
+	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, 3, setName.c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 }

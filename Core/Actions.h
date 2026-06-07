@@ -12,5 +12,13 @@ void PickupCoin(int coinType, int amount);
 void StartBulkTrade(const std::vector<std::string>& itemNames);
 void KickFromGroup(int spawnId, const std::string& name);
 
+struct SpellSetStep
+{
+	int slot = 0;
+	int spellId = 0; // 0 = clear the slot
+};
+void StartSpellSetLoad(const std::vector<SpellSetStep>& steps);
+bool SpellSetLoadActive();
+
 void PulseActions();
 }

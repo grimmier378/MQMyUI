@@ -147,7 +147,6 @@ const char* FlagDescription(const std::string& window, const std::string& flag)
 		{ "ShowDistance",        "Show each member's distance from you." },
 		{ "VertPet",             "Draw the group pet bars vertically instead of horizontally." },
 		{ "ShowEmptySlots",      "Draw an empty placeholder tile for each unfilled group slot." },
-		{ "ShowRaidWindow",      "Show the separate Raid grid window while you're in a raid." },
 		{ "IconView",            "Show as an icon grid instead of a list with names and timers." },
 		{ "ShowGroupOnly",       "Limit the character picker (for viewing another box's buffs) to your group members." },
 		{ "ShowTimer",           "Show the remaining time on each entry." },
