@@ -340,9 +340,7 @@ void CharData::RefreshGroupRaid()
 				m.inLOS      = m.isSelf || (pLocalPlayer && pLocalPlayer->CanSee(*sp));
 				if (!m.isSelf && pLocalPlayer)
 				{
-					float dx = sp->X - pLocalPlayer->X;
-					float dy = sp->Y - pLocalPlayer->Y;
-					m.distance = sqrtf(dx * dx + dy * dy);
+					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
 				}
 				m.pctHP      = m.isSelf ? m_snap.PctHP()   : sp->HPCurrent;
 				m.pctMana    = m.isSelf ? m_snap.PctMana() : sp->ManaCurrent;
@@ -404,6 +402,10 @@ void CharData::RefreshGroupRaid()
 				m.velocity   = sp->SpeedRun;
 				m.petId      = sp->PetID;
 				m.inLOS      = m.isSelf || (pLocalPlayer && pLocalPlayer->CanSee(*sp));
+				if (!m.isSelf && pLocalPlayer)
+				{
+					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
+				}
 				m.pctHP      = m.isSelf ? m_snap.PctHP() : sp->HPCurrent;
 			}
 

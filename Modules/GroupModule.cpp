@@ -10,6 +10,7 @@
 #include "../Core/Actions.h"
 
 #include "imgui/fonts/IconsFontAwesome.h"
+#include "imgui/fonts/IconsMaterialDesign.h"
 
 #include <array>
 #include <cstdio>
@@ -326,7 +327,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 					}
 					else if (moving)
 					{
-						glyph(ICON_FA_CHILD, ImVec4(0.9f, 0.85f, 0.3f, 1.0f), "Moving");
+						glyph(ICON_MD_DIRECTIONS_RUN, ImVec4(0.25f, 0.85f, 0.80f, 1.0f), "Moving");
 					}
 					else
 					{
