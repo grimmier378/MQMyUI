@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -57,6 +58,46 @@ struct CharSnapshot
 	int PctEnd()  const { return maxEnd  > 0 ? (curEnd  * 100) / maxEnd  : 0; }
 };
 
+struct StatVal
+{
+	int value = 0;
+	int cap = -1;
+	int heroic = 0;
+};
+
+struct StatsSnapshot
+{
+	bool valid = false;
+
+	int hpCur = 0,   hpMax = 0;
+	int manaCur = 0, manaMax = 0;
+	int endCur = 0,  endMax = 0;
+
+	int ac = 0;
+	int attack = 0;
+	int hastePct = 0;
+
+	int hpRegen = 0;
+	int manaRegen = 0;
+	int endRegen = 0;
+
+	StatVal str, sta, agi, dex, wis, intel, cha;
+	StatVal rMagic, rFire, rCold, rDisease, rPoison, rCorrupt;
+
+	StatVal combatEffects;
+	StatVal spellShield, shielding, dmgShield, dotShield, dsMitigation;
+	StatVal avoidance, accuracy, stunResist, strikeThrough;
+	int spellDamage = 0;
+
+	StatVal skillMod[9];
+
+	int weight = 0;
+	std::string className;
+	std::string deityName;
+};
+
+std::string InvControlTooltip(const char* child);
+
 struct GroupMemberSnap
 {
 	std::string name;
@@ -87,6 +128,9 @@ public:
 	const CharSnapshot& Get() const { return m_snap; }
 	bool IsIngame() const { return m_snap.valid; }
 
+	void RefreshStats();
+	const StatsSnapshot& Stats() const { return m_stats; }
+
 	void RefreshBuffs();
 	void RefreshSongs();
 	const std::vector<BuffInfo>& Buffs() const { return m_buffs; }
@@ -100,6 +144,8 @@ private:
 	void RefreshGroupRaid();
 
 	CharSnapshot m_snap;
+	StatsSnapshot m_stats;
+	std::chrono::steady_clock::time_point m_statsNext;
 	std::vector<BuffInfo> m_buffs;
 	std::vector<BuffInfo> m_songs;
 	std::vector<GroupMemberSnap> m_group;

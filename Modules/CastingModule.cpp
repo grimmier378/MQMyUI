@@ -4,32 +4,32 @@
 #include "../Core/BarEngine.h"
 #include "../Core/ThemeManager.h"
 
+#include <cassert>
+
 void CastingModule::OnPulse()
 {
-	bool visible = pCastingWnd && pCastingWnd->IsVisible();
+	bool castingNow = pLocalPlayer && pDisplay && pLocalPlayer->CastingData.SpellID != -1
+		&& pLocalPlayer->CastingData.SpellETA != 0;
 
-	if (visible && !m_wasVisible)
+	if (castingNow && !m_casting)
 	{
-		const char* spellName = "";
-		if (CXWnd* nameWnd = pCastingWnd->GetChildItem("Casting_SpellName"))
+		m_castEta = pLocalPlayer->CastingData.SpellETA;
+		float total = static_cast<float>(
+			static_cast<int64_t>(m_castEta) - static_cast<int64_t>(pDisplay->TimeStamp));
+		m_castTotalMs = total > 0.0f ? total : 0.0f;
+
+		m_spellName.clear();
+		if (EQ_Spell* spell = GetSpellByID(pLocalPlayer->CastingData.SpellID))
 		{
-			spellName = nameWnd->WindowText.c_str();
+			m_spellName = spell->Name;
 		}
 
-		if (EQ_Spell* spell = GetSpellByName(spellName))
-		{
-			m_casting = true;
-			m_spellName = spellName;
-			m_castTotalMs = static_cast<float>(spell->CastTime + GetCastingTimeModifier(spell));
-			m_castStart = std::chrono::steady_clock::now();
-		}
+		m_casting = true;
 	}
-	else if (!visible)
+	else if (!castingNow)
 	{
 		m_casting = false;
 	}
-
-	m_wasVisible = visible;
 }
 
 void CastingModule::OnRenderGUI()
@@ -42,30 +42,31 @@ void CastingModule::OnRenderGUI()
 
 	if (!preview)
 	{
-		if (!w.visible || !m_casting)
+		if (!w.visible || !m_casting || m_castTotalMs <= 0.0f || !pDisplay)
 		{
 			return;
 		}
 
-		auto now = std::chrono::steady_clock::now();
-		float elapsedMs = static_cast<float>(
-			std::chrono::duration_cast<std::chrono::milliseconds>(now - m_castStart).count());
-
-		if (m_castTotalMs <= 0.0f || elapsedMs >= m_castTotalMs)
+		float remainMs = static_cast<float>(
+			static_cast<int64_t>(m_castEta) - static_cast<int64_t>(pDisplay->TimeStamp));
+		if (remainMs < 0.0f)
 		{
-			m_casting = false;
-			return;
+			remainMs = 0.0f;
+		}
+		else if (remainMs > m_castTotalMs)
+		{
+			remainMs = m_castTotalMs;
 		}
 
-		progress = 1.0f - (elapsedMs / m_castTotalMs);
-		remainSec = (m_castTotalMs - elapsedMs) / 1000.0f;
+		progress = remainMs / m_castTotalMs;
+		remainSec = remainMs / 1000.0f;
 	}
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
-		| ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing;
+		| ImGuiWindowFlags_NoFocusOnAppearing;
 	if (w.locked)
 	{
-		flags |= ImGuiWindowFlags_NoMove;
+		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(280, 0), ImGuiCond_FirstUseEver);

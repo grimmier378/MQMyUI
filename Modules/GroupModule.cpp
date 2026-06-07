@@ -67,7 +67,7 @@ bool IsManaClass(const std::string& cls)
 	}
 	return false;
 }
-} // namespace
+}
 
 GroupRowData GroupModule::BuildRow(const GroupMemberSnap& snap) const
 {
@@ -561,6 +561,73 @@ void GroupModule::DrawMemberTooltip(const GroupRowData& row)
 	ImGui::EndTooltip();
 }
 
+void GroupModule::SendToMembers(const std::vector<GroupMemberSnap>& members, const std::string& action, int arg, const std::string& argStr)
+{
+	ActorManager* ac = m_ctx.Actors;
+	if (!ac)
+	{
+		return;
+	}
+
+	for (const GroupMemberSnap& m : members)
+	{
+		if (m.isSelf)
+		{
+			continue;
+		}
+		ac->SendCommand("", m.name, action, arg, argStr);
+	}
+}
+
+void GroupModule::DrawCommandButtons(const std::vector<GroupMemberSnap>& members, const char* scopeLabel, bool& followActive)
+{
+	if (!m_ctx.Actors || !pLocalPlayer)
+	{
+		return;
+	}
+
+	float spacing = ImGui::GetStyle().ItemSpacing.x;
+	float halfW = (ImGui::GetContentRegionAvail().x - spacing) * 0.5f;
+
+	if (ImGui::Button("Come to Me", ImVec2(halfW, 0.0f)))
+	{
+		int zoneId = pZoneInfo ? static_cast<int>(pZoneInfo->ZoneID) : 0;
+		std::string loc = fmt::format("{:.2f} {:.2f} {:.2f}", pLocalPlayer->X, pLocalPlayer->Y, pLocalPlayer->Z);
+		SendToMembers(members, "ComeLoc", zoneId, loc);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetItemTooltip("Send a /nav to your exact location to every %s member running MyUI (only those in your zone respond).", scopeLabel);
+	}
+
+	ImGui::SameLine();
+
+	bool active = followActive;
+	if (active)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.35f, 0.60f, 1.0f));
+	}
+	if (ImGui::Button(active ? "Following" : "Follow Me", ImVec2(halfW, 0.0f)))
+	{
+		SendToMembers(members, active ? "FollowStop" : "FollowMe");
+		followActive = !active;
+	}
+	if (active)
+	{
+		ImGui::PopStyleColor(1);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetItemTooltip("Toggle every %s member running MyUI to /afollow you (only those in your zone start following). Resets on zone.", scopeLabel);
+	}
+}
+
+void GroupModule::OnZone()
+{
+	m_groupFollow = false;
+	m_raidFollow = false;
+}
+
 void GroupModule::DrawGroupWindow()
 {
 	CharData* ch = m_ctx.Char;
@@ -569,8 +636,14 @@ void GroupModule::DrawGroupWindow()
 	bool showSelf = m_ctx.UI->Flag("Group", "ShowSelf", false);
 
 	int shown = 0;
+	bool hasOthers = false;
 	for (const GroupMemberSnap& snap : members)
 	{
+		if (!snap.isSelf)
+		{
+			hasOthers = true;
+		}
+
 		if (snap.isSelf && !showSelf)
 		{
 			continue;
@@ -585,6 +658,11 @@ void GroupModule::DrawGroupWindow()
 	if (shown == 0)
 	{
 		ImGui::TextDisabled("Not in a group");
+	}
+
+	if (hasOthers)
+	{
+		DrawCommandButtons(members, "group", m_groupFollow);
 	}
 }
 
@@ -659,6 +737,9 @@ void GroupModule::DrawRaidWindow()
 		}
 		ImGui::EndTable();
 	}
+
+	ImGui::Separator();
+	DrawCommandButtons(members, "raid", m_raidFollow);
 }
 
 void GroupModule::OnRenderGUI()

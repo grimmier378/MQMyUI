@@ -237,29 +237,71 @@ void PlayerModule::DrawTarget()
 
 	std::string targetName = mq::IsAnonymized() ? "Target" : myui::TrimName(pTarget->DisplayedName);
 
-	if (ImGui::BeginTable("##tinfo", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
+	int pct = pTarget->HPCurrent;
+	bool overlayText = m_ctx.UI->Flag(GetName(), "TargetTextOverlay", false);
+
+	if (overlayText)
 	{
-		ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("dist", ImGuiTableColumnFlags_WidthFixed, 0.0f);
+		const BarStyle& tbar = m_ctx.UI->Bar(GetName(), "TargetHP");
+		float barH = tbar.height > 1.0f ? tbar.height : 1.0f;
+		float textH = ImGui::GetTextLineHeightWithSpacing() * 2.0f + 4.0f;
+		float regionH = barH > textH ? barH : textH;
+		float width = ImGui::GetContentRegionAvail().x;
 
-		ImGui::TableNextColumn();
-		ImGui::Text( "%s", targetName.c_str());
+		ImVec2 top = ImGui::GetCursorScreenPos();
+		ImVec2 barP0(top.x, top.y + (regionH - barH));
+		ImVec2 barP1(top.x + width, top.y + regionH);
+		myui::DrawStyledBarRect("##thp", static_cast<float>(pct), tbar, barP0, barP1);
 
-		ImGui::TableNextColumn();
-		bool los = pLocalPlayer->CanSee(*pTarget);
-		ImGui::TextColored(los ? ImVec4(0.3f, 0.9f, 0.3f, 1.0f) : ImVec4(0.9f, 0.3f, 0.3f, 1.0f),
-			"%s", los ? ICON_FA_EYE : ICON_FA_EYE_SLASH);
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetItemTooltip("%s", los ? "In Line of Sight" : "No Line of Sight");
-		}
-		ImGui::SameLine();
-		float dx = pTarget->X - pLocalPlayer->X;
-		float dy = pTarget->Y - pLocalPlayer->Y;
-		ImGui::Text("%.0fm", std::sqrt(dx * dx + dy * dy));
+		DrawTargetOverlayText(top, ImVec2(top.x + width, top.y + regionH), targetName);
 
-		ImGui::EndTable();
+		ImGui::Dummy(ImVec2(width, regionH));
 	}
+	else
+	{
+		DrawTargetInfo(targetName);
+		myui::DrawStyledBar("##thp", static_cast<float>(pct), m_ctx.UI->Bar(GetName(), "TargetHP"));
+	}
+
+	if (pTarget->Type == SPAWN_NPC)
+	{
+		int aggro = m_ctx.Char->Get().pctAggro;
+		myui::DrawStyledBar("##taggro", static_cast<float>(aggro), m_ctx.UI->Bar(GetName(), "Aggro"));
+	}
+
+	DrawTargetBuffs();
+
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
+}
+
+void PlayerModule::DrawTargetInfo(const std::string& targetName)
+{
+	bool los = pLocalPlayer->CanSee(*pTarget);
+	float dx = pTarget->X - pLocalPlayer->X;
+	float dy = pTarget->Y - pLocalPlayer->Y;
+	char distbuf[24];
+	sprintf_s(distbuf, "%.0fm", std::sqrt(dx * dx + dy * dy));
+	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
+
+	ImGui::Text("%s", targetName.c_str());
+
+	float spacing = ImGui::GetStyle().ItemSpacing.x;
+	float rightW = ImGui::CalcTextSize(eye).x + spacing + ImGui::CalcTextSize(distbuf).x;
+	ImGui::SameLine();
+	float avail = ImGui::GetContentRegionAvail().x;
+	if (avail > rightW)
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (avail - rightW));
+	}
+	ImGui::TextColored(los ? ImVec4(0.3f, 0.9f, 0.3f, 1.0f) : ImVec4(0.9f, 0.3f, 0.3f, 1.0f),
+		"%s", eye);
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetItemTooltip("%s", los ? "In Line of Sight" : "No Line of Sight");
+	}
+	ImGui::SameLine();
+	ImGui::Text("%s", distbuf);
 
 	const char* tcls = pTarget->GetClassThreeLetterCode();
 	const char* tbody = GetBodyTypeDesc(GetBodyType(pTarget));
@@ -272,20 +314,52 @@ void PlayerModule::DrawTarget()
 	{
 		ImGui::TextDisabled("Lvl %d %s", pTarget->Level, tcls ? tcls : "");
 	}
+}
 
-	int pct = pTarget->HPCurrent;
-	myui::DrawStyledBar("##thp", static_cast<float>(pct), m_ctx.UI->Bar(GetName(), "TargetHP"));
-
-	if (pTarget->Type == SPAWN_NPC)
+void PlayerModule::DrawTargetOverlayText(const ImVec2& rmin, const ImVec2& rmax, const std::string& targetName)
+{
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const ImU32 shadow = IM_COL32(0, 0, 0, 180);
+	auto drawText = [&](float x, float y, ImU32 col, const char* s)
 	{
-		int aggro = m_ctx.Char->Get().pctAggro;
-		myui::DrawStyledBar("##taggro", static_cast<float>(aggro), m_ctx.UI->Bar(GetName(), "Aggro"));
+		dl->AddText(ImVec2(x + 1.0f, y + 1.0f), shadow, s);
+		dl->AddText(ImVec2(x, y), col, s);
+	};
+
+	float padX = ImGui::GetStyle().FramePadding.x + 2.0f;
+	float x = rmin.x + padX;
+	float y = rmin.y + 2.0f;
+	float lineH = ImGui::GetTextLineHeightWithSpacing();
+
+	drawText(x, y, IM_COL32(255, 255, 255, 255), targetName.c_str());
+
+	bool los = pLocalPlayer->CanSee(*pTarget);
+	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
+	float dx = pTarget->X - pLocalPlayer->X;
+	float dy = pTarget->Y - pLocalPlayer->Y;
+	char distbuf[24];
+	sprintf_s(distbuf, "%.0fm", std::sqrt(dx * dx + dy * dy));
+
+	float distW = ImGui::CalcTextSize(distbuf).x;
+	float eyeW = ImGui::CalcTextSize(eye).x;
+	float gap = ImGui::GetStyle().ItemSpacing.x;
+	float distX = rmax.x - padX - distW;
+	drawText(distX, y, IM_COL32(255, 255, 255, 255), distbuf);
+	drawText(distX - gap - eyeW, y, los ? IM_COL32(80, 230, 80, 255) : IM_COL32(230, 80, 80, 255), eye);
+
+	const char* tcls = pTarget->GetClassThreeLetterCode();
+	const char* tbody = GetBodyTypeDesc(GetBodyType(pTarget));
+	bool showBody = tbody && tbody[0] && tbody[0] != '*';
+	char lvlbuf[96];
+	if (showBody)
+	{
+		sprintf_s(lvlbuf, "Lvl %d %s %s", pTarget->Level, tcls ? tcls : "", tbody);
 	}
-
-	DrawTargetBuffs();
-
-	ImGui::EndChild();
-	ImGui::PopStyleColor();
+	else
+	{
+		sprintf_s(lvlbuf, "Lvl %d %s", pTarget->Level, tcls ? tcls : "");
+	}
+	drawText(x, y + lineH, IM_COL32(170, 170, 170, 255), lvlbuf);
 }
 
 void PlayerModule::DrawTargetBuffs()

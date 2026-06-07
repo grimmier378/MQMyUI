@@ -37,7 +37,7 @@ Core/
   SettingsStore   SQLite-backed typed settings + theme rows + char->char copy
   ThemeManager    DB-backed ImGui themes (push/pop), replaces hardcoded themes
   CharData        Per-pulse local TLO snapshot (modules read this, never poll TLOs)
-  ChatBridge      Routes output to MQMyChat (${MyChat.Send[...]}) or MQ console
+  ChatBridge      Routes output to MQMyChat's MyUI channel via its plugin API (ChatAPI) or MQ console
   ColorUtil.h     Progress-bar + color-lerp helpers
   ActorManager    (Phase 3) peer-to-peer protobuf data sharing
 Modules/          One focused .h/.cpp per UI window

@@ -26,6 +26,13 @@ const char* kWornDisplayNames[] = {
 	"Right Finger", "Chest", "Legs", "Feet", "Waist", "Power Source", "Ammo",
 };
 
+const char* kWornBackgroundNames[] = {
+	"A_InvCharm", "A_InvEar", "A_InvHead", "A_InvFace", "A_InvEar", "A_InvNeck", "A_InvShoulders",
+	"A_InvArms", "A_InvBack", "A_InvWrist", "A_InvWrist", "A_InvRange", "A_InvHands", "A_InvPrimary",
+	"A_InvSecondary", "A_InvRing", "A_InvRing", "A_InvChest", "A_InvLegs", "A_InvFeet", "A_InvWaist",
+	"A_InvPowerSource", "A_InvAmmo",
+};
+
 constexpr int kWornCount = 23;
 
 int PlayerLevel()
@@ -66,6 +73,7 @@ const ImColor kColGreen(40, 200, 40);
 const ImColor kColOrange(242, 140, 40);
 const ImColor kColGrey(150, 150, 150);
 const ImColor kColYellow(255, 255, 0);
+const ImColor kColHeroicSoft(200, 200, 110);
 const ImColor kColTeal(0, 210, 210);
 const ImColor kColRed(220, 90, 90);
 const ImColor kColPink(230, 130, 160);
@@ -75,6 +83,29 @@ const char* SizeName(int size)
 {
 	static const char* kSizes[] = { "Tiny", "Small", "Medium", "Large", "Giant" };
 	return (size >= 0 && size <= 4) ? kSizes[size] : "Unknown";
+}
+
+std::string FormatThousands(int value)
+{
+	bool negative = value < 0;
+	std::string digits = std::to_string(negative ? -static_cast<long long>(value) : value);
+	std::string out;
+	int count = 0;
+	for (auto it = digits.rbegin(); it != digits.rend(); ++it)
+	{
+		if (count != 0 && count % 3 == 0)
+		{
+			out.push_back(',');
+		}
+		out.push_back(*it);
+		++count;
+	}
+	if (negative)
+	{
+		out.push_back('-');
+	}
+	std::reverse(out.begin(), out.end());
+	return out;
 }
 
 const char* ItemTypeName(ItemDefinition* def)
@@ -836,6 +867,57 @@ void CompareLine(const char* label, int candidate, int equipped)
 		ImGui::TextColored(kColGrey, "%d", candidate);
 	}
 }
+
+void CompareValue(int candidate, int equipped)
+{
+	int delta = candidate - equipped;
+	if (delta != 0)
+	{
+		ImColor color = delta > 0 ? kColGreen : kColRed;
+		ImGui::TextColored(color, "%d (%+d)", candidate, delta);
+	}
+	else
+	{
+		ImGui::TextColored(kColGrey, "%d", candidate);
+	}
+}
+
+void CompareInt(const char* label, int candidate, int equipped)
+{
+	if (candidate == 0 && equipped == 0)
+	{
+		return;
+	}
+	ImGui::TableNextColumn();
+	ImGui::Text("%s:", label);
+	ImGui::SameLine();
+	CompareValue(candidate, equipped);
+}
+
+void CompareStat(const char* label, int candBase, int wornBase, int candHeroic, int wornHeroic)
+{
+	if (candBase == 0 && wornBase == 0 && candHeroic == 0 && wornHeroic == 0)
+	{
+		return;
+	}
+	ImGui::TableNextColumn();
+	ImGui::Text("%s:", label);
+	ImGui::SameLine();
+	CompareValue(candBase, wornBase);
+	if (candHeroic != 0 || wornHeroic != 0)
+	{
+		int heroicDelta = candHeroic - wornHeroic;
+		ImGui::SameLine();
+		if (heroicDelta != 0)
+		{
+			ImGui::TextColored(kColHeroicSoft, "+%d (%+d)", candHeroic, heroicDelta);
+		}
+		else
+		{
+			ImGui::TextColored(kColHeroicSoft, "+%d", candHeroic);
+		}
+	}
+}
 } // namespace
 
 int ItemRef::id() const          { return item ? item->GetID() : 0; }
@@ -866,6 +948,15 @@ const char* WornSlotDisplayName(int wornSlot)
 		return kWornDisplayNames[wornSlot];
 	}
 	return "";
+}
+
+const char* WornSlotBackgroundName(int wornSlot)
+{
+	if (wornSlot >= 0 && wornSlot < kWornCount)
+	{
+		return kWornBackgroundNames[wornSlot];
+	}
+	return nullptr;
 }
 
 ItemRef WornItem(int wornSlot)
@@ -1017,6 +1108,29 @@ bool ItemFitsSlot(const ItemRef& ref, int wornSlot)
 	return def && (def->EquipSlots & (1 << wornSlot)) != 0;
 }
 
+bool IsTwoHandedWeapon(const ItemRef& ref)
+{
+	if (!ref.valid())
+	{
+		return false;
+	}
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	if (!def)
+	{
+		return false;
+	}
+	switch (def->ItemClass)
+	{
+	case ItemClass_2HSlashing:
+	case ItemClass_2HBlunt:
+	case ItemClass_2HPiercing:
+	case ItemClass_Martial:
+		return true;
+	default:
+		return false;
+	}
+}
+
 int CountInventory(const std::string& name)
 {
 	int total = 0;
@@ -1062,10 +1176,15 @@ std::vector<ItemRef> GetCompatibleItems(int wornSlot)
 		{
 			continue;
 		}
-		if ((def->EquipSlots & slotMask) != 0)
+		if ((def->EquipSlots & slotMask) == 0)
 		{
-			out.push_back(ref);
+			continue;
 		}
+		if (wornSlot == kSlotSecondary && IsTwoHandedWeapon(ref))
+		{
+			continue;
+		}
+		out.push_back(ref);
 	}
 	return out;
 }
@@ -1267,7 +1386,10 @@ void DrawItemIcon(IconHelper* icons, const ItemRef& ref, const DrawItemOptions& 
 
 	if (icons && opts.showBackground)
 	{
-		icons->DrawStatusIcon("A_RecessedBox", static_cast<int>(size));
+		if (!opts.backgroundAnim || !icons->DrawStatusIcon(opts.backgroundAnim, static_cast<int>(size)))
+		{
+			icons->DrawStatusIcon("A_RecessedBox", static_cast<int>(size));
+		}
 		ImGui::SetCursorScreenPos(origin);
 	}
 
@@ -1385,32 +1507,127 @@ void RenderCompareTooltip(const ItemRef& candidate, const ItemRef& equipped)
 	auto cand = [&](auto field) { return AugmentedStat(candidate, field); };
 	auto worn = [&](auto field) { return AugmentedStat(equipped, field); };
 
+	auto setupCols = []() {
+		ImGui::TableSetupColumn("##a", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+		ImGui::TableSetupColumn("##b", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+		ImGui::TableNextRow();
+	};
+	auto either = [&](auto field) { return cand(field) != 0 || worn(field) != 0; };
+
+	bool hasBase = either(&ItemDefinition::AC) || either(&ItemDefinition::HP) || either(&ItemDefinition::Mana)
+		|| either(&ItemDefinition::Endurance) || either(&ItemDefinition::HPRegen)
+		|| either(&ItemDefinition::ManaRegen) || either(&ItemDefinition::EnduranceRegen);
+	bool hasStats = either(&ItemDefinition::STR) || either(&ItemDefinition::STA) || either(&ItemDefinition::AGI)
+		|| either(&ItemDefinition::DEX) || either(&ItemDefinition::WIS) || either(&ItemDefinition::INT)
+		|| either(&ItemDefinition::CHA);
+	bool hasResists = either(&ItemDefinition::SvMagic) || either(&ItemDefinition::SvFire) || either(&ItemDefinition::SvCold)
+		|| either(&ItemDefinition::SvDisease) || either(&ItemDefinition::SvPoison) || either(&ItemDefinition::SvCorruption);
+
 	ImGui::BeginTooltip();
 	ImGui::TextColored(kColYellow, "%s", c->Name);
 	ImGui::TextColored(kColGrey, "vs %s", e ? e->Name : "(empty)");
 	ImGui::Separator();
 
-	if ((c->Damage > 0 && c->Delay > 0) || (e && e->Damage > 0))
+	bool isWeapon = (c->Damage > 0 && c->Delay > 0) || (e && e->Damage > 0);
+	if (isWeapon)
 	{
-		CompareLine("Dmg", cand(&ItemDefinition::Damage), worn(&ItemDefinition::Damage));
-		CompareLine("Delay", cand(&ItemDefinition::Delay), worn(&ItemDefinition::Delay));
+		if (ImGui::BeginTable("##cmpdmg", 2, ImGuiTableFlags_None))
+		{
+			setupCols();
+			CompareInt("Dmg", cand(&ItemDefinition::Damage), worn(&ItemDefinition::Damage));
+			CompareInt("Dly", cand(&ItemDefinition::Delay), worn(&ItemDefinition::Delay));
+			CompareInt("Haste", cand(&ItemDefinition::Haste), worn(&ItemDefinition::Haste));
+			CompareInt("Dmg Shield", cand(&ItemDefinition::DamShield), worn(&ItemDefinition::DamShield));
+			CompareInt("DS Mit", cand(&ItemDefinition::DamageShieldMitigation), worn(&ItemDefinition::DamageShieldMitigation));
+			CompareInt("Avoidance", cand(&ItemDefinition::Avoidance), worn(&ItemDefinition::Avoidance));
+			CompareInt("DoT Shielding", cand(&ItemDefinition::DoTShielding), worn(&ItemDefinition::DoTShielding));
+			CompareInt("Accuracy", cand(&ItemDefinition::Accuracy), worn(&ItemDefinition::Accuracy));
+			CompareInt("Spell Shield", cand(&ItemDefinition::SpellShield), worn(&ItemDefinition::SpellShield));
+			CompareInt("Heal Amt", cand(&ItemDefinition::HealAmount), worn(&ItemDefinition::HealAmount));
+			CompareInt("Spell Dmg", cand(&ItemDefinition::SpellDamage), worn(&ItemDefinition::SpellDamage));
+			CompareInt("Stun Res", cand(&ItemDefinition::StunResist), worn(&ItemDefinition::StunResist));
+			CompareInt("Clairvoyance", cand(&ItemDefinition::Clairvoyance), worn(&ItemDefinition::Clairvoyance));
+			ImGui::EndTable();
+		}
 	}
-	CompareLine("AC", cand(&ItemDefinition::AC), worn(&ItemDefinition::AC));
-	CompareLine("HP", cand(&ItemDefinition::HP), worn(&ItemDefinition::HP));
-	CompareLine("Mana", cand(&ItemDefinition::Mana), worn(&ItemDefinition::Mana));
-	CompareLine("STR", cand(&ItemDefinition::STR), worn(&ItemDefinition::STR));
-	CompareLine("STA", cand(&ItemDefinition::STA), worn(&ItemDefinition::STA));
-	CompareLine("AGI", cand(&ItemDefinition::AGI), worn(&ItemDefinition::AGI));
-	CompareLine("DEX", cand(&ItemDefinition::DEX), worn(&ItemDefinition::DEX));
-	CompareLine("WIS", cand(&ItemDefinition::WIS), worn(&ItemDefinition::WIS));
-	CompareLine("INT", cand(&ItemDefinition::INT), worn(&ItemDefinition::INT));
-	CompareLine("CHA", cand(&ItemDefinition::CHA), worn(&ItemDefinition::CHA));
-	CompareLine("Magic", cand(&ItemDefinition::SvMagic), worn(&ItemDefinition::SvMagic));
-	CompareLine("Fire", cand(&ItemDefinition::SvFire), worn(&ItemDefinition::SvFire));
-	CompareLine("Cold", cand(&ItemDefinition::SvCold), worn(&ItemDefinition::SvCold));
-	CompareLine("Disease", cand(&ItemDefinition::SvDisease), worn(&ItemDefinition::SvDisease));
-	CompareLine("Poison", cand(&ItemDefinition::SvPoison), worn(&ItemDefinition::SvPoison));
-	CompareLine("Corruption", cand(&ItemDefinition::SvCorruption), worn(&ItemDefinition::SvCorruption));
+
+	if (hasBase)
+	{
+		ImGui::SeparatorText("Stats");
+		if (ImGui::BeginTable("##cmpbase", 2, ImGuiTableFlags_None))
+		{
+			setupCols();
+			CompareInt("AC", cand(&ItemDefinition::AC), worn(&ItemDefinition::AC));
+			CompareInt("HPs", cand(&ItemDefinition::HP), worn(&ItemDefinition::HP));
+			CompareInt("Mana", cand(&ItemDefinition::Mana), worn(&ItemDefinition::Mana));
+			CompareInt("End", cand(&ItemDefinition::Endurance), worn(&ItemDefinition::Endurance));
+			CompareInt("HP Regen", cand(&ItemDefinition::HPRegen), worn(&ItemDefinition::HPRegen));
+			CompareInt("Mana Regen", cand(&ItemDefinition::ManaRegen), worn(&ItemDefinition::ManaRegen));
+			CompareInt("End Regen", cand(&ItemDefinition::EnduranceRegen), worn(&ItemDefinition::EnduranceRegen));
+			ImGui::EndTable();
+		}
+	}
+
+	if (hasStats && ImGui::BeginTable("##cmpattr", 2, ImGuiTableFlags_None))
+	{
+		setupCols();
+		CompareStat("STR", cand(&ItemDefinition::STR), worn(&ItemDefinition::STR), cand(&ItemDefinition::HeroicSTR), worn(&ItemDefinition::HeroicSTR));
+		CompareStat("STA", cand(&ItemDefinition::STA), worn(&ItemDefinition::STA), cand(&ItemDefinition::HeroicSTA), worn(&ItemDefinition::HeroicSTA));
+		CompareStat("AGI", cand(&ItemDefinition::AGI), worn(&ItemDefinition::AGI), cand(&ItemDefinition::HeroicAGI), worn(&ItemDefinition::HeroicAGI));
+		CompareStat("DEX", cand(&ItemDefinition::DEX), worn(&ItemDefinition::DEX), cand(&ItemDefinition::HeroicDEX), worn(&ItemDefinition::HeroicDEX));
+		CompareStat("WIS", cand(&ItemDefinition::WIS), worn(&ItemDefinition::WIS), cand(&ItemDefinition::HeroicWIS), worn(&ItemDefinition::HeroicWIS));
+		CompareStat("INT", cand(&ItemDefinition::INT), worn(&ItemDefinition::INT), cand(&ItemDefinition::HeroicINT), worn(&ItemDefinition::HeroicINT));
+		CompareStat("CHA", cand(&ItemDefinition::CHA), worn(&ItemDefinition::CHA), cand(&ItemDefinition::HeroicCHA), worn(&ItemDefinition::HeroicCHA));
+		ImGui::EndTable();
+	}
+
+	if (hasResists)
+	{
+		ImGui::SeparatorText("Resists");
+		if (ImGui::BeginTable("##cmpresist", 2, ImGuiTableFlags_None))
+		{
+			setupCols();
+			CompareStat("Magic", cand(&ItemDefinition::SvMagic), worn(&ItemDefinition::SvMagic), cand(&ItemDefinition::HeroicSvMagic), worn(&ItemDefinition::HeroicSvMagic));
+			CompareStat("Fire", cand(&ItemDefinition::SvFire), worn(&ItemDefinition::SvFire), cand(&ItemDefinition::HeroicSvFire), worn(&ItemDefinition::HeroicSvFire));
+			CompareStat("Cold", cand(&ItemDefinition::SvCold), worn(&ItemDefinition::SvCold), cand(&ItemDefinition::HeroicSvCold), worn(&ItemDefinition::HeroicSvCold));
+			CompareStat("Disease", cand(&ItemDefinition::SvDisease), worn(&ItemDefinition::SvDisease), cand(&ItemDefinition::HeroicSvDisease), worn(&ItemDefinition::HeroicSvDisease));
+			CompareStat("Poison", cand(&ItemDefinition::SvPoison), worn(&ItemDefinition::SvPoison), cand(&ItemDefinition::HeroicSvPoison), worn(&ItemDefinition::HeroicSvPoison));
+			CompareStat("Corruption", cand(&ItemDefinition::SvCorruption), worn(&ItemDefinition::SvCorruption), cand(&ItemDefinition::HeroicSvCorruption), worn(&ItemDefinition::HeroicSvCorruption));
+			ImGui::EndTable();
+		}
+	}
+
+	ImGui::Separator();
+	ImGui::TextColored(kColGrey, "Hold Shift for full side-by-side comparison");
+	ImGui::EndTooltip();
+}
+
+void RenderCompareSideBySide(IconHelper* icons, const ItemRef& candidate, const ItemRef& equipped)
+{
+	if (!candidate.valid())
+	{
+		return;
+	}
+
+	ImGui::BeginTooltip();
+	ImGui::BeginChild("##cmpLeft", ImVec2(320.0f, 0.0f), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders);
+	ImGui::SeparatorText("Equipped");
+	if (equipped.valid())
+	{
+		RenderItemInfo(icons, equipped, false);
+	}
+	else
+	{
+		ImGui::TextColored(kColGrey, "(empty slot)");
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("##cmpRight", ImVec2(320.0f, 0.0f), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders);
+	ImGui::SeparatorText(candidate.name());
+	RenderItemInfo(icons, candidate, false);
+	ImGui::EndChild();
 	ImGui::EndTooltip();
 }
 
@@ -1513,7 +1730,7 @@ void PulseAugInsert()
 	}
 }
 
-void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker)
+void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker, bool vertical)
 {
 	struct CoinKind { int icon; int type; const char* label; };
 	static const CoinKind kCoins[] = {
@@ -1536,10 +1753,11 @@ void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker)
 		}
 
 		int amount = CoinAmount(coin.type);
-		ImGui::TextColored(ImColor(0, 220, 220), "%d", amount);
+		std::string amountText = FormatThousands(amount);
+		ImGui::TextColored(ImColor(0, 220, 220), "%s", amountText.c_str());
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("%d %s", amount, coin.label);
+			ImGui::SetTooltip("%s %s", amountText.c_str(), coin.label);
 		}
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
@@ -1552,7 +1770,7 @@ void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker)
 			picker.posY = mouse.y;
 		}
 
-		if (coin.type != 3)
+		if (!vertical && coin.type != 3)
 		{
 			ImGui::SameLine();
 		}
@@ -1583,7 +1801,7 @@ void DrawCoinQuantityWindow(CoinPicker& picker)
 			ImGui::SetKeyboardFocusHere();
 			picker.focus = true;
 		}
-		std::string hint = "Available: " + std::to_string(maxQty);
+		std::string hint = "Available: " + FormatThousands(maxQty);
 		bool entered = ImGui::InputTextWithHint("##Qty", hint.c_str(), picker.buf, sizeof(picker.buf),
 			ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal);
 

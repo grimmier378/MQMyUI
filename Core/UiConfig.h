@@ -28,9 +28,10 @@ struct BarStyle
 	float   borderThickness = 1.0f;
 	MQColor borderColor{ 200, 200, 200, 255 };
 
-	int         textMode   = 0;
-	std::string textFormat = "%.0f%%";
-	float       textScale  = 1.0f;
+	int         textMode      = 0;
+	std::string textFormat    = "%.0f%%";
+	float       textScale     = 1.0f;
+	bool        textDropShadow = true;
 
 	bool  ticksOn       = false;
 	float tickEvery     = 0.10f;

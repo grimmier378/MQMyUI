@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace
@@ -109,7 +110,68 @@ bool ColorEditMQ(const char* label, MQColor& c)
 	}
 	return false;
 }
-} // namespace
+
+const char* WindowDescription(const std::string& name)
+{
+	if (name == "Player")      { return "Your health / mana / endurance bars, combat state, and (optionally) the target block."; }
+	if (name == "Pet")         { return "Your pet's health and target, plus configurable command buttons (attack, guard, follow, ...)."; }
+	if (name == "Group")       { return "Your group as a compact list - HP/mana/end bars, level, distance, roles, and pets."; }
+	if (name == "Raid")        { return "A tiled grid of your raid, merging in-zone members with out-of-zone boxed characters."; }
+	if (name == "Buffs")       { return "Your long-duration buffs (or another box's), as a list or an icon grid."; }
+	if (name == "Songs")       { return "Your short-duration buffs / bard songs, as a list or an icon grid."; }
+	if (name == "Spells")      { return "Your memorized spell gems - left-click to cast, right-click an empty gem to memorize."; }
+	if (name == "Casting")     { return "A cast bar showing the spell being cast and the time remaining."; }
+	if (name == "XPBars")      { return "Per-character XP / AA / breath tiles for your boxes, with AA allocation buttons."; }
+	if (name == "MyAA")        { return "Browse, buy, and hotkey alternate-advancement abilities."; }
+	if (name == "HUD")         { return "A small always-on status HUD (combat state, optional HP/Mana)."; }
+	if (name == "MyInventory") { return "Your equipped paperdoll, bags, currency, and a character Stats tab."; }
+	if (name == "BigBag")      { return "An all-in-one inventory browser - items, clickies, augments, bank, with search and sort."; }
+	if (name == "iTrack")      { return "A shared cross-character item tracker - broadcast a list of items to watch for."; }
+	return "";
+}
+
+const char* FlagDescription(const std::string& window, const std::string& flag)
+{
+	static const std::unordered_map<std::string, const char*> kDesc = {
+		{ "ShowTarget",          "Show the target block (target HP, distance, and buffs) below your bars." },
+		{ "SplitTarget",         "Move the target block into its own separate, movable window." },
+		{ "CombatPulse",         "Pulse a red border around the player block while you're in combat." },
+		{ "TargetTextOverlay",   "Draw the target's name and level over the target HP bar; raise the TargetHP bar height to grow it up behind the text." },
+		{ "ShowMana",            "Show a mana bar for each group member." },
+		{ "ShowEnd",             "Show an endurance bar for each group member." },
+		{ "ShowPet",             "Show each member's pet HP bar." },
+		{ "ShowSelf",            "Include yourself as a row in the group window." },
+		{ "ShowRoleIcons",       "Show main-tank / main-assist / puller role icons and line-of-sight." },
+		{ "ShowLevel",           "Show each member's level." },
+		{ "ShowMoveStatus",      "Show a moving / sitting status indicator for each member." },
+		{ "ShowDistance",        "Show each member's distance from you." },
+		{ "VertPet",             "Draw the group pet bars vertically instead of horizontally." },
+		{ "ShowRaidWindow",      "Show the separate Raid grid window while you're in a raid." },
+		{ "IconView",            "Show as an icon grid instead of a list with names and timers." },
+		{ "ShowGroupOnly",       "Limit the character picker (for viewing another box's buffs) to your group members." },
+		{ "ShowTimer",           "Show the remaining time on each entry." },
+		{ "Vertical",            "Stack the spell gems vertically instead of in a horizontal row." },
+		{ "ShowTooltip",         "Show a tooltip with exact XP / AA percentages on hover." },
+		{ "AlphaSort",           "Sort the boxes alphabetically by name." },
+		{ "MyGroupOnly",         "Only show tiles for characters in your group." },
+		{ "ShowLeader",          "Show a leader icon on the group / raid leader's tile." },
+		{ "TrainableOnly",       "Only list AAs you can currently train." },
+		{ "AffordableOnly",      "Only list AAs you can currently afford." },
+		{ "ConfirmPurchase",     "Ask for confirmation before buying an AA." },
+		{ "ShowHotkeyButton",    "Show the Hotkey button (creates a hotkey for the selected AA)." },
+		{ "ShowHpMana",          "Show HP / Mana readouts on the floating status HUD." },
+		{ "ShowSlotBackground",  "Draw the slot background art behind item icons." },
+		{ "AutoInventoryOnSwap", "Automatically stow the displaced item when you equip-swap a slot." },
+		{ "DimUnusable",         "Dim items your class / race can't use." },
+		{ "SortName",            "Sort items by name." },
+		{ "SortStack",           "Sort items by stack size." },
+		{ "SortType",            "Sort items by item type." },
+	};
+	(void)window;
+	auto it = kDesc.find(flag);
+	return it != kDesc.end() ? it->second : "";
+}
+}
 
 void SettingsModule::OnRenderGUI()
 {
@@ -260,6 +322,11 @@ void SettingsModule::DrawWindowsTab()
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(name);
+			if (const char* d = WindowDescription(name); d && *d)
+			{
+				ImGui::SameLine();
+				mq::imgui::HelpMarker(d);
+			}
 			ImGui::TableNextColumn();
 			if (myui::DrawToggle((std::string("Shown##vis") + name).c_str(), &w.visible))
 			{
@@ -347,6 +414,8 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 	ImGui::PushID(window.c_str());
 	ImGui::PushID(role.c_str());
 
+	auto tip = [](const char* t) { ImGui::SameLine(); mq::imgui::HelpMarker(t); };
+
 	ImGui::Text("%s / %s", window.c_str(), role.c_str());
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Reset Effects"))
@@ -397,10 +466,13 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 	{
 		if (!groupPet)
 		{
-			ImGui::Checkbox("Vertical", &b.vertical);
+			b.vertical = false;
 		}
 		ImGui::DragFloat("Height", &b.height, 0.5f, 1.0f, 200.0f, "%.0f");
-		ImGui::DragFloat("Width (0=auto)", &b.width, 0.5f, 0.0f, 400.0f, "%.0f");
+		if (groupPet)
+		{
+			ImGui::DragFloat("Width (vertical)", &b.width, 0.5f, 1.0f, 200.0f, "%.0f");
+		}
 		ImGui::DragFloat("Rounding", &b.rounding, 0.1f, 0.0f, 24.0f, "%.1f");
 		ImGui::DragFloat("Pad End", &b.padEnd, 0.5f, 0.0f, 40.0f, "%.0f");
 	}
@@ -408,15 +480,21 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 	if (ImGui::CollapsingHeader("Fill", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ColorEditMQ("Fill Low", b.fillLow);
+		tip("Fill color toward 0% (and the gradient's start color).");
 		ColorEditMQ("Fill High", b.fillHigh);
+		tip("Fill color toward 100% (and the gradient's end color).");
 		ColorEditMQ("Background", b.bgColor);
+		tip("Color of the empty (unfilled) part of the bar.");
 		ImGui::Checkbox("Gradient", &b.gradientOn);
+		tip("Blend Fill Low -> Fill High across the fill instead of a solid color.");
 		if (b.gradientOn)
 		{
 			const char* modes[] = { "Static", "Dynamic" };
 			ImGui::Combo("Gradient Mode", &b.gradientMode, modes, 2);
+			tip("Static: a fixed Low->High gradient. Dynamic: the end color tracks the current fill %.");
 			const char* dirs[] = { "Horizontal", "Vertical", "Diag TL-BR", "Diag TR-BL" };
 			ImGui::Combo("Gradient Dir", &b.gradientDir, dirs, 4);
+			tip("Direction the gradient runs across the bar.");
 		}
 	}
 
@@ -436,6 +514,7 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 				}
 			}
 			ImGui::DragFloat("Text Scale", &b.textScale, 0.01f, 0.3f, 3.0f, "%.2f");
+			ImGui::Checkbox("Drop Shadow", &b.textDropShadow);
 		}
 	}
 
@@ -451,26 +530,31 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 	if (ImGui::CollapsingHeader("Efx"))
 	{
 		ImGui::Checkbox("Ticks", &b.ticksOn);
+		tip("Draw evenly-spaced marker lines across the bar.");
 		if (b.ticksOn)
 		{
 			ImGui::Indent();
 			ImGui::DragFloat("Tick Every (0-1)", &b.tickEvery, 0.01f, 0.01f, 1.0f, "%.2f");
+			tip("Spacing between ticks as a fraction of the bar (0.10 = every 10%).");
 			ImGui::DragFloat("Tick Thickness", &b.tickThickness, 0.1f, 0.5f, 4.0f, "%.1f");
 			ImGui::DragInt("Tick Alpha", &b.tickAlpha, 1.0f, 0, 255);
 			ImGui::Unindent();
 		}
 
 		ImGui::Checkbox("Shimmer", &b.shimmerOn);
+		tip("A bright highlight that sweeps along the filled portion.");
 		if (b.shimmerOn)
 		{
 			ImGui::Indent();
 			ImGui::DragFloat("Shimmer Speed", &b.shimmerSpeed, 0.01f, 0.0f, 4.0f, "%.2f");
 			ImGui::DragFloat("Shimmer Width", &b.shimmerWidth, 0.5f, 4.0f, 120.0f, "%.0f");
 			ImGui::Checkbox("Follows Progress", &b.shimmerFollows);
+			tip("Reverse the shimmer's sweep direction while the bar is draining.");
 			ImGui::Unindent();
 		}
 
 		ImGui::Checkbox("Glow", &b.glowOn);
+		tip("A soft glow at the leading edge of the fill.");
 		if (b.glowOn)
 		{
 			ImGui::Indent();
@@ -481,6 +565,7 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 
 		ImGui::SeparatorText("Animation");
 		ImGui::DragFloat("Tween Seconds", &b.tweenSeconds, 0.01f, 0.0f, 2.0f, "%.2f");
+		tip("Animate the bar smoothly toward new values over this many seconds (0 = snap instantly).");
 	}
 
 	ImGui::PopID();
@@ -490,6 +575,11 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 void SettingsModule::DrawScalingTab()
 {
 	UiConfig* ui = m_active ? m_active : m_ctx.UI;
+
+	ImGui::TextUnformatted("Per-window scale");
+	ImGui::SameLine();
+	mq::imgui::HelpMarker("Text scales fonts; Icon scales icons & bars, per window. 1.00 = default; drag to adjust.");
+
 	if (ImGui::BeginTable("##ScaleTable", 3, ImGuiTableFlags_SizingStretchProp))
 	{
 		for (const char* name : kScalingWindows)
@@ -526,6 +616,10 @@ void SettingsModule::DrawDisplayTab()
 		{
 			return true;
 		}
+		if (win == "XPBars" && flag == "AutoSize")
+		{
+			return true;
+		}
 		return false;
 	};
 
@@ -539,10 +633,18 @@ void SettingsModule::DrawDisplayTab()
 		}
 		if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			bool isPet = ci_equals(name, "Pet");
+			if (isPet)
+			{
+				ImGui::TextDisabled("Buttons shown");
+				ImGui::SameLine();
+				mq::imgui::HelpMarker("Toggle which pet command buttons appear on the Pet window (Attack, Guard, Follow, ...).");
+			}
+
 			if (!w.flags.empty())
 			{
 				float avail = ImGui::GetContentRegionAvail().x;
-				int cols = (int)(avail / 150.0f);
+				int cols = (int)(avail / 175.0f);
 				if (cols < 1)
 				{
 					cols = 1;
@@ -562,9 +664,27 @@ void SettingsModule::DrawDisplayTab()
 						}
 						ImGui::TableNextColumn();
 						myui::DrawToggle((flag + "##" + name).c_str(), &val);
+						if (!isPet)
+						{
+							if (const char* d = FlagDescription(name, flag); d && *d)
+							{
+								ImGui::SameLine(0.0f, 4.0f);
+								mq::imgui::HelpMarker(d);
+							}
+						}
 					}
 					ImGui::EndTable();
 				}
+			}
+
+			if (ci_equals(name, "XPBars"))
+			{
+				if (ImGui::Button("Fit to Tiles##XPBarsFit"))
+				{
+					m_ctx.UI->SetFlag("XPBars", "AutoSize", true);
+				}
+				ImGui::SameLine();
+				mq::imgui::HelpMarker("Resize the XP Bars window once to clip tightly around the current tile layout, then leave it freely sizable (unless the window is locked). Press after adding/removing characters or changing the window width.");
 			}
 
 			if (isRaid)
@@ -575,6 +695,8 @@ void SettingsModule::DrawDisplayTab()
 				{
 					ui->SetNum("Raid", "TileWidth", tileWidth);
 				}
+				ImGui::SameLine();
+				mq::imgui::HelpMarker("Width of each raid member tile, in pixels.");
 			}
 		}
 	}

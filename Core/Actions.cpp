@@ -1,5 +1,6 @@
 #include "Actions.h"
 #include "InventoryData.h"
+#include "ChatBridge.h"
 
 #include <mq/Plugin.h>
 
@@ -17,10 +18,11 @@ int s_pending = 0;
 std::chrono::steady_clock::time_point s_deadline;
 constexpr float kTradeRange = 20.0f;
 
-enum class SwapStep { None, WaitPickup, WaitDrop, WaitAuto };
+enum class SwapStep { None, PreUnequip, WaitTwoHandCursor, WaitPickup, WaitDrop, WaitAuto };
 SwapStep    s_swapStep = SwapStep::None;
 std::string s_swapPickup;
 std::string s_swapDrop;
+int         s_swapItemId = 0;
 bool        s_swapAuto = false;
 std::chrono::steady_clock::time_point s_swapDeadline;
 std::chrono::steady_clock::time_point s_swapDropTime;
@@ -115,7 +117,8 @@ void GiveItemTo(int spawnId)
 	s_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(15);
 }
 
-void SwapToWornSlot(const std::string& pickupCommand, const std::string& dropCommand, bool autoInventory)
+void SwapToWornSlot(const std::string& pickupCommand, const std::string& dropCommand, bool autoInventory,
+	const std::string& preUnequipCommand, int swapItemId)
 {
 	if (dropCommand.empty())
 	{
@@ -124,10 +127,17 @@ void SwapToWornSlot(const std::string& pickupCommand, const std::string& dropCom
 
 	s_swapPickup = pickupCommand;
 	s_swapDrop = dropCommand;
+	s_swapItemId = swapItemId;
 	s_swapAuto = autoInventory;
 	s_swapDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
 
-	if (!pickupCommand.empty() && !CursorHasItem())
+	if (!preUnequipCommand.empty() && !pickupCommand.empty() && !CursorHasItem())
+	{
+		s_swapAuto = true;
+		EzCommand(preUnequipCommand.c_str());
+		s_swapStep = SwapStep::PreUnequip;
+	}
+	else if (!pickupCommand.empty() && !CursorHasItem())
 	{
 		EzCommand(pickupCommand.c_str());
 		s_swapStep = SwapStep::WaitPickup;
@@ -156,6 +166,26 @@ void PulseSwap()
 
 	switch (s_swapStep)
 	{
+	case SwapStep::PreUnequip:
+		if (CursorHasItem())
+		{
+			EzCommand(s_swapPickup.c_str());
+			s_swapStep = SwapStep::WaitTwoHandCursor;
+		}
+		break;
+
+	case SwapStep::WaitTwoHandCursor:
+	{
+		ItemRef cursor = CursorItem();
+		if (cursor.valid() && cursor.id() == s_swapItemId)
+		{
+			EzCommand(s_swapDrop.c_str());
+			s_swapDropTime = now;
+			s_swapStep = SwapStep::WaitDrop;
+		}
+		break;
+	}
+
 	case SwapStep::WaitPickup:
 		if (CursorHasItem())
 		{
@@ -271,7 +301,7 @@ void StartBulkTrade(const std::vector<std::string>& itemNames)
 	}
 	if (!pTarget || pTarget == pLocalPlayer)
 	{
-		WriteChatf("\ar[MyUI]\ax Select another character as your trade target first.");
+		ChatOutf("\ar[MyUI]\ax Select another character as your trade target first.");
 		return;
 	}
 

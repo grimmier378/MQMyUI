@@ -73,7 +73,7 @@ bool IconHelper::DrawStatusIcon(const char* animName, int sizePx, const char* to
 	return true;
 }
 
-void IconHelper::DrawEmptySlot(int slotNumber, const CXSize& size)
+void IconHelper::DrawEmptySlot(const CXSize& size)
 {
 	ImVec2 p = ImGui::GetCursorScreenPos();
 	ImVec2 sz(static_cast<float>(size.cx), static_cast<float>(size.cy));
@@ -81,12 +81,6 @@ void IconHelper::DrawEmptySlot(int slotNumber, const CXSize& size)
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	dl->AddRect(p, ImVec2(p.x + sz.x, p.y + sz.y), IM_COL32(110, 110, 110, 160));
-
-	char num[16];
-	sprintf_s(num, "%d", slotNumber);
-	ImVec2 ts = ImGui::CalcTextSize(num);
-	dl->AddText(ImVec2(p.x + (sz.x - ts.x) * 0.5f, p.y + (sz.y - ts.y) * 0.5f),
-		IM_COL32(150, 150, 150, 200), num);
 }
 
 void IconHelper::Shutdown()
@@ -98,6 +92,8 @@ void IconHelper::Shutdown()
 	delete m_itemIcon;      m_itemIcon = nullptr;
 
 	for (auto& [name, anim] : m_named)
+	{
 		delete anim;
+	}
 	m_named.clear();
 }

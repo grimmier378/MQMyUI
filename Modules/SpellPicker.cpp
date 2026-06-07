@@ -34,7 +34,6 @@ void SpellPicker::DrawSpellTree()
 							if (ImGui::Selectable(spell.Name))
 							{
 								m_selectedSpell = std::make_shared<SpellData>(spell);
-								m_pickerOpen = false;
 							}
 
 							ImGui::SameLine();

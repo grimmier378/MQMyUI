@@ -4,7 +4,7 @@
 
 #include <mq/Plugin.h>
 
-#include <chrono>
+#include <cstdint>
 #include <string>
 
 class CastingModule : public ModuleBase
@@ -16,9 +16,8 @@ public:
 	void OnRenderGUI() override;
 
 private:
-	bool  m_casting = false;
-	bool  m_wasVisible = false;
-	float m_castTotalMs = 0.0f;
+	bool     m_casting = false;
+	uint32_t m_castEta = 0;
+	float    m_castTotalMs = 0.0f;
 	std::string m_spellName;
-	std::chrono::steady_clock::time_point m_castStart;
 };

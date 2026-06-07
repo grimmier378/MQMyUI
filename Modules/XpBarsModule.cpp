@@ -41,7 +41,7 @@ bool InGroup(CharData* ch, const std::string& name)
 	}
 	return false;
 }
-} // namespace
+}
 
 void XpBarsModule::DrawRow(const AARow& row)
 {
@@ -250,6 +250,8 @@ void XpBarsModule::OnRenderGUI()
 	if (autoSize)
 	{
 		flags |= ImGuiWindowFlags_AlwaysAutoResize;
+		m_ctx.UI->SetFlag(GetName(), "AutoSize", false);
+		m_ctx.UI->RequestSave();
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(185, 480), ImGuiCond_FirstUseEver);

@@ -2,6 +2,7 @@
 
 #include "../Core/UiConfig.h"
 #include "../Core/CharData.h"
+#include "../Core/ChatBridge.h"
 
 #include "mq/base/String.h"
 
@@ -107,14 +108,14 @@ bool ClickAAButton(const std::string& name, const char* buttonId)
 	}
 	if (!selected)
 	{
-		WriteChatf("\ar[MyUI AA]\ax could not find '%s' in the AA window lists.", name.c_str());
+		myui::ChatOutf("\ar[MyUI AA]\ax could not find '%s' in the AA window lists.", name.c_str());
 		return false;
 	}
 
 	CXWnd* btn = pAAWnd->GetChildItem(buttonId);
 	if (!btn)
 	{
-		WriteChatf("\ar[MyUI AA]\ax button '%s' not found.", buttonId);
+		myui::ChatOutf("\ar[MyUI AA]\ax button '%s' not found.", buttonId);
 		return false;
 	}
 	return SendWndClick2(btn, "leftmouseup");

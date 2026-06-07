@@ -33,7 +33,7 @@ void FormatDuration(char* out, size_t size, int ms)
 		sprintf_s(out, size, "%ds", seconds);
 	}
 }
-} // namespace
+}
 
 void SongsModule::OnPulse()
 {
@@ -196,7 +196,11 @@ void SongsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 
 		if (song.isEmpty)
 		{
-			m_ctx.Icons->DrawEmptySlot(song.slot + 1, CXSize(iconSize, iconSize));
+			m_ctx.Icons->DrawEmptySlot(CXSize(iconSize, iconSize));
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetItemTooltip("Slot %d (Empty)", song.slot + 1);
+			}
 		}
 		else
 		{

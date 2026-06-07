@@ -16,5 +16,7 @@ public:
 private:
 	void DrawPlayer();
 	void DrawTarget();
+	void DrawTargetInfo(const std::string& targetName);
+	void DrawTargetOverlayText(const ImVec2& rmin, const ImVec2& rmax, const std::string& targetName);
 	void DrawTargetBuffs();
 };

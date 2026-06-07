@@ -17,7 +17,7 @@ constexpr auto kBuffsInterval     = std::chrono::seconds(3);
 constexpr auto kInventoryInterval = std::chrono::seconds(4);
 constexpr auto kPruneInterval     = std::chrono::seconds(5);
 constexpr auto kStaleAfter        = std::chrono::seconds(60);
-} // namespace
+}
 
 void ActorManager::Init(CharData* charData, ChatBridge* chat, SettingsStore* settings, const std::string& server, const std::string& character)
 {
@@ -429,6 +429,25 @@ void ActorManager::ExecuteCommand(const std::string& action, const std::string& 
 	{
 		EzCommand(fmt::format("/nav spawn =\"{}\" dist={} lineofsight=on", fromChar, arg > 0 ? arg : 10).c_str());
 	}
+	else if (ci_equals(action, "ComeLoc"))
+	{
+		if (!argStr.empty() && pZoneInfo && static_cast<int>(pZoneInfo->ZoneID) == arg)
+		{
+			EzCommand(fmt::format("/nav locxyz {}", argStr).c_str());
+		}
+	}
+	else if (ci_equals(action, "FollowMe"))
+	{
+		if (PlayerClient* sp = GetSpawnByName(fromChar.c_str()))
+		{
+			EzCommand("/nav stop");
+			EzCommand(fmt::format("/afollow spawn {}", sp->SpawnID).c_str());
+		}
+	}
+	else if (ci_equals(action, "FollowStop"))
+	{
+		EzCommand("/afollow off");
+	}
 	else if (ci_equals(action, "MakeLeader"))
 	{
 		EzCommand(fmt::format("/makeleader {}", fromChar).c_str());
@@ -591,16 +610,7 @@ void ActorManager::SaveTrackedList()
 	{
 		return;
 	}
-	std::string joined;
-	for (size_t i = 0; i < m_trackedItems.size(); ++i)
-	{
-		if (i > 0)
-		{
-			joined += '|';
-		}
-		joined += m_trackedItems[i];
-	}
-	m_settings->SetGlobal("iTrack", "TrackedList", joined);
+	m_settings->SetGlobal("iTrack", "TrackedList", mq::join(m_trackedItems, "|"));
 }
 
 void ActorManager::AddTrackedItem(const std::string& name)

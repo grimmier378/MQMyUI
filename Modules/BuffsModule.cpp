@@ -43,7 +43,7 @@ void FormatDuration(char* out, size_t size, int ms)
 		sprintf_s(out, size, "%ds", seconds);
 	}
 }
-} // namespace
+}
 
 void BuffsModule::OnPulse()
 {
@@ -208,10 +208,10 @@ void BuffsModule::DrawTableView(float pulse)
 		{
 			if (ImGui::TableSetColumnIndex(0))
 			{
-				m_ctx.Icons->DrawEmptySlot(buff.slot + 1, CXSize(static_cast<int>(iconSize), static_cast<int>(iconSize)));
+				m_ctx.Icons->DrawEmptySlot(CXSize(static_cast<int>(iconSize), static_cast<int>(iconSize)));
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetItemTooltip("No Buff");
+					ImGui::SetItemTooltip("Slot %d (Empty)", buff.slot + 1);
 				}
 			}
 			ImGui::PopID();
@@ -320,10 +320,10 @@ void BuffsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 
 		if (buff.isEmpty)
 		{
-			m_ctx.Icons->DrawEmptySlot(buff.slot + 1, CXSize(iconSize, iconSize));
+			m_ctx.Icons->DrawEmptySlot(CXSize(iconSize, iconSize));
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetItemTooltip("No Buff");
+				ImGui::SetItemTooltip("Slot %d (Empty)", buff.slot + 1);
 			}
 		}
 		else

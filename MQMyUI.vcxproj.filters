@@ -233,6 +233,12 @@
     <ClInclude Include="Proto\myui.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Core\UiHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyChatAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ProtocolBuffer Include="Proto\myui.proto">

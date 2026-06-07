@@ -1,4 +1,5 @@
 #include "SettingsStore.h"
+#include "ChatBridge.h"
 
 #include <mq/Plugin.h>
 
@@ -20,7 +21,7 @@ bool SettingsStore::Open(const std::string& dbPath)
 		SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
 	if (rc != SQLITE_OK)
 	{
-		WriteChatf("\ar[MyUI] Failed to open settings database: %s", sqlite3_errmsg(m_db));
+		myui::ChatOutf("\ar[MyUI] Failed to open settings database: %s", sqlite3_errmsg(m_db));
 		sqlite3_close(m_db);
 		m_db = nullptr;
 		return false;
@@ -55,7 +56,7 @@ void SettingsStore::ExecSQL(const char* sql)
 	int rc = sqlite3_exec(m_db, sql, nullptr, nullptr, &errMsg);
 	if (rc != SQLITE_OK)
 	{
-		WriteChatf("\ar[MyUI] SQL error: %s", errMsg ? errMsg : "unknown");
+		myui::ChatOutf("\ar[MyUI] SQL error: %s", errMsg ? errMsg : "unknown");
 		if (errMsg)
 		{
 			sqlite3_free(errMsg);
@@ -73,7 +74,7 @@ bool SettingsStore::PrepareAndStep(const char* sql, sqlite3_stmt*& stmt)
 	int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
 	if (rc != SQLITE_OK)
 	{
-		WriteChatf("\ar[MyUI] Prepare failed: %s", sqlite3_errmsg(m_db));
+		myui::ChatOutf("\ar[MyUI] Prepare failed: %s", sqlite3_errmsg(m_db));
 		stmt = nullptr;
 		return false;
 	}

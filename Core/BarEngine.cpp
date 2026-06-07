@@ -2,6 +2,8 @@
 #include "UiConfig.h"
 #include "ColorUtil.h"
 
+#include "mq/imgui/AlphaMask.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -48,110 +50,113 @@ float Tween(ImGuiID id, float target, float seconds)
 	return cur;
 }
 
-void DrawSlicedFill(ImDrawList* dl, ImVec2 p0, ImVec2 p1, const ImVec4& lo, const ImVec4& hi,
-	int dir, float rounding)
+bool TrackDescending(ImGuiID id, float p)
 {
-	float w = p1.x - p0.x;
-	float h = p1.y - p0.y;
-	if (w <= 0.0f || h <= 0.0f)
+	static std::unordered_map<ImGuiID, float> s_prev;
+	static std::unordered_map<ImGuiID, bool> s_desc;
+	bool desc = s_desc.count(id) ? s_desc[id] : false;
+	auto it = s_prev.find(id);
+	if (it != s_prev.end())
 	{
-		return;
-	}
-
-	const float step = 2.0f;
-	bool gridX = (dir != 1);
-	bool gridY = (dir == 1 || dir == 2 || dir == 3);
-
-	int nx = gridX ? std::max(1, (int)ceilf(w / step)) : 1;
-	int ny = gridY ? std::max(1, (int)ceilf(h / step)) : 1;
-
-	for (int ix = 0; ix < nx; ++ix)
-	{
-		float cx0 = p0.x + (w * ix) / nx;
-		float cx1 = p0.x + (w * (ix + 1)) / nx;
-		float fx = (nx > 1) ? ((ix + 0.5f) / nx) : 0.0f;
-		for (int iy = 0; iy < ny; ++iy)
+		float dp = p - it->second;
+		if (dp < -1e-4f)
 		{
-			float cy0 = p0.y + (h * iy) / ny;
-			float cy1 = p0.y + (h * (iy + 1)) / ny;
-			float fy = (ny > 1) ? ((iy + 0.5f) / ny) : 0.0f;
-
-			float frac;
-			switch (dir)
-			{
-			case 1:  frac = fy; break;
-			case 2:  frac = (fx + fy) * 0.5f; break;
-			case 3:  frac = ((1.0f - fx) + fy) * 0.5f; break;
-			default: frac = fx; break;
-			}
-
-			dl->PushClipRect(ImVec2(cx0, cy0), ImVec2(cx1, cy1), true);
-			dl->AddRectFilled(p0, p1, ImGui::GetColorU32(LerpV4(lo, hi, frac)), rounding);
-			dl->PopClipRect();
+			desc = true;
+		}
+		else if (dp > 1e-4f)
+		{
+			desc = false;
 		}
 	}
+	s_prev[id] = p;
+	s_desc[id] = desc;
+	return desc;
 }
 
-template <class ColorFn>
-void DrawSlicedBand(ImDrawList* dl, ImVec2 f0, ImVec2 f1, bool vertical, float rounding, ColorFn colorAt)
+template <class DrawFn>
+void DrawMaskedFill(ImDrawList* dl, ImVec2 f0, ImVec2 f1, float rounding, DrawFn drawContent)
 {
-	float w = f1.x - f0.x;
-	float h = f1.y - f0.y;
-	if (w <= 0.0f || h <= 0.0f)
+	if (f1.x - f0.x <= 0.0f || f1.y - f0.y <= 0.0f)
 	{
 		return;
 	}
+	if (rounding <= 0.0f)
+	{
+		dl->PushClipRect(f0, f1, true);
+		drawContent();
+		dl->PopClipRect();
+		return;
+	}
+	mq::imgui::CreateCoverageMaskLayer(dl, f0, f1);
+	dl->AddRectFilled(f0, f1, IM_COL32_WHITE, rounding);
+	mq::imgui::BeginCoverageMaskedDraw(dl);
+	drawContent();
+	mq::imgui::EndCoverageMaskedDraw(dl);
+}
 
-	const float step = 2.0f;
-	if (vertical)
+template <class DrawFn>
+void DrawStencilMaskedFill(ImDrawList* dl, ImVec2 f0, ImVec2 f1, float rounding, DrawFn drawContent)
+{
+	if (f1.x - f0.x <= 0.0f || f1.y - f0.y <= 0.0f)
 	{
-		int ny = std::max(1, (int)ceilf(h / step));
-		for (int iy = 0; iy < ny; ++iy)
-		{
-			float cy0 = f0.y + (h * iy) / ny;
-			float cy1 = f0.y + (h * (iy + 1)) / ny;
-			float t = (iy + 0.5f) / ny;
-			dl->PushClipRect(ImVec2(f0.x, cy0), ImVec2(f1.x, cy1), true);
-			dl->AddRectFilled(f0, f1, colorAt(t), rounding);
-			dl->PopClipRect();
-		}
+		return;
 	}
-	else
+	if (rounding <= 0.0f)
 	{
-		int nx = std::max(1, (int)ceilf(w / step));
-		for (int ix = 0; ix < nx; ++ix)
-		{
-			float cx0 = f0.x + (w * ix) / nx;
-			float cx1 = f0.x + (w * (ix + 1)) / nx;
-			float t = (ix + 0.5f) / nx;
-			dl->PushClipRect(ImVec2(cx0, f0.y), ImVec2(cx1, f1.y), true);
-			dl->AddRectFilled(f0, f1, colorAt(t), rounding);
-			dl->PopClipRect();
-		}
+		dl->PushClipRect(f0, f1, true);
+		drawContent();
+		dl->PopClipRect();
+		return;
 	}
+	mq::imgui::CreateMaskLayer(dl);
+	dl->AddRectFilled(f0, f1, IM_COL32_WHITE, rounding);
+	mq::imgui::BeginMaskedDraw(dl, mq::imgui::AlphaMaskOp::Union);
+	drawContent();
+	mq::imgui::EndMaskedDraw(dl);
+}
+
+void DrawGradientFill(ImDrawList* dl, ImVec2 f0, ImVec2 f1, const ImVec4& lo, const ImVec4& hi,
+	int dir, float rounding)
+{
+	ImU32 cLo = ImGui::GetColorU32(lo);
+	ImU32 cHi = ImGui::GetColorU32(hi);
+	ImU32 cMid = ImGui::GetColorU32(LerpV4(lo, hi, 0.5f));
+
+	ImU32 ul, ur, br, bl;
+	switch (dir)
+	{
+	case 1:
+		ul = cLo; ur = cLo; br = cHi; bl = cHi;
+		break;
+	case 2:
+		ul = cMid; ur = cLo; br = cMid; bl = cHi;
+		break;
+	case 3:
+		ul = cLo; ur = cMid; br = cHi; bl = cMid;
+		break;
+	default:
+		ul = cLo; ur = cHi; br = cHi; bl = cLo;
+		break;
+	}
+
+	DrawMaskedFill(dl, f0, f1, rounding, [&]() {
+		dl->AddRectFilledMultiColor(f0, f1, ul, ur, br, bl);
+	});
 }
 } // namespace
 
-void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValue, int maxValue)
+void DrawStyledBarRect(const char* id, float pct, const BarStyle& style, const ImVec2& p0, const ImVec2& p1,
+	int curValue, int maxValue)
 {
 	pct = std::max(0.0f, std::min(100.0f, pct));
 	float target = pct / 100.0f;
 
 	ImGuiID gid = ImGui::GetID(id);
 	float p = Tween(gid, target, style.tweenSeconds);
+	bool descending = TrackDescending(gid, p);
 
-	ImVec2 avail = ImGui::GetContentRegionAvail();
-	float barW, barH;
-	if (style.vertical)
-	{
-		barW = style.width > 3.0f ? style.width : 24.0f;
-		barH = style.height > 3.0f ? style.height : barW;
-	}
-	else
-	{
-		barW = style.width > 3.0f ? style.width : avail.x;
-		barH = style.height;
-	}
+	float barW = p1.x - p0.x;
+	float barH = p1.y - p0.y;
 	if (barW <= 0.0f)
 	{
 		barW = 1.0f;
@@ -160,10 +165,6 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 	{
 		barH = 1.0f;
 	}
-
-	ImVec2 pos = ImGui::GetCursorScreenPos();
-	ImVec2 p0 = pos;
-	ImVec2 p1 = ImVec2(pos.x + barW, pos.y + barH);
 
 	float maxRound = (style.vertical ? barW : barH) * 0.5f;
 	float rounding = std::min(style.rounding, maxRound);
@@ -191,7 +192,7 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 		if (style.gradientOn)
 		{
 			ImVec4 endHi = (style.gradientMode == 1) ? LerpV4(lo, hi, p) : hi;
-			DrawSlicedFill(dl, f0, f1, lo, endHi, style.gradientDir, rounding);
+			DrawGradientFill(dl, f0, f1, lo, endHi, style.gradientDir, rounding);
 		}
 		else
 		{
@@ -203,7 +204,7 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 	if (style.ticksOn && style.tickEvery > 0.0f)
 	{
 		ImU32 tcol = ImGui::GetColorU32(ImVec4(1, 1, 1, style.tickAlpha / 255.0f));
-		for (float t = style.tickEvery; t < 1.0f; t += style.tickEvery)
+		for (float t = style.tickEvery; t < 1.0f - style.tickEvery * 0.5f; t += style.tickEvery)
 		{
 			if (style.vertical)
 			{
@@ -224,56 +225,57 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 		float glowA = style.glowAlpha / 255.0f;
 		if (gt > 0.0f)
 		{
-			if (style.vertical)
-			{
-				float top = f0.y;
-				DrawSlicedBand(dl, f0, f1, true, rounding, [&](float t) {
-					float y = f0.y + t * (f1.y - f0.y);
-					float d = y - top;
-					float a = (d < gt) ? (1.0f - d / gt) * glowA : 0.0f;
-					return ImGui::GetColorU32(ImVec4(1, 1, 1, a));
-				});
-			}
-			else
-			{
-				float right = f1.x;
-				DrawSlicedBand(dl, f0, f1, false, rounding, [&](float t) {
-					float x = f0.x + t * (f1.x - f0.x);
-					float d = right - x;
-					float a = (d < gt) ? (1.0f - d / gt) * glowA : 0.0f;
-					return ImGui::GetColorU32(ImVec4(1, 1, 1, a));
-				});
-			}
+			DrawStencilMaskedFill(dl, f0, f1, rounding, [&]() {
+				ImU32 cEdge = ImGui::GetColorU32(ImVec4(1, 1, 1, glowA));
+				if (style.vertical)
+				{
+					float span = std::min(gt, f1.y - f0.y);
+					ImU32 cFar = ImGui::GetColorU32(ImVec4(1, 1, 1, (1.0f - span / gt) * glowA));
+					dl->AddRectFilledMultiColor(ImVec2(f0.x, f0.y), ImVec2(f1.x, f0.y + span),
+						cEdge, cEdge, cFar, cFar);
+				}
+				else
+				{
+					float span = std::min(gt, f1.x - f0.x);
+					ImU32 cFar = ImGui::GetColorU32(ImVec4(1, 1, 1, (1.0f - span / gt) * glowA));
+					dl->AddRectFilledMultiColor(ImVec2(f1.x - span, f0.y), ImVec2(f1.x, f1.y),
+						cFar, cEdge, cEdge, cFar);
+				}
+			});
 		}
 	}
 
 	if (style.shimmerOn && p > 0.001f)
 	{
 		float phase = fmodf((float)ImGui::GetTime() * style.shimmerSpeed, 1.0f);
+		if (style.shimmerFollows && descending)
+		{
+			phase = 1.0f - phase;
+		}
 		float hw = style.shimmerWidth * 0.5f;
 		const float midA = 0.25f;
 		if (hw > 0.0f)
 		{
-			if (style.vertical)
-			{
-				float yc = p1.y - barH * phase;
-				DrawSlicedBand(dl, f0, f1, true, rounding, [&](float t) {
-					float y = f0.y + t * (f1.y - f0.y);
-					float dist = fabsf(y - yc);
-					float a = (dist < hw) ? midA * (1.0f - dist / hw) : 0.0f;
-					return ImGui::GetColorU32(ImVec4(1, 1, 1, a));
-				});
-			}
-			else
-			{
-				float xc = p0.x + barW * phase;
-				DrawSlicedBand(dl, f0, f1, false, rounding, [&](float t) {
-					float x = f0.x + t * (f1.x - f0.x);
-					float dist = fabsf(x - xc);
-					float a = (dist < hw) ? midA * (1.0f - dist / hw) : 0.0f;
-					return ImGui::GetColorU32(ImVec4(1, 1, 1, a));
-				});
-			}
+			ImU32 cPeak = ImGui::GetColorU32(ImVec4(1, 1, 1, midA));
+			ImU32 cZero = ImGui::GetColorU32(ImVec4(1, 1, 1, 0.0f));
+			DrawStencilMaskedFill(dl, f0, f1, rounding, [&]() {
+				if (style.vertical)
+				{
+					float yc = p1.y - barH * phase;
+					dl->AddRectFilledMultiColor(ImVec2(f0.x, yc - hw), ImVec2(f1.x, yc),
+						cZero, cZero, cPeak, cPeak);
+					dl->AddRectFilledMultiColor(ImVec2(f0.x, yc), ImVec2(f1.x, yc + hw),
+						cPeak, cPeak, cZero, cZero);
+				}
+				else
+				{
+					float xc = p0.x + barW * phase;
+					dl->AddRectFilledMultiColor(ImVec2(xc - hw, f0.y), ImVec2(xc, f1.y),
+						cZero, cPeak, cPeak, cZero);
+					dl->AddRectFilledMultiColor(ImVec2(xc, f0.y), ImVec2(xc + hw, f1.y),
+						cPeak, cZero, cZero, cPeak);
+				}
+			});
 		}
 	}
 
@@ -296,10 +298,41 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 
 		ImGui::PushFont(nullptr, ImGui::GetFontSize() * (style.textScale > 0.0f ? style.textScale : 1.0f));
 		ImVec2 ts = ImGui::CalcTextSize(buf);
-		dl->AddText(ImVec2(p0.x + (barW - ts.x) * 0.5f, p0.y + (barH - ts.y) * 0.5f),
-			ImGui::GetColorU32(ImGuiCol_Text), buf);
+		ImVec2 textPos(p0.x + (barW - ts.x) * 0.5f, p0.y + (barH - ts.y) * 0.5f);
+		if (style.textDropShadow)
+		{
+			dl->AddText(ImVec2(textPos.x + 1.0f, textPos.y + 1.0f), IM_COL32(0, 0, 0, 160), buf);
+		}
+		dl->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), buf);
 		ImGui::PopFont();
 	}
+}
+
+void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValue, int maxValue)
+{
+	ImVec2 avail = ImGui::GetContentRegionAvail();
+	float barW, barH;
+	if (style.vertical)
+	{
+		barW = style.width > 3.0f ? style.width : 24.0f;
+		barH = style.height > 3.0f ? style.height : barW;
+	}
+	else
+	{
+		barW = avail.x;
+		barH = style.height;
+	}
+	if (barW <= 0.0f)
+	{
+		barW = 1.0f;
+	}
+	if (barH <= 0.0f)
+	{
+		barH = 1.0f;
+	}
+
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	DrawStyledBarRect(id, pct, style, pos, ImVec2(pos.x + barW, pos.y + barH), curValue, maxValue);
 
 	ImGui::Dummy(ImVec2(barW, barH));
 }

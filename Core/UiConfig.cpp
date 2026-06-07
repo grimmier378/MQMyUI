@@ -66,6 +66,7 @@ void VisitBar(BarStyle& s, V& v)
 	v.in("textMode", s.textMode);
 	v.st("textFormat", s.textFormat);
 	v.fl("textScale", s.textScale);
+	v.bo("textDropShadow", s.textDropShadow);
 	v.bo("ticksOn", s.ticksOn);
 	v.fl("tickEvery", s.tickEvery);
 	v.fl("tickThickness", s.tickThickness);
@@ -240,6 +241,7 @@ void UiConfig::SeedDefaults()
 	SetFlag("Player", "ShowTarget", true);
 	SetFlag("Player", "SplitTarget", false);
 	SetFlag("Player", "CombatPulse", true);
+	SetFlag("Player", "TargetTextOverlay", false);
 
 	Window("Pet");
 	bar("Pet", "HP", MQColor(190, 75, 75), MQColor(190, 75, 75), 18.0f);
@@ -260,7 +262,7 @@ void UiConfig::SeedDefaults()
 	{
 		BarStyle& pb = bar("Group", "Pet", MQColor(210, 185, 1), MQColor(0, 160, 0), 16.0f);
 		pb.vertical = true;
-		pb.width = 14.0f;
+		pb.width = 16.0f;
 	}
 	SetFlag("Group", "ShowMana", true);
 	SetFlag("Group", "ShowEnd", true);
@@ -329,6 +331,18 @@ void UiConfig::SeedDefaults()
 	SetFlag("MyInventory", "ShowSlotBackground", true);
 	SetFlag("MyInventory", "AutoInventoryOnSwap", true);
 	SetNum("MyInventory", "ItemSize", 40.0f);
+	{
+		BarStyle& xp = bar("MyInventory", "XP", MQColor(255, 215, 0), MQColor(255, 215, 0), 6.0f);
+		xp.textMode = 0;
+		xp.gradientOn = false;
+		xp.ticksOn = true;
+		xp.tickEvery = 0.10f;
+		BarStyle& aa = bar("MyInventory", "AAExp", MQColor(120, 170, 230), MQColor(120, 170, 230), 6.0f);
+		aa.textMode = 0;
+		aa.gradientOn = false;
+		aa.ticksOn = true;
+		aa.tickEvery = 0.10f;
+	}
 	for (int p = 0; p < myui::BagSlotCount(); ++p)
 	{
 		SetFlag("MyInventory", "BagLock" + std::to_string(p), false);
@@ -419,6 +433,11 @@ void UiConfig::Load()
 		{
 			LoadVisitor lv{ m_store, key, "Bar." + role + "." };
 			VisitBar(style, lv);
+			bool groupPet = (key == "Group" || key == "Raid") && role == "Pet";
+			if (!groupPet)
+			{
+				style.vertical = false;
+			}
 		}
 
 		if (IsTransientVisibility(key))

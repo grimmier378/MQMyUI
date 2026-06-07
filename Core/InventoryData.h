@@ -33,9 +33,15 @@ struct ItemRef
 	bool isContainer() const;
 };
 
+constexpr int kSlotPrimary = 13;
+constexpr int kSlotSecondary = 14;
+
+const ImVec4 kItemNameColor = ImVec4(242.0f / 255.0f, 140.0f / 255.0f, 40.0f / 255.0f, 1.0f);
+
 int BagSlotCount();
 const char* WornSlotCommandName(int wornSlot);
 const char* WornSlotDisplayName(int wornSlot);
+const char* WornSlotBackgroundName(int wornSlot);
 
 ItemRef WornItem(int wornSlot);
 ItemRef BagItem(int packIndex);
@@ -53,6 +59,7 @@ ItemRef FindBagItemByName(const std::string& name);
 
 bool IsClicky(const ItemRef& ref);
 bool IsAugment(const ItemRef& ref);
+bool IsTwoHandedWeapon(const ItemRef& ref);
 bool ItemFitsSlot(const ItemRef& ref, int wornSlot);
 
 int CountInventory(const std::string& name);
@@ -70,11 +77,13 @@ struct DrawItemOptions
 	bool  handleLeftClick = true;
 	bool  handleUse = true;
 	bool  handlePopInfo = true;
+	const char* backgroundAnim = nullptr;
 };
 
 void DrawItemIcon(IconHelper* icons, const ItemRef& ref, const DrawItemOptions& opts);
 void RenderTooltip(IconHelper* icons, const ItemRef& ref);
 void RenderCompareTooltip(const ItemRef& candidate, const ItemRef& equipped);
+void RenderCompareSideBySide(IconHelper* icons, const ItemRef& candidate, const ItemRef& equipped);
 void PopInfoWindow(const ItemRef& ref);
 void DrawPoppedInfoWindows(IconHelper* icons);
 void PulseAugInsert();
@@ -89,7 +98,7 @@ struct CoinPicker
 	float posY = 0.0f;
 };
 
-void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker);
+void DrawCurrencyRow(IconHelper* icons, float iconSize, CoinPicker& picker, bool vertical = false);
 void DrawCoinQuantityWindow(CoinPicker& picker);
 void DrawDropZones();
 } // namespace myui

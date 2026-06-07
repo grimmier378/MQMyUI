@@ -18,7 +18,7 @@ public:
 
 	void DrawSpellIcon(int iconId, const CXSize& size, const MQColor& tint, const MQColor& border);
 
-	void DrawEmptySlot(int slotNumber, const CXSize& size);
+	void DrawEmptySlot(const CXSize& size);
 
 	bool DrawStatusIcon(const char* animName, int sizePx, const char* tooltip = nullptr);
 

@@ -147,23 +147,23 @@ static void MyUICommand(PlayerClient*, const char* Line)
 
 	if (arg1[0] == 0 || ci_equals(arg1, "help"))
 	{
-		WriteChatf("\ag[MyUI]\ax commands:");
-		WriteChatf("  \ay/myui list\ax - list windows and visibility");
-		WriteChatf("  \ay/myui <window>\ax - toggle a window");
-		WriteChatf("  \ay/myui show|hide <window>\ax - show/hide a window");
-		WriteChatf("  \ay/myui settings\ax - open the settings window");
-		WriteChatf("  \ay/myui theme\ax - open the theme editor");
-		WriteChatf("  \ay/myui theme set <name>\ax - set the active theme");
-		WriteChatf("  \ay/myui theme list\ax - list available themes");
+		myui::ChatOutf("\ag[MyUI]\ax commands:");
+		myui::ChatOutf("  \ay/myui list\ax - list windows and visibility");
+		myui::ChatOutf("  \ay/myui <window>\ax - toggle a window");
+		myui::ChatOutf("  \ay/myui show|hide <window>\ax - show/hide a window");
+		myui::ChatOutf("  \ay/myui settings\ax - open the settings window");
+		myui::ChatOutf("  \ay/myui theme\ax - open the theme editor");
+		myui::ChatOutf("  \ay/myui theme set <name>\ax - set the active theme");
+		myui::ChatOutf("  \ay/myui theme list\ax - list available themes");
 		return;
 	}
 
 	if (ci_equals(arg1, "list"))
 	{
-		WriteChatf("\ag[MyUI]\ax windows:");
+		myui::ChatOutf("\ag[MyUI]\ax windows:");
 		for (const std::string& key : s_ui.WindowKeys())
 		{
-			WriteChatf("  %s - %s", key.c_str(), s_ui.Window(key).visible ? "\agshown\ax" : "\arhidden\ax");
+			myui::ChatOutf("  %s - %s", key.c_str(), s_ui.Window(key).visible ? "\agshown\ax" : "\arhidden\ax");
 		}
 		return;
 	}
@@ -180,7 +180,7 @@ static void MyUICommand(PlayerClient*, const char* Line)
 		}
 		else
 		{
-			WriteChatf("\ar[MyUI]\ax unknown window '%s'", arg2);
+			myui::ChatOutf("\ar[MyUI]\ax unknown window '%s'", arg2);
 		}
 		return;
 	}
@@ -198,11 +198,11 @@ static void MyUICommand(PlayerClient*, const char* Line)
 
 		if (ci_equals(arg2, "list"))
 		{
-			WriteChatf("\ag[MyUI]\ax themes:");
+			myui::ChatOutf("\ag[MyUI]\ax themes:");
 			for (const std::string& name : s_themes.GetThemeNames())
 			{
 				bool active = ci_equals(name, s_themes.ActiveName());
-				WriteChatf("  %s%s", name.c_str(), active ? " \ag(active)\ax" : "");
+				myui::ChatOutf("  %s%s", name.c_str(), active ? " \ag(active)\ax" : "");
 			}
 			return;
 		}
@@ -213,7 +213,7 @@ static void MyUICommand(PlayerClient*, const char* Line)
 			GetArg(arg3, Line, 3);
 			if (arg3[0] == 0)
 			{
-				WriteChatf("\ar[MyUI]\ax usage: /myui theme set <name>");
+				myui::ChatOutf("\ar[MyUI]\ax usage: /myui theme set <name>");
 				return;
 			}
 
@@ -222,15 +222,15 @@ static void MyUICommand(PlayerClient*, const char* Line)
 				if (ci_equals(name, arg3))
 				{
 					s_themes.SetActiveTheme(name);
-					WriteChatf("\ag[MyUI]\ax theme set to %s", name.c_str());
+					myui::ChatOutf("\ag[MyUI]\ax theme set to %s", name.c_str());
 					return;
 				}
 			}
-			WriteChatf("\ar[MyUI]\ax unknown theme '%s'", arg3);
+			myui::ChatOutf("\ar[MyUI]\ax unknown theme '%s'", arg3);
 			return;
 		}
 
-		WriteChatf("\ar[MyUI]\ax usage: /myui theme | theme set <name> | theme list");
+		myui::ChatOutf("\ar[MyUI]\ax usage: /myui theme | theme set <name> | theme list");
 		return;
 	}
 
@@ -241,7 +241,7 @@ static void MyUICommand(PlayerClient*, const char* Line)
 	}
 	else
 	{
-		WriteChatf("\ar[MyUI]\ax unknown window '%s'", arg1);
+		myui::ChatOutf("\ar[MyUI]\ax unknown window '%s'", arg1);
 	}
 }
 

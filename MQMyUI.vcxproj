@@ -112,6 +112,7 @@
     <ProtocolBuffer Include="Proto\myui.proto" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MyChatAPI.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Core\ModuleBase.h" />
     <ClInclude Include="Core\ColorUtil.h" />

@@ -9,10 +9,29 @@
 #include "mq/imgui/Widgets.h"
 #include "imgui/fonts/IconsFontAwesome.h"
 
+#include <cassert>
+
 namespace
 {
 const MQColor kTintReady(255, 255, 255, 255);
 const MQColor kTintNotReady(70, 70, 70, 255);
+
+int CursorSpellId()
+{
+	if (!pCursorAttachment || !pLocalPC)
+	{
+		return 0;
+	}
+	switch (pCursorAttachment->GetType())
+	{
+	case eCursorAttachment_MemorizeSpell:
+		return pLocalPC->GetSpellBook(pCursorAttachment->Index);
+	case eCursorAttachment_SpellGem:
+		return pLocalPC->GetMemorizedSpell(pCursorAttachment->Index);
+	default:
+		return 0;
+	}
+}
 
 bool GemReady(int i)
 {
@@ -50,10 +69,19 @@ void SpellsModule::OnInit()
 
 void SpellsModule::OnPulse()
 {
-	if (m_picker.m_selectedSpell && m_memGemIndex > 0)
+	if (m_picker.m_selectedSpell)
 	{
-		DoCommandf("/memspell %d \"%s\"", m_memGemIndex, m_picker.m_selectedSpell->Name);
+		if (m_memGemIndex > 0)
+		{
+			DoCommandf("/memspell %d \"%s\"", m_memGemIndex, m_picker.m_selectedSpell->Name);
+			m_memGemIndex = 0;
+			m_picker.SetOpen(false);
+		}
 		m_picker.ClearSelection();
+	}
+
+	if (!m_picker.m_pickerOpen)
+	{
 		m_memGemIndex = 0;
 	}
 
@@ -66,6 +94,7 @@ void SpellsModule::OnPulse()
 void SpellsModule::OpenPickerForGem(int gemIndex)
 {
 	m_memGemIndex = gemIndex + 1;
+	m_picker.ClearSelection();
 	m_picker.m_filterString.clear();
 	m_picker.m_needFilter = true;
 	m_picker.SetOpen(true);
@@ -100,10 +129,6 @@ void SpellsModule::OnRenderGUI()
 		for (int i = 0; i < gemCount; ++i)
 		{
 			int spellId = pLocalPC->GetMemorizedSpell(i);
-			if (spellId == 0)
-			{
-				continue;
-			}
 
 			ImGui::PushID(i);
 
@@ -123,7 +148,7 @@ void SpellsModule::OnRenderGUI()
 				}
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetItemTooltip("Empty gem - right-click to memorize");
+					ImGui::SetItemTooltip("Empty gem - right-click or drop a spell to memorize");
 				}
 			}
 			else
@@ -174,27 +199,43 @@ void SpellsModule::OnRenderGUI()
 					ImGui::TextColored(ImVec4(1.0f, 0.82f, 0.3f, 1.0f), "%s", spell->Name);
 					myui::RenderSpellEffects(spellId);
 					ImGui::EndTooltip();
-					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !CursorSpellId())
 					{
 						DoCommandf("/cast %d", i + 1);
 					}
 				}
 			}
 
-			if (ImGui::BeginPopupContextItem("##GemCtx"))
+			if (!spell && CursorSpellId() && ImGui::IsItemHovered()
+				&& ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 			{
-				if (ImGui::MenuItem(spell ? "Replace Spell..." : "Memorize Spell..."))
+				if (pCastSpellWnd && pCastSpellWnd->SpellSlots[i])
 				{
-					OpenPickerForGem(i);
+					SendWndClick2(pCastSpellWnd->SpellSlots[i], "leftmouseup");
 				}
-				if (spell && ImGui::MenuItem("Clear Gem"))
+			}
+
+			if (spell)
+			{
+				if (ImGui::BeginPopupContextItem("##GemCtx"))
 				{
-					if (pCastSpellWnd)
+					if (ImGui::MenuItem("Replace Spell..."))
 					{
-						pCastSpellWnd->ForgetMemorizedSpell(i);
+						OpenPickerForGem(i);
 					}
+					if (ImGui::MenuItem("Clear Gem"))
+					{
+						if (pCastSpellWnd)
+						{
+							pCastSpellWnd->ForgetMemorizedSpell(i);
+						}
+					}
+					ImGui::EndPopup();
 				}
-				ImGui::EndPopup();
+			}
+			else if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+			{
+				OpenPickerForGem(i);
 			}
 
 			ImGui::PopID();

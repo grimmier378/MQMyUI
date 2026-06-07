@@ -14,6 +14,10 @@ public:
 
 private:
 	void DrawHeader();
+	void DrawStatsTab();
+	void DrawInventoryStats();
+	void DrawInventoryResists();
+	void DrawInventoryFooter(bool& visible);
 	void DrawPaperdoll(float cellSize, bool showBackground, bool highlight);
 	void DrawBags(float cellSize, bool showBackground, bool highlight);
 	void DrawSwapMenu(int wornSlot);
