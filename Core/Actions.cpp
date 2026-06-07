@@ -73,9 +73,7 @@ float DistTo(PlayerClient* sp)
 	{
 		return 99999.0f;
 	}
-	float dx = sp->X - pLocalPlayer->X;
-	float dy = sp->Y - pLocalPlayer->Y;
-	return sqrtf(dx * dx + dy * dy);
+	return GetDistance(pLocalPlayer, sp);
 }
 
 void Trade(int spawnId)

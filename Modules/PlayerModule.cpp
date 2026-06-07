@@ -225,11 +225,7 @@ void PlayerModule::DrawTarget()
 	}
 
 	uint32_t argb = ConColorToARGB(ConColor(pTarget));
-	ImVec4 conCol(
-		static_cast<float>((argb >> 16) & 0xFF) / 255.0f,
-		static_cast<float>((argb >> 8) & 0xFF) / 255.0f,
-		static_cast<float>(argb & 0xFF) / 255.0f,
-		static_cast<float>((argb >> 24) & 0xFF) / 255.0f);
+	ImVec4 conCol = MQColor(MQColor::format_argb, argb).ToImColor();
 
 	ImGui::PushStyleColor(ImGuiCol_Border, conCol);
 	ImGui::BeginChild("##tgtblk", ImVec2(0.0f, 0.0f),
@@ -278,10 +274,8 @@ void PlayerModule::DrawTarget()
 void PlayerModule::DrawTargetInfo(const std::string& targetName)
 {
 	bool los = pLocalPlayer->CanSee(*pTarget);
-	float dx = pTarget->X - pLocalPlayer->X;
-	float dy = pTarget->Y - pLocalPlayer->Y;
 	char distbuf[24];
-	sprintf_s(distbuf, "%.0fm", std::sqrt(dx * dx + dy * dy));
+	sprintf_s(distbuf, "%.0fm", GetDistance(pLocalPlayer, pTarget));
 	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
 
 	ImGui::Text("%s", targetName.c_str());
@@ -335,10 +329,8 @@ void PlayerModule::DrawTargetOverlayText(const ImVec2& rmin, const ImVec2& rmax,
 
 	bool los = pLocalPlayer->CanSee(*pTarget);
 	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
-	float dx = pTarget->X - pLocalPlayer->X;
-	float dy = pTarget->Y - pLocalPlayer->Y;
 	char distbuf[24];
-	sprintf_s(distbuf, "%.0fm", std::sqrt(dx * dx + dy * dy));
+	sprintf_s(distbuf, "%.0fm", GetDistance(pLocalPlayer, pTarget));
 
 	float distW = ImGui::CalcTextSize(distbuf).x;
 	float eyeW = ImGui::CalcTextSize(eye).x;

@@ -102,6 +102,7 @@ struct GroupMemberSnap
 {
 	std::string name;
 	std::string classShort;
+	int classId = 0;
 	int level = 0;
 	bool isSelf = false;
 	bool present = false;

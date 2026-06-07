@@ -230,15 +230,15 @@ void XpBarsModule::OnRenderGUI()
 		std::sort(rows.begin(), rows.end(), [](const AARow& a, const AARow& b) {
 			if (ci_equals(a.groupLeader, b.groupLeader))
 			{
-				return _stricmp(a.name.c_str(), b.name.c_str()) < 0;
+				return ci_string_compare(a.name, b.name) < 0;
 			}
-			return _stricmp(a.groupLeader.c_str(), b.groupLeader.c_str()) < 0;
+			return ci_string_compare(a.groupLeader, b.groupLeader) < 0;
 		});
 	}
 	else
 	{
 		std::stable_sort(rows.begin(), rows.end(), [](const AARow& a, const AARow& b) {
-			return _stricmp(a.groupLeader.c_str(), b.groupLeader.c_str()) < 0;
+			return ci_string_compare(a.groupLeader, b.groupLeader) < 0;
 		});
 	}
 

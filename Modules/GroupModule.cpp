@@ -52,24 +52,6 @@ struct GroupRowData
 	int petId = 0;
 };
 
-namespace
-{
-bool IsManaClass(const std::string& cls)
-{
-	static const std::array<const char*, 12> kManaClasses = {
-		"WIZ", "MAG", "NEC", "ENC", "DRU", "SHM", "CLR", "BST", "BRD", "PAL", "RNG", "SHD"
-	};
-	for (const char* c : kManaClasses)
-	{
-		if (ci_equals(cls, c))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-}
-
 GroupRowData GroupModule::BuildRow(const GroupMemberSnap& snap) const
 {
 	GroupRowData row;
@@ -142,7 +124,9 @@ GroupRowData GroupModule::BuildRow(const GroupMemberSnap& snap) const
 		row.pctHP      = snap.pctHP;
 		row.pctMana    = snap.pctMana;
 		row.pctEnd     = snap.pctEnd;
-		row.manaClass  = IsManaClass(row.classShort);
+		row.manaClass  = snap.classId > 0
+			&& snap.classId < static_cast<int>(sizeof(ClassInfo) / sizeof(ClassInfo[0]))
+			&& ClassInfo[snap.classId].CanCast;
 		row.hasPet     = snap.petId > 0;
 		row.petPctHP   = snap.petPctHP;
 	}

@@ -334,6 +334,7 @@ void CharData::RefreshGroupRaid()
 			{
 				m.present    = true;
 				m.spawnId    = sp->SpawnID;
+				m.classId    = sp->GetClass();
 				m.standState = sp->StandState;
 				m.velocity   = sp->SpeedRun;
 				m.petId      = sp->PetID;
@@ -380,6 +381,7 @@ void CharData::RefreshGroupRaid()
 			GroupMemberSnap m;
 			m.name        = rm.Name;
 			m.level       = rm.nLevel;
+			m.classId     = rm.nClass;
 			m.groupNumber = rm.GroupNumber + 1;
 			m.isLeader    = rm.RaidLeader || rm.GroupLeader;
 			m.present     = rm.IsInZone;

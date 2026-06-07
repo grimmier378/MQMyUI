@@ -144,7 +144,7 @@ void AAData::Rebuild()
 	}
 
 	std::sort(m_entries.begin(), m_entries.end(), [](const AAEntry& a, const AAEntry& b) {
-		return _stricmp(a.name.c_str(), b.name.c_str()) < 0;
+		return ci_string_compare(a.name, b.name) < 0;
 	});
 }
 
