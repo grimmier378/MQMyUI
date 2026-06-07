@@ -10,6 +10,7 @@ void SwapToWornSlot(const std::string& pickupCommand, const std::string& dropCom
 	const std::string& preUnequipCommand = "", int swapItemId = 0);
 void PickupCoin(int coinType, int amount);
 void StartBulkTrade(const std::vector<std::string>& itemNames);
+void KickFromGroup(int spawnId, const std::string& name);
 
 void PulseActions();
 }

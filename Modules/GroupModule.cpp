@@ -188,6 +188,18 @@ void GroupModule::DrawMemberContextMenu(const GroupRowData& row)
 		ac->SendCommand(row.server, row.name, "MakeLeader");
 	}
 
+	if (!row.isSelf)
+	{
+		ImGui::Separator();
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.4f, 0.4f, 1.0f));
+		bool kick = ImGui::Selectable("Kick");
+		ImGui::PopStyleColor();
+		if (kick)
+		{
+			myui::KickFromGroup(row.spawnId, row.name);
+		}
+	}
+
 	ImGui::EndPopup();
 }
 
@@ -387,6 +399,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 		int bars = 1 + ((showMana && row.manaClass && row.hasManaEnd) ? 1 : 0) + ((showEnd && row.hasManaEnd) ? 1 : 0);
 		float h = barH * bars + ImGui::GetStyle().ItemSpacing.y * (bars - 1);
 		petBar.height = h;
+		ApplyOutOfZoneColor(petBar, row.outOfZone);
 
 		if (ImGui::BeginTable("##rowbars", 2, ImGuiTableFlags_SizingFixedFit))
 		{
@@ -415,6 +428,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 		{
 			BarStyle petBar = m_ctx.UI->Bar(win, "Pet");
 			petBar.vertical = false;
+			ApplyOutOfZoneColor(petBar, row.outOfZone);
 			myui::DrawStyledBar("##pet", static_cast<float>(row.petPctHP), petBar);
 			if (ImGui::IsItemClicked() && row.petId > 0)
 			{
@@ -442,6 +456,17 @@ void GroupModule::TargetMember(const GroupRowData& row)
 	}
 }
 
+void GroupModule::ApplyOutOfZoneColor(BarStyle& bar, bool outOfZone) const
+{
+	if (!outOfZone)
+	{
+		return;
+	}
+	MQColor c = m_ctx.UI->Color("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
+	bar.fillLow = c;
+	bar.fillHigh = c;
+}
+
 void GroupModule::DrawVitalBars(const GroupRowData& row)
 {
 	const std::string& win = m_curWindow;
@@ -449,11 +474,7 @@ void GroupModule::DrawVitalBars(const GroupRowData& row)
 	bool showEnd = m_ctx.UI->Flag("Group", "ShowEnd", true);
 
 	BarStyle hpBar = m_ctx.UI->Bar(win, "HP");
-	if (row.outOfZone)
-	{
-		hpBar.fillLow = MQColor(204, 0, 255, 255);
-		hpBar.fillHigh = MQColor(204, 0, 255, 255);
-	}
+	ApplyOutOfZoneColor(hpBar, row.outOfZone);
 
 	int hpCur = row.realValues ? row.curHP : -1;
 	int hpMax = row.realValues ? row.maxHP : -1;
@@ -465,9 +486,11 @@ void GroupModule::DrawVitalBars(const GroupRowData& row)
 
 	if (showMana && row.manaClass && row.hasManaEnd)
 	{
+		BarStyle manaBar = m_ctx.UI->Bar(win, "Mana");
+		ApplyOutOfZoneColor(manaBar, row.outOfZone);
 		int cur = row.realValues ? row.curMana : -1;
 		int max = row.realValues ? row.maxMana : -1;
-		myui::DrawStyledBar("##mana", static_cast<float>(row.pctMana), m_ctx.UI->Bar(win, "Mana"), cur, max);
+		myui::DrawStyledBar("##mana", static_cast<float>(row.pctMana), manaBar, cur, max);
 		if (ImGui::IsItemClicked())
 		{
 			TargetMember(row);
@@ -476,9 +499,11 @@ void GroupModule::DrawVitalBars(const GroupRowData& row)
 
 	if (showEnd && row.hasManaEnd)
 	{
+		BarStyle endBar = m_ctx.UI->Bar(win, "End");
+		ApplyOutOfZoneColor(endBar, row.outOfZone);
 		int cur = row.realValues ? row.curEnd : -1;
 		int max = row.realValues ? row.maxEnd : -1;
-		myui::DrawStyledBar("##end", static_cast<float>(row.pctEnd), m_ctx.UI->Bar(win, "End"), cur, max);
+		myui::DrawStyledBar("##end", static_cast<float>(row.pctEnd), endBar, cur, max);
 		if (ImGui::IsItemClicked())
 		{
 			TargetMember(row);
@@ -638,6 +663,20 @@ void GroupModule::DrawGroupWindow()
 		DrawMemberRow(row);
 		ImGui::Separator();
 		++shown;
+	}
+
+	if (m_ctx.UI->Flag("Group", "ShowEmptySlots", false) && !members.empty())
+	{
+		float barH = m_ctx.UI->Bar("Group", "HP").height;
+		int emptySlots = MAX_GROUP_SIZE - static_cast<int>(members.size());
+		for (int i = 0; i < emptySlots; ++i)
+		{
+			ImGui::PushID(2000 + i);
+			ImGui::TextDisabled("(empty)");
+			ImGui::Dummy(ImVec2(0.0f, barH));
+			ImGui::Separator();
+			ImGui::PopID();
+		}
 	}
 
 	if (shown == 0)

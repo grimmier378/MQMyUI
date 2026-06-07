@@ -86,6 +86,8 @@ public:
 	void  SetNum(const std::string& window, const std::string& name, float value);
 	std::string Str(const std::string& window, const std::string& name, const std::string& def);
 	void        SetStr(const std::string& window, const std::string& name, const std::string& value);
+	MQColor     Color(const std::string& window, const std::string& name, const MQColor& def);
+	void        SetColor(const std::string& window, const std::string& name, const MQColor& value);
 
 	bool ToggleVisible(const std::string& window);
 	const std::vector<std::string>& WindowKeys() const { return m_order; }

@@ -33,6 +33,10 @@ int      s_coinType = 0;
 int      s_coinAmount = 0;
 std::chrono::steady_clock::time_point s_coinDeadline;
 
+int         s_kickSpawnId = 0;
+std::string s_kickName;
+std::chrono::steady_clock::time_point s_kickDeadline;
+
 bool WindowVisible(const char* name)
 {
 	CXWnd* w = FindMQ2Window(name);
@@ -464,11 +468,54 @@ void PulseGive()
 	}
 }
 
+void KickFromGroup(int spawnId, const std::string& name)
+{
+	s_kickSpawnId = spawnId;
+	s_kickName = name;
+	s_kickDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+	if (spawnId > 0)
+	{
+		EzCommand(fmt::format("/target id {}", spawnId).c_str());
+	}
+	else if (!name.empty())
+	{
+		EzCommand(fmt::format("/target {}", name).c_str());
+	}
+}
+
+void PulseKick()
+{
+	if (s_kickSpawnId == 0 && s_kickName.empty())
+	{
+		return;
+	}
+	if (std::chrono::steady_clock::now() > s_kickDeadline)
+	{
+		s_kickSpawnId = 0;
+		s_kickName.clear();
+		return;
+	}
+	if (!pTarget)
+	{
+		return;
+	}
+	bool match = s_kickSpawnId > 0
+		? (static_cast<int>(pTarget->SpawnID) == s_kickSpawnId)
+		: ci_equals(pTarget->DisplayedName, s_kickName);
+	if (match)
+	{
+		EzCommand("/disband");
+		s_kickSpawnId = 0;
+		s_kickName.clear();
+	}
+}
+
 void PulseActions()
 {
 	PulseGive();
 	PulseSwap();
 	PulseCoin();
 	PulseTrade();
+	PulseKick();
 }
 } // namespace myui

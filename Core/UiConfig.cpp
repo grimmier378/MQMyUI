@@ -211,6 +211,16 @@ void UiConfig::SetStr(const std::string& window, const std::string& name, const 
 	Window(window).strs[name] = value;
 }
 
+MQColor UiConfig::Color(const std::string& window, const std::string& name, const MQColor& def)
+{
+	return StrToColor(Str(window, name, ColorToStr(def)), def);
+}
+
+void UiConfig::SetColor(const std::string& window, const std::string& name, const MQColor& value)
+{
+	SetStr(window, name, ColorToStr(value));
+}
+
 bool UiConfig::ToggleVisible(const std::string& window)
 {
 	WindowConfig& w = Window(window);
@@ -273,11 +283,13 @@ void UiConfig::SeedDefaults()
 	SetFlag("Group", "ShowMoveStatus", true);
 	SetFlag("Group", "ShowDistance", true);
 	SetFlag("Group", "VertPet", true);
-	SetFlag("Group", "ShowRaidWindow", false);
+	SetFlag("Group", "ShowEmptySlots", false);
 	SetNum("Group", "NavDist", 10.0f);
 	SetNum("Group", "MaxRaidColumns", 4.0f);
+	SetColor("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
 
 	Window("Raid");
+	SetFlag("Raid", "ShowRaidWindow", false);
 	bar("Raid", "HP", MQColor(190, 75, 75), MQColor(190, 75, 75), 10.0f);
 	bar("Raid", "Mana", MQColor(66, 18, 128), MQColor(32, 151, 235), 10.0f);
 	bar("Raid", "End", MQColor(16, 99, 30), MQColor(210, 185, 1), 10.0f);

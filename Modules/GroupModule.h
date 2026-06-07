@@ -8,6 +8,7 @@
 #include <string>
 
 struct GroupRowData;
+struct BarStyle;
 
 class GroupModule : public ModuleBase
 {
@@ -24,6 +25,7 @@ private:
 	void DrawRaidDummyTile();
 	void DrawMemberRow(const GroupRowData& row);
 	void DrawVitalBars(const GroupRowData& row);
+	void ApplyOutOfZoneColor(BarStyle& bar, bool outOfZone) const;
 	void TargetMember(const GroupRowData& row);
 	void DrawMemberContextMenu(const GroupRowData& row);
 	void DrawMemberTooltip(const GroupRowData& row);

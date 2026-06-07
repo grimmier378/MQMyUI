@@ -146,6 +146,7 @@ const char* FlagDescription(const std::string& window, const std::string& flag)
 		{ "ShowMoveStatus",      "Show a moving / sitting status indicator for each member." },
 		{ "ShowDistance",        "Show each member's distance from you." },
 		{ "VertPet",             "Draw the group pet bars vertically instead of horizontally." },
+		{ "ShowEmptySlots",      "Draw an empty placeholder tile for each unfilled group slot." },
 		{ "ShowRaidWindow",      "Show the separate Raid grid window while you're in a raid." },
 		{ "IconView",            "Show as an icon grid instead of a list with names and timers." },
 		{ "ShowGroupOnly",       "Limit the character picker (for viewing another box's buffs) to your group members." },
@@ -685,6 +686,17 @@ void SettingsModule::DrawDisplayTab()
 				}
 				ImGui::SameLine();
 				mq::imgui::HelpMarker("Resize the XP Bars window once to clip tightly around the current tile layout, then leave it freely sizable (unless the window is locked). Press after adding/removing characters or changing the window width.");
+			}
+
+			if (ci_equals(name, "Group"))
+			{
+				MQColor ooz = ui->Color("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
+				if (ColorEditMQ("Out-of-Zone Bar Color##GroupOOZ", ooz))
+				{
+					ui->SetColor("Group", "OutOfZoneColor", ooz);
+				}
+				ImGui::SameLine();
+				mq::imgui::HelpMarker("Color used for all bars (HP/Mana/End/Pet) of out-of-zone members in both the Group and Raid windows.");
 			}
 
 			if (isRaid)
