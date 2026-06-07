@@ -118,7 +118,7 @@ void CharData::Refresh()
 	if (PlayerClient* pPet = GetSpawnByID(pLocalPlayer->PetID))
 	{
 		m_snap.petName  = pPet->DisplayedName;
-		m_snap.petPctHP = pPet->HPCurrent;
+		m_snap.petPctHP = static_cast<int>(pPet->HPCurrent);
 	}
 
 	if (pZoneInfo)
@@ -343,7 +343,7 @@ void CharData::RefreshGroupRaid()
 				{
 					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
 				}
-				m.pctHP      = m.isSelf ? m_snap.PctHP()   : sp->HPCurrent;
+				m.pctHP      = m.isSelf ? m_snap.PctHP()   : static_cast<int>(sp->HPCurrent);
 				m.pctMana    = m.isSelf ? m_snap.PctMana() : sp->ManaCurrent;
 				m.pctEnd     = m.isSelf ? m_snap.PctEnd()  : sp->EnduranceCurrent;
 				if (const char* cls = sp->GetClassThreeLetterCode())
@@ -352,7 +352,7 @@ void CharData::RefreshGroupRaid()
 				}
 				if (PlayerClient* pPet = GetSpawnByID(sp->PetID))
 				{
-					m.petPctHP = pPet->HPCurrent;
+					m.petPctHP = static_cast<int>(pPet->HPCurrent);
 				}
 			}
 			else if (m.isSelf)
@@ -384,7 +384,11 @@ void CharData::RefreshGroupRaid()
 			m.classId     = rm.nClass;
 			m.groupNumber = rm.GroupNumber + 1;
 			m.isLeader    = rm.RaidLeader || rm.GroupLeader;
+#if IS_EMU_CLIENT
 			m.present     = rm.IsInZone;
+#else
+			m.present     = (GetSpawnByName(rm.Name) != nullptr);
+#endif
 			m.isSelf      = ci_equals(rm.Name, pLocalPC->Name);
 			if (rm.RaidMainAssist)
 			{
@@ -408,7 +412,7 @@ void CharData::RefreshGroupRaid()
 				{
 					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
 				}
-				m.pctHP      = m.isSelf ? m_snap.PctHP() : sp->HPCurrent;
+				m.pctHP      = m.isSelf ? m_snap.PctHP() : static_cast<int>(sp->HPCurrent);
 			}
 
 			m_raid.push_back(std::move(m));

@@ -233,7 +233,7 @@ void PlayerModule::DrawTarget()
 
 	std::string targetName = mq::IsAnonymized() ? "Target" : myui::TrimName(pTarget->DisplayedName);
 
-	int pct = pTarget->HPCurrent;
+	int pct = static_cast<int>(pTarget->HPCurrent);
 	bool overlayText = m_ctx.UI->Flag(GetName(), "TargetTextOverlay", false);
 
 	if (overlayText)

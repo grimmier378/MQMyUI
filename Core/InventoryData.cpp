@@ -345,6 +345,33 @@ int AugmentedStat(const ItemRef& ref, T ItemDefinition::* field)
 	return total;
 }
 
+int AugmentedStatFn(const ItemRef& ref, int (ItemBase::*getter)() const)
+{
+	if (!ref.valid())
+	{
+		return 0;
+	}
+	int total = ((*ref.item).*getter)();
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	if (!def)
+	{
+		return total;
+	}
+	for (int i = 0; i < MAX_AUG_SOCKETS; ++i)
+	{
+		if (!def->AugData.IsSocketValid(i))
+		{
+			continue;
+		}
+		ItemPtr aug = ref.item->GetHeldItem(i);
+		if (aug)
+		{
+			total += ((*aug).*getter)();
+		}
+	}
+	return total;
+}
+
 void DrawAugStat(const char* label, int value, const ImColor& color)
 {
 	if (value == 0)
@@ -626,6 +653,9 @@ void RenderItemInfo(IconHelper* icons, const ItemRef& ref, bool interactive)
 	auto augTotal = [&](auto field) -> int {
 		return AugmentedStat(ref, field);
 	};
+	auto augTotalFn = [&](int (ItemBase::*getter)() const) -> int {
+		return AugmentedStatFn(ref, getter);
+	};
 
 	if (ImGui::BeginTable("##dmgstats", 2, ImGuiTableFlags_None))
 	{
@@ -635,15 +665,15 @@ void RenderItemInfo(IconHelper* icons, const ItemRef& ref, bool interactive)
 		PairInt("Dmg", augTotal(&ItemDefinition::Damage), kColPink);
 		PairInt("Dly", def->Delay, kColYellow);
 		PairInt("Haste", augTotal(&ItemDefinition::Haste), kColGreen);
-		PairInt("Dmg Shield", augTotal(&ItemDefinition::DamShield), kColYellow);
-		PairInt("DS Mit", augTotal(&ItemDefinition::DamageShieldMitigation), kColTeal);
-		PairInt("Avoidance", augTotal(&ItemDefinition::Avoidance), kColGreen);
-		PairInt("DoT Shielding", augTotal(&ItemDefinition::DoTShielding), kColYellow);
-		PairInt("Accuracy", augTotal(&ItemDefinition::Accuracy), kColGreen);
-		PairInt("Spell Shield", augTotal(&ItemDefinition::SpellShield), kColTeal);
+		PairInt("Dmg Shield", augTotalFn(&ItemBase::GetDamShield), kColYellow);
+		PairInt("DS Mit", augTotalFn(&ItemBase::GetDamageShieldMitigation), kColTeal);
+		PairInt("Avoidance", augTotalFn(&ItemBase::GetAvoidance), kColGreen);
+		PairInt("DoT Shielding", augTotalFn(&ItemBase::GetDoTShielding), kColYellow);
+		PairInt("Accuracy", augTotalFn(&ItemBase::GetAccuracy), kColGreen);
+		PairInt("Spell Shield", augTotalFn(&ItemBase::GetSpellShield), kColTeal);
 		PairInt("Heal Amt", augTotal(&ItemDefinition::HealAmount), kColPink);
 		PairInt("Spell Dmg", augTotal(&ItemDefinition::SpellDamage), kColTeal);
-		PairInt("Stun Res", augTotal(&ItemDefinition::StunResist), kColGreen);
+		PairInt("Stun Res", augTotalFn(&ItemBase::GetStunResist), kColGreen);
 		PairInt("Clairvoyance", augTotal(&ItemDefinition::Clairvoyance), kColGreen);
 		int dmgTotal = augTotal(&ItemDefinition::Damage);
 		if (dmgTotal > 0 && def->Delay > 0)
@@ -709,12 +739,12 @@ void RenderItemInfo(IconHelper* icons, const ItemRef& ref, bool interactive)
 			ImGui::TableSetupColumn("##a", ImGuiTableColumnFlags_WidthFixed, 150.0f);
 			ImGui::TableSetupColumn("##b", ImGuiTableColumnFlags_WidthFixed, 150.0f);
 			ImGui::TableNextRow();
-			PairStat("Magic", augTotal(&ItemDefinition::SvMagic), augTotal(&ItemDefinition::HeroicSvMagic), kColGreen);
-			PairStat("Fire", augTotal(&ItemDefinition::SvFire), augTotal(&ItemDefinition::HeroicSvFire), kColGreen);
-			PairStat("Cold", augTotal(&ItemDefinition::SvCold), augTotal(&ItemDefinition::HeroicSvCold), kColGreen);
-			PairStat("Disease", augTotal(&ItemDefinition::SvDisease), augTotal(&ItemDefinition::HeroicSvDisease), kColGreen);
-			PairStat("Poison", augTotal(&ItemDefinition::SvPoison), augTotal(&ItemDefinition::HeroicSvPoison), kColGreen);
-			PairStat("Corruption", augTotal(&ItemDefinition::SvCorruption), augTotal(&ItemDefinition::HeroicSvCorruption), kColGreen);
+			PairStat("Magic", augTotal(&ItemDefinition::SvMagic), augTotalFn(&ItemBase::GetHeroicSvMagic), kColGreen);
+			PairStat("Fire", augTotal(&ItemDefinition::SvFire), augTotalFn(&ItemBase::GetHeroicSvFire), kColGreen);
+			PairStat("Cold", augTotal(&ItemDefinition::SvCold), augTotalFn(&ItemBase::GetHeroicSvCold), kColGreen);
+			PairStat("Disease", augTotal(&ItemDefinition::SvDisease), augTotalFn(&ItemBase::GetHeroicSvDisease), kColGreen);
+			PairStat("Poison", augTotal(&ItemDefinition::SvPoison), augTotalFn(&ItemBase::GetHeroicSvPoison), kColGreen);
+			PairStat("Corruption", augTotal(&ItemDefinition::SvCorruption), augTotalFn(&ItemBase::GetHeroicSvCorruption), kColGreen);
 			ImGui::EndTable();
 		}
 	}
@@ -1506,6 +1536,8 @@ void RenderCompareTooltip(const ItemRef& candidate, const ItemRef& equipped)
 
 	auto cand = [&](auto field) { return AugmentedStat(candidate, field); };
 	auto worn = [&](auto field) { return AugmentedStat(equipped, field); };
+	auto candFn = [&](int (ItemBase::*getter)() const) { return AugmentedStatFn(candidate, getter); };
+	auto wornFn = [&](int (ItemBase::*getter)() const) { return AugmentedStatFn(equipped, getter); };
 
 	auto setupCols = []() {
 		ImGui::TableSetupColumn("##a", ImGuiTableColumnFlags_WidthFixed, 150.0f);
@@ -1537,15 +1569,15 @@ void RenderCompareTooltip(const ItemRef& candidate, const ItemRef& equipped)
 			CompareInt("Dmg", cand(&ItemDefinition::Damage), worn(&ItemDefinition::Damage));
 			CompareInt("Dly", cand(&ItemDefinition::Delay), worn(&ItemDefinition::Delay));
 			CompareInt("Haste", cand(&ItemDefinition::Haste), worn(&ItemDefinition::Haste));
-			CompareInt("Dmg Shield", cand(&ItemDefinition::DamShield), worn(&ItemDefinition::DamShield));
-			CompareInt("DS Mit", cand(&ItemDefinition::DamageShieldMitigation), worn(&ItemDefinition::DamageShieldMitigation));
-			CompareInt("Avoidance", cand(&ItemDefinition::Avoidance), worn(&ItemDefinition::Avoidance));
-			CompareInt("DoT Shielding", cand(&ItemDefinition::DoTShielding), worn(&ItemDefinition::DoTShielding));
-			CompareInt("Accuracy", cand(&ItemDefinition::Accuracy), worn(&ItemDefinition::Accuracy));
-			CompareInt("Spell Shield", cand(&ItemDefinition::SpellShield), worn(&ItemDefinition::SpellShield));
+			CompareInt("Dmg Shield", candFn(&ItemBase::GetDamShield), wornFn(&ItemBase::GetDamShield));
+			CompareInt("DS Mit", candFn(&ItemBase::GetDamageShieldMitigation), wornFn(&ItemBase::GetDamageShieldMitigation));
+			CompareInt("Avoidance", candFn(&ItemBase::GetAvoidance), wornFn(&ItemBase::GetAvoidance));
+			CompareInt("DoT Shielding", candFn(&ItemBase::GetDoTShielding), wornFn(&ItemBase::GetDoTShielding));
+			CompareInt("Accuracy", candFn(&ItemBase::GetAccuracy), wornFn(&ItemBase::GetAccuracy));
+			CompareInt("Spell Shield", candFn(&ItemBase::GetSpellShield), wornFn(&ItemBase::GetSpellShield));
 			CompareInt("Heal Amt", cand(&ItemDefinition::HealAmount), worn(&ItemDefinition::HealAmount));
 			CompareInt("Spell Dmg", cand(&ItemDefinition::SpellDamage), worn(&ItemDefinition::SpellDamage));
-			CompareInt("Stun Res", cand(&ItemDefinition::StunResist), worn(&ItemDefinition::StunResist));
+			CompareInt("Stun Res", candFn(&ItemBase::GetStunResist), wornFn(&ItemBase::GetStunResist));
 			CompareInt("Clairvoyance", cand(&ItemDefinition::Clairvoyance), worn(&ItemDefinition::Clairvoyance));
 			ImGui::EndTable();
 		}
@@ -1587,12 +1619,12 @@ void RenderCompareTooltip(const ItemRef& candidate, const ItemRef& equipped)
 		if (ImGui::BeginTable("##cmpresist", 2, ImGuiTableFlags_None))
 		{
 			setupCols();
-			CompareStat("Magic", cand(&ItemDefinition::SvMagic), worn(&ItemDefinition::SvMagic), cand(&ItemDefinition::HeroicSvMagic), worn(&ItemDefinition::HeroicSvMagic));
-			CompareStat("Fire", cand(&ItemDefinition::SvFire), worn(&ItemDefinition::SvFire), cand(&ItemDefinition::HeroicSvFire), worn(&ItemDefinition::HeroicSvFire));
-			CompareStat("Cold", cand(&ItemDefinition::SvCold), worn(&ItemDefinition::SvCold), cand(&ItemDefinition::HeroicSvCold), worn(&ItemDefinition::HeroicSvCold));
-			CompareStat("Disease", cand(&ItemDefinition::SvDisease), worn(&ItemDefinition::SvDisease), cand(&ItemDefinition::HeroicSvDisease), worn(&ItemDefinition::HeroicSvDisease));
-			CompareStat("Poison", cand(&ItemDefinition::SvPoison), worn(&ItemDefinition::SvPoison), cand(&ItemDefinition::HeroicSvPoison), worn(&ItemDefinition::HeroicSvPoison));
-			CompareStat("Corruption", cand(&ItemDefinition::SvCorruption), worn(&ItemDefinition::SvCorruption), cand(&ItemDefinition::HeroicSvCorruption), worn(&ItemDefinition::HeroicSvCorruption));
+			CompareStat("Magic", cand(&ItemDefinition::SvMagic), worn(&ItemDefinition::SvMagic), candFn(&ItemBase::GetHeroicSvMagic), wornFn(&ItemBase::GetHeroicSvMagic));
+			CompareStat("Fire", cand(&ItemDefinition::SvFire), worn(&ItemDefinition::SvFire), candFn(&ItemBase::GetHeroicSvFire), wornFn(&ItemBase::GetHeroicSvFire));
+			CompareStat("Cold", cand(&ItemDefinition::SvCold), worn(&ItemDefinition::SvCold), candFn(&ItemBase::GetHeroicSvCold), wornFn(&ItemBase::GetHeroicSvCold));
+			CompareStat("Disease", cand(&ItemDefinition::SvDisease), worn(&ItemDefinition::SvDisease), candFn(&ItemBase::GetHeroicSvDisease), wornFn(&ItemBase::GetHeroicSvDisease));
+			CompareStat("Poison", cand(&ItemDefinition::SvPoison), worn(&ItemDefinition::SvPoison), candFn(&ItemBase::GetHeroicSvPoison), wornFn(&ItemBase::GetHeroicSvPoison));
+			CompareStat("Corruption", cand(&ItemDefinition::SvCorruption), worn(&ItemDefinition::SvCorruption), candFn(&ItemBase::GetHeroicSvCorruption), wornFn(&ItemBase::GetHeroicSvCorruption));
 			ImGui::EndTable();
 		}
 	}
