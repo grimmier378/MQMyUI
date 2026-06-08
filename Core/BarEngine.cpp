@@ -336,4 +336,52 @@ void DrawStyledBar(const char* id, float pct, const BarStyle& style, int curValu
 
 	ImGui::Dummy(ImVec2(barW, barH));
 }
+
+void DrawScrollingGradientText(ImDrawList* dl, const ImVec2& pos, const char* text,
+	const ImVec4& colorA, const ImVec4& colorB)
+{
+	if (!dl || !text || !*text)
+	{
+		return;
+	}
+
+	ImVec2 size = ImGui::CalcTextSize(text);
+	if (size.x <= 0.0f || size.y <= 0.0f)
+	{
+		return;
+	}
+
+	const ImVec2 p0 = pos;
+	const ImVec2 p1(pos.x + size.x, pos.y + size.y);
+
+	// One colorA->colorB->colorA cycle spans the text height; scroll it downward
+	// over time so the band moves top-to-bottom and loops seamlessly.
+	const float period = size.y;
+	const float scrollSpeed = 0.6f; // cycles per second
+	const float phase = std::fmod(static_cast<float>(ImGui::GetTime()) * scrollSpeed, 1.0f);
+
+	auto colorAt = [&](float y) -> ImU32 {
+		float u = (y - p0.y) / period - phase;
+		u -= std::floor(u);                                  // wrap to [0,1)
+		float t = (u < 0.5f) ? (u * 2.0f) : (2.0f - u * 2.0f); // triangle 0..1..0
+		return ImGui::GetColorU32(LerpV4(colorA, colorB, t));
+	};
+
+	// Use the glyph coverage as a per-pixel alpha mask, then fill it with the gradient.
+	mq::imgui::CreateCoverageMaskLayer(dl, p0, p1);
+	dl->AddText(p0, IM_COL32_WHITE, text);
+	mq::imgui::BeginCoverageMaskedDraw(dl);
+
+	const int bands = 32;
+	for (int i = 0; i < bands; ++i)
+	{
+		float y0 = p0.y + size.y * (static_cast<float>(i) / bands);
+		float y1 = p0.y + size.y * (static_cast<float>(i + 1) / bands);
+		ImU32 c0 = colorAt(y0);
+		ImU32 c1 = colorAt(y1);
+		dl->AddRectFilledMultiColor(ImVec2(p0.x, y0), ImVec2(p1.x, y1), c0, c0, c1, c1);
+	}
+
+	mq::imgui::EndCoverageMaskedDraw(dl);
+}
 } // namespace myui

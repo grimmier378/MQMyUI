@@ -146,7 +146,17 @@ void PlayerModule::DrawPlayer()
 
 		ImGui::TableNextColumn();
 
-		ImGui::Text( "%s", name);
+		if (c.inCombat)
+		{
+			ImVec2 namePos = ImGui::GetCursorScreenPos();
+			myui::DrawScrollingGradientText(ImGui::GetWindowDrawList(), namePos, name,
+				ImVec4(0.9f, 0.1f, 0.1f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+			ImGui::Dummy(ImGui::CalcTextSize(name));
+		}
+		else
+		{
+			ImGui::Text( "%s", name);
+		}
 
 		ImGui::TableNextColumn();
 		if (m_ctx.Icons)
