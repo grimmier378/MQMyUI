@@ -108,16 +108,6 @@ std::string FormatThousands(int value)
 	return out;
 }
 
-const char* ItemTypeName(ItemDefinition* def)
-{
-	int itemClass = def->ItemClass;
-	if (itemClass >= 0 && itemClass < static_cast<int>(MAX_ITEMCLASSES) && szItemClasses[itemClass])
-	{
-		return szItemClasses[itemClass];
-	}
-	return nullptr;
-}
-
 constexpr int kAllThreshold = 16;
 
 std::string ClassList(ItemDefinition* def)
@@ -949,6 +939,29 @@ void CompareStat(const char* label, int candBase, int wornBase, int candHeroic, 
 	}
 }
 } // namespace
+
+const char* ItemTypeName(ItemDefinition* def)
+{
+	if (def->Type == ITEMTYPE_PACK)
+	{
+		int combine = def->Combine;
+		if (combine >= 0 && combine < static_cast<int>(MAX_COMBINES) && szCombineTypes[combine])
+		{
+			return szCombineTypes[combine];
+		}
+		return nullptr;
+	}
+	if (def->Type == ITEMTYPE_BOOK)
+	{
+		return "Book";
+	}
+	int itemClass = def->ItemClass;
+	if (itemClass >= 0 && itemClass < static_cast<int>(MAX_ITEMCLASSES) && szItemClasses[itemClass])
+	{
+		return szItemClasses[itemClass];
+	}
+	return nullptr;
+}
 
 int ItemRef::id() const          { return item ? item->GetID() : 0; }
 const char* ItemRef::name() const { return item ? item->GetName() : ""; }

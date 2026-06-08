@@ -50,6 +50,7 @@ std::vector<ItemRef> GetBagContents();
 std::vector<ItemRef> GetBank();
 std::vector<ItemRef> GetCompatibleItems(int wornSlot);
 std::string ItemCompareKey(const ItemRef& ref);
+const char* ItemTypeName(ItemDefinition* def);
 ItemRef CursorItem();
 bool CursorHasItem();
 int GetFreeSlots();

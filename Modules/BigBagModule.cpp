@@ -403,9 +403,15 @@ void BigBagModule::SortItems(std::vector<myui::ItemRef>& items) const
 		{
 			return false;
 		}
-		if (byType && da->Type != db->Type)
+		if (byType)
 		{
-			return da->Type < db->Type;
+			const char* ta = myui::ItemTypeName(da);
+			const char* tb = myui::ItemTypeName(db);
+			int c = ci_string_compare(ta ? ta : "", tb ? tb : "");
+			if (c != 0)
+			{
+				return c < 0;
+			}
 		}
 		if (byName)
 		{
