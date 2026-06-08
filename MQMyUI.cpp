@@ -1,11 +1,14 @@
 #include <mq/Plugin.h>
 
+#include "imgui/imanim/im_anim.h"
+
 #include "Core/SettingsStore.h"
 #include "Core/ThemeManager.h"
 #include "Core/CharData.h"
 #include "Core/ChatBridge.h"
 #include "Core/IconHelper.h"
 #include "Core/ActorManager.h"
+#include "Core/StorageId.h"
 #include "Core/ModuleManager.h"
 #include "Core/UiConfig.h"
 #include "Core/Actions.h"
@@ -43,6 +46,13 @@ static IconHelper      s_icons;
 static ActorManager    s_actors;
 static UiConfig        s_ui;
 static ModuleManager  s_modules;
+
+// Plugin-owned imanim context. We do NOT rely on the host driving imanim's
+// ambient/default context (which is not reliably current from inside the
+// plugin DLL and crashes on first tween). Instead we own a context, make it
+// current, and drive its per-frame update ourselves around our render pass —
+// the same isolation pattern MQ2Lua uses (src/plugins/lua/LuaImGui.cpp).
+static iam_context* s_iamCtx = nullptr;
 
 static bool s_charInitialized = false;
 static std::chrono::steady_clock::time_point s_pulseTimer;
@@ -86,13 +96,13 @@ static void InitForCharacter()
 		return;
 	}
 
+	std::string dir = fmt::format("{}/MQMyUI", gPathConfig);
+	std::string dbPath = fmt::format("{}/MQMyUI.db", dir);
 	if (!s_settings.IsOpen())
 	{
-		std::string dir = fmt::format("{}/MQMyUI", gPathConfig);
 		std::error_code ec;
 		std::filesystem::create_directories(dir, ec);
 
-		std::string dbPath = fmt::format("{}/MQMyUI.db", dir);
 		if (!s_settings.Open(dbPath))
 		{
 			return;
@@ -101,11 +111,18 @@ static void InitForCharacter()
 
 	const char* serverName = GetServerShortName();
 	s_settings.SetContext(serverName ? serverName : "", pLocalPC->Name);
+
+	// Re-stamp the store identity from the current LAN IP before any sync goes out, so a copied DB
+	// never impersonates its origin and DHCP changes self-correct.
+	std::string storageId = myui::ComputeStorageId(dbPath);
+	std::string host = myui::GetHostNameStr();
+	s_settings.SetGlobal("MyUI", "StorageId", storageId);
+
 	s_themes.Init(&s_settings);
 	s_themes.LoadActiveTheme();
 	s_ui.Init(&s_settings);
 
-	s_actors.Init(&s_charData, &s_chat, &s_settings, serverName ? serverName : "", pLocalPC->Name);
+	s_actors.Init(&s_charData, &s_chat, &s_settings, serverName ? serverName : "", pLocalPC->Name, storageId, host);
 
 	s_charData.Refresh();
 	s_modules.InitAll();
@@ -131,6 +148,10 @@ static bool MatchWindow(const char* in, std::string& out)
 {
 	for (const std::string& key : s_ui.WindowKeys())
 	{
+		if (s_ui.Window(key).internal)
+		{
+			continue;
+		}
 		if (ci_equals(key, in))
 		{
 			out = key;
@@ -163,6 +184,10 @@ static void MyUICommand(PlayerClient*, const char* Line)
 		myui::ChatOutf("\ag[MyUI]\ax windows:");
 		for (const std::string& key : s_ui.WindowKeys())
 		{
+			if (s_ui.Window(key).internal)
+			{
+				continue;
+			}
 			myui::ChatOutf("  %s - %s", key.c_str(), s_ui.Window(key).visible ? "\agshown\ax" : "\arhidden\ax");
 		}
 		return;
@@ -192,7 +217,7 @@ static void MyUICommand(PlayerClient*, const char* Line)
 
 		if (arg2[0] == 0)
 		{
-			s_ui.ToggleVisible("ThemeZ");
+			s_ui.ToggleVisible("Themes");
 			return;
 		}
 
@@ -252,6 +277,19 @@ PLUGIN_API void InitializePlugin()
 	AddCommand("/myui", MyUICommand, false, true, true);
 	RegisterModules();
 	s_actors.SetReloadHandler([]() { s_settings.InvalidateCache(); s_ui.Load(); });
+	s_actors.SetSettingsApplyHandler([](const std::string& server, const std::string& character,
+		const std::vector<SettingRow>& rows, bool) -> std::vector<SettingRow>
+	{
+		std::vector<SettingRow> current = s_settings.ApplySettingRows(server, character, rows);
+		s_settings.InvalidateCache();
+		s_ui.Load();
+		return current;
+	});
+	s_actors.SetSettingsMirrorHandler([](const std::string& server, const std::string& character,
+		const std::vector<SettingRow>& rows, bool)
+	{
+		s_settings.ApplySettingRows(server, character, rows);
+	});
 	s_chat.DetectMyChat();
 }
 
@@ -261,6 +299,14 @@ PLUGIN_API void ShutdownPlugin()
 	s_icons.Shutdown();
 	s_settings.Close();
 	RemoveCommand("/myui");
+
+	// Remove our context from imanim's global list so the host's per-frame
+	// update never walks a freed pointer after we unload.
+	if (s_iamCtx)
+	{
+		iam_context_destroy(s_iamCtx);
+		s_iamCtx = nullptr;
+	}
 }
 
 PLUGIN_API void SetGameState(int GameState)
@@ -312,10 +358,28 @@ PLUGIN_API void OnUpdateImGui()
 		return;
 	}
 
+	if (!s_iamCtx)
+	{
+		s_iamCtx = iam_context_create();
+		iam_context_set_current(s_iamCtx);
+		// Create channels at their resting value so they animate on the first
+		// target change. With lazy-init on, a channel whose initial target
+		// equals its init value is never created, so it snaps instead of
+		// tweening (e.g. the tab pill and the reveal heights).
+		iam_set_lazy_init(false);
+	}
+	// The host (MQ2Main ImGuiManager) already calls iam_update_begin_frame()
+	// once per frame, which advances imanim's shared clock and every registered
+	// context (ours included). We must NOT call it again or the clock advances
+	// twice and animations run at double speed — we only make our context current.
+	iam_context* prevCtx = iam_context_set_current(s_iamCtx);
+
 	ImGuiStyle saved = s_themes.ApplyTheme(s_themes.Resolved());
 	s_modules.RenderAll();
 	myui::DrawPoppedInfoWindows(&s_icons);
 	ThemeManager::ResetTheme(saved);
+
+	iam_context_set_current(prevCtx);
 }
 
 PLUGIN_API void OnZoned()
