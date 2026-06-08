@@ -12,11 +12,13 @@
 #include "imgui/fonts/IconsFontAwesome.h"
 
 #include <cassert>
+#include <cmath>
 
 namespace
 {
 const MQColor kTintReady(255, 255, 255, 255);
 const MQColor kTintNotReady(70, 70, 70, 255);
+const ImU32 kCooldownShadow = IM_COL32(220, 30, 30, 170);
 
 int CursorSpellId()
 {
@@ -47,6 +49,57 @@ bool GemReady(int i)
 	}
 	return pDisplay->TimeStamp > pLocalPlayer->SpellGemETA[i]
 		&& pDisplay->TimeStamp > pLocalPlayer->GetSpellCooldownETA();
+}
+
+// Draws a clock-style cooldown shadow: a filled circular pie wedge sized to the
+// remaining fraction, whose leading edge sweeps clockwise from 12 o'clock as the
+// timer counts down (the icon is revealed behind the sweeping hand).
+void DrawRadialCooldown(ImDrawList* drawList, const ImVec2& rectMin, const ImVec2& rectMax, float remaining, ImU32 color)
+{
+	if (remaining <= 0.0f)
+	{
+		return;
+	}
+	if (remaining > 1.0f)
+	{
+		remaining = 1.0f;
+	}
+
+	const ImVec2 center((rectMin.x + rectMax.x) * 0.5f, (rectMin.y + rectMax.y) * 0.5f);
+	const float halfW = (rectMax.x - rectMin.x) * 0.5f;
+	const float halfH = (rectMax.y - rectMin.y) * 0.5f;
+	const float radius = (halfW < halfH ? halfW : halfH) + 3.0f;
+
+	const float pi = 3.14159265358979323846f;
+	const float twoPi = 2.0f * pi;
+	const float top = -pi * 0.5f;
+	const float darkStart = top + (1.0f - remaining) * twoPi;
+	const float sweep = remaining * twoPi;
+
+	int segments = static_cast<int>(std::ceil(64.0f * remaining));
+	if (segments < 1)
+	{
+		segments = 1;
+	}
+
+	auto edgePoint = [&](float angle) -> ImVec2 {
+		return ImVec2(center.x + std::cos(angle) * radius, center.y + std::sin(angle) * radius);
+	};
+
+	const bool hadAa = (drawList->Flags & ImDrawListFlags_AntiAliasedFill) != 0;
+	drawList->Flags &= ~ImDrawListFlags_AntiAliasedFill;
+	ImVec2 prev = edgePoint(darkStart);
+	for (int s = 1; s <= segments; ++s)
+	{
+		const float t = static_cast<float>(s) / static_cast<float>(segments);
+		const ImVec2 cur = edgePoint(darkStart + sweep * t);
+		drawList->AddTriangleFilled(center, prev, cur, color);
+		prev = cur;
+	}
+	if (hadAa)
+	{
+		drawList->Flags |= ImDrawListFlags_AntiAliasedFill;
+	}
 }
 } // namespace
 
@@ -354,6 +407,17 @@ void SpellsModule::OnRenderGUI()
 
 				if (!ready && pLocalPlayer && pDisplay)
 				{
+					int remainMs = pLocalPlayer->SpellGemETA[i] - pDisplay->TimeStamp;
+					if (remainMs > 0 && spell->RecastTime > 0)
+					{
+						float ox = (gemSize.cx - iconPx) * 0.5f;
+						float oy = (gemSize.cy - iconPx) * 0.5f;
+						ImVec2 iconMin(rectMin.x + ox, rectMin.y + oy);
+						ImVec2 iconMax(iconMin.x + iconPx, iconMin.y + iconPx);
+						float frac = static_cast<float>(remainMs) / static_cast<float>(spell->RecastTime);
+						DrawRadialCooldown(ImGui::GetWindowDrawList(), iconMin, iconMax, frac, kCooldownShadow);
+					}
+
 					int coolDown = (pLocalPlayer->SpellGemETA[i] - pDisplay->TimeStamp) / 1000;
 					if (coolDown > 0 && coolDown < 1801)
 					{
