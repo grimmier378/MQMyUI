@@ -19,14 +19,18 @@ constexpr auto kPruneInterval     = std::chrono::seconds(5);
 constexpr auto kStaleAfter        = std::chrono::seconds(60);
 }
 
-void ActorManager::Init(CharData* charData, ChatBridge* chat, SettingsStore* settings, const std::string& server, const std::string& character)
+void ActorManager::Init(CharData* charData, ChatBridge* chat, SettingsStore* settings, const std::string& server, const std::string& character,
+	const std::string& storageId, const std::string& host)
 {
 	m_char = charData;
 	m_chat = chat;
 	m_settings = settings;
 	m_server = server;
 	m_character = character;
+	m_storageId = storageId;
+	m_host = host;
 	m_peers.clear();
+	m_seenPeers.clear();
 	m_itemCounts.clear();
 	LoadTrackedList();
 
@@ -61,6 +65,7 @@ void ActorManager::Shutdown()
 	m_dropbox = mq::postoffice::DropboxAPI{};
 	m_valid = false;
 	m_peers.clear();
+	m_seenPeers.clear();
 }
 
 void ActorManager::Pulse()
@@ -129,6 +134,8 @@ void ActorManager::PublishVitals()
 	v->set_pet_name(c.petName);
 	v->set_group_leader(c.groupLeader);
 	v->set_role_mask(c.roleMask);
+	v->set_storage_id(m_storageId);
+	v->set_host(m_host);
 
 	mq::postoffice::Address addr;
 	addr.Mailbox = kMailbox;
@@ -266,7 +273,9 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 			return;
 		}
 
-		auto& p = m_peers[myui::PeerKey(v.server(), v.character())];
+		const std::string peerKey = myui::PeerKey(v.server(), v.character());
+		const bool isNewPeer = (m_peers.find(peerKey) == m_peers.end());
+		auto& p = m_peers[peerKey];
 		p.server      = v.server();
 		p.character   = v.character();
 		p.classShort  = v.class_short();
@@ -287,8 +296,17 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		p.petName     = v.pet_name();
 		p.groupLeader = v.group_leader();
 		p.roleMask    = v.role_mask();
+		p.storageId   = v.storage_id();
+		p.host        = v.host();
 		p.hasVitals   = true;
 		p.lastSeen    = now;
+
+		// First time we have seen this peer: pull its settings into our local mirror, unless it
+		// shares our SQLite file (same-store), in which case the rows are already present.
+		if (isNewPeer && m_seenPeers.insert(peerKey).second && !IsSameStore(p))
+		{
+			SendSettingsRequest(v.server(), v.character());
+		}
 		break;
 	}
 	case mq::proto::myui::MyUIEnvelope::PayloadCase::kAa:
@@ -414,6 +432,68 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		}
 		break;
 	}
+	case mq::proto::myui::MyUIEnvelope::PayloadCase::kSettings:
+	{
+		const auto& s = env.settings();
+		if (ci_equals(s.from_char(), m_character))
+		{
+			return;
+		}
+
+		std::vector<SettingRow> rows;
+		rows.reserve(s.rows_size());
+		for (const auto& r : s.rows())
+		{
+			rows.push_back(SettingRow{ r.module(), r.name(), r.type(), r.value() });
+		}
+
+		const bool addressedToUs = ci_equals(s.to_char(), m_character)
+			&& (s.to_server().empty() || ci_equals(s.to_server(), m_server));
+
+		switch (s.kind())
+		{
+		case mq::proto::myui::SettingsSync::PUSH:
+			if (!s.to_char().empty())
+			{
+				// Directed PUSH: we are the authoritative owner -> apply to our own DB, reply with results.
+				if (addressedToUs && m_onSettingsApply)
+				{
+					std::vector<SettingRow> current = m_onSettingsApply(m_server, m_character, rows, s.full());
+					SendSettingsReply(s.from_server(), s.from_char(), current, false);
+				}
+			}
+			else
+			{
+				// Undirected PUSH = "mirror me". Skip same-store senders (shared file already current).
+				auto it = m_peers.find(myui::PeerKey(s.from_server(), s.from_char()));
+				const bool sameStore = (it != m_peers.end()) && IsSameStore(it->second);
+				if (!sameStore && m_onSettingsMirror)
+				{
+					m_onSettingsMirror(s.from_server(), s.from_char(), rows, s.full());
+				}
+			}
+			break;
+
+		case mq::proto::myui::SettingsSync::REPLY:
+			if (m_onSettingsMirror)
+			{
+				m_onSettingsMirror(s.from_server(), s.from_char(), rows, s.full());
+			}
+			break;
+
+		case mq::proto::myui::SettingsSync::REQUEST:
+			if (addressedToUs && m_settings)
+			{
+				SendSettingsReply(s.from_server(), s.from_char(),
+					m_settings->GetAllSettings(m_server, m_character), true);
+			}
+			break;
+
+		default:
+			break;
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -535,6 +615,123 @@ void ActorManager::BroadcastReload(const std::string& targetList)
 	m_dropbox.Post(addr, env);
 }
 
+namespace
+{
+void FillSettingRows(mq::proto::myui::SettingsSync* sync, const std::vector<SettingRow>& rows)
+{
+	for (const SettingRow& r : rows)
+	{
+		auto* row = sync->add_rows();
+		row->set_module(r.module);
+		row->set_name(r.name);
+		row->set_type(r.type);
+		row->set_value(r.value);
+	}
+}
+}
+
+void ActorManager::SendSettingsPush(const std::string& toServer, const std::string& toChar, const std::vector<SettingRow>& rows, bool full)
+{
+	if (!m_valid)
+	{
+		return;
+	}
+
+	mq::proto::myui::MyUIEnvelope env;
+	auto* s = env.mutable_settings();
+	s->set_from_server(m_server);
+	s->set_from_char(m_character);
+	s->set_to_server(toServer);
+	s->set_to_char(toChar);
+	s->set_kind(mq::proto::myui::SettingsSync::PUSH);
+	s->set_full(full);
+	FillSettingRows(s, rows);
+
+	mq::postoffice::Address addr;
+	addr.Mailbox = kMailbox;
+	addr.Character = toChar;
+	if (!toServer.empty())
+	{
+		addr.Server = toServer;
+	}
+	m_dropbox.Post(addr, env);
+}
+
+void ActorManager::BroadcastSettingsPush(const std::vector<SettingRow>& rows)
+{
+	if (!m_valid || rows.empty())
+	{
+		return;
+	}
+
+	mq::proto::myui::MyUIEnvelope env;
+	auto* s = env.mutable_settings();
+	s->set_from_server(m_server);
+	s->set_from_char(m_character);
+	s->set_to_server("");
+	s->set_to_char("");
+	s->set_kind(mq::proto::myui::SettingsSync::PUSH);
+	s->set_full(false);
+	FillSettingRows(s, rows);
+
+	mq::postoffice::Address addr;
+	addr.Mailbox = kMailbox;
+	m_dropbox.Post(addr, env);
+}
+
+void ActorManager::SendSettingsRequest(const std::string& toServer, const std::string& toChar)
+{
+	if (!m_valid)
+	{
+		return;
+	}
+
+	mq::proto::myui::MyUIEnvelope env;
+	auto* s = env.mutable_settings();
+	s->set_from_server(m_server);
+	s->set_from_char(m_character);
+	s->set_to_server(toServer);
+	s->set_to_char(toChar);
+	s->set_kind(mq::proto::myui::SettingsSync::REQUEST);
+	s->set_full(false);
+
+	mq::postoffice::Address addr;
+	addr.Mailbox = kMailbox;
+	addr.Character = toChar;
+	if (!toServer.empty())
+	{
+		addr.Server = toServer;
+	}
+	m_dropbox.Post(addr, env);
+}
+
+void ActorManager::SendSettingsReply(const std::string& toServer, const std::string& toChar, const std::vector<SettingRow>& rows, bool full)
+{
+	if (!m_valid)
+	{
+		return;
+	}
+
+	mq::proto::myui::MyUIEnvelope env;
+	auto* s = env.mutable_settings();
+	s->set_from_server(m_server);
+	s->set_from_char(m_character);
+	s->set_to_server(toServer);
+	s->set_to_char(toChar);
+	s->set_kind(mq::proto::myui::SettingsSync::REPLY);
+	s->set_full(full);
+	FillSettingRows(s, rows);
+
+	mq::postoffice::Address addr;
+	addr.Mailbox = kMailbox;
+	addr.Character = toChar;
+	if (!toServer.empty())
+	{
+		addr.Server = toServer;
+	}
+	m_dropbox.Post(addr, env);
+}
+
 bool ActorManager::ReloadTargetsSelf(const std::string& targetList) const
 {
 	for (const std::string& entry : mq::split(targetList, ';'))
@@ -566,6 +763,7 @@ void ActorManager::PruneStale()
 			{
 				charCounts.erase(staleChar);
 			}
+			m_seenPeers.erase(it->first);
 			it = m_peers.erase(it);
 		}
 		else

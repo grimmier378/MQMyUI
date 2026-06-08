@@ -119,7 +119,7 @@ struct KeyCollector
 
 bool IsTransientVisibility(const std::string& window)
 {
-	return window == "BigBag" || window == "MyInventory" || window == "iTrack" || window == "Settings" || window == "MyAA";
+	return window == "BigBag" || window == "Inventory" || window == "iTrack" || window == "Settings" || window == "AA";
 }
 
 bool IsValidBarKey(const WindowConfig& w, const std::set<std::string>& barFields, const std::string& name)
@@ -326,11 +326,11 @@ void UiConfig::SeedDefaults()
 	bar("XPBars", "AAExp", MQColor(60, 60, 140), MQColor(120, 120, 255), 6.0f);
 	bar("XPBars", "Air", MQColor(160, 90, 20), MQColor(240, 140, 25), 6.0f);
 
-	Window("MyAA");
-	SetFlag("MyAA", "TrainableOnly", false);
-	SetFlag("MyAA", "AffordableOnly", false);
-	SetFlag("MyAA", "ConfirmPurchase", false);
-	SetFlag("MyAA", "ShowHotkeyButton", true);
+	Window("AA");
+	SetFlag("AA", "TrainableOnly", false);
+	SetFlag("AA", "AffordableOnly", false);
+	SetFlag("AA", "ConfirmPurchase", false);
+	SetFlag("AA", "ShowHotkeyButton", true);
 
 	Window("HUD").visible = true;
 	SetFlag("HUD", "ShowHpMana", false);
@@ -338,17 +338,17 @@ void UiConfig::SeedDefaults()
 	Window("Toolbar").visible = true;
 	SetNum("Toolbar", "ItemSize", 32.0f);
 
-	Window("MyInventory");
-	SetFlag("MyInventory", "ShowSlotBackground", true);
-	SetFlag("MyInventory", "AutoInventoryOnSwap", true);
-	SetNum("MyInventory", "ItemSize", 40.0f);
+	Window("Inventory");
+	SetFlag("Inventory", "ShowSlotBackground", true);
+	SetFlag("Inventory", "AutoInventoryOnSwap", true);
+	SetNum("Inventory", "ItemSize", 40.0f);
 	{
-		BarStyle& xp = bar("MyInventory", "XP", MQColor(255, 215, 0), MQColor(255, 215, 0), 6.0f);
+		BarStyle& xp = bar("Inventory", "XP", MQColor(255, 215, 0), MQColor(255, 215, 0), 6.0f);
 		xp.textMode = 0;
 		xp.gradientOn = false;
 		xp.ticksOn = true;
 		xp.tickEvery = 0.10f;
-		BarStyle& aa = bar("MyInventory", "AAExp", MQColor(120, 170, 230), MQColor(120, 170, 230), 6.0f);
+		BarStyle& aa = bar("Inventory", "AAExp", MQColor(120, 170, 230), MQColor(120, 170, 230), 6.0f);
 		aa.textMode = 0;
 		aa.gradientOn = false;
 		aa.ticksOn = true;
@@ -356,13 +356,13 @@ void UiConfig::SeedDefaults()
 	}
 	for (int p = 0; p < myui::BagSlotCount(); ++p)
 	{
-		SetFlag("MyInventory", "BagLock" + std::to_string(p), false);
+		SetFlag("Inventory", "BagLock" + std::to_string(p), false);
 	}
-	SetStr("MyInventory", "ToggleKey", "I");
-	SetStr("MyInventory", "ToggleMod1", "Ctrl");
-	SetStr("MyInventory", "ToggleMod2", "None");
-	SetStr("MyInventory", "ToggleMod3", "None");
-	SetStr("MyInventory", "ToggleMouse", "None");
+	SetStr("Inventory", "ToggleKey", "I");
+	SetStr("Inventory", "ToggleMod1", "Ctrl");
+	SetStr("Inventory", "ToggleMod2", "None");
+	SetStr("Inventory", "ToggleMod3", "None");
+	SetStr("Inventory", "ToggleMouse", "None");
 
 	Window("BigBag");
 	SetFlag("BigBag", "ShowSlotBackground", true);
@@ -385,11 +385,11 @@ void UiConfig::SeedDefaults()
 	SetStr("iTrack", "ToggleMod3", "None");
 	SetStr("iTrack", "ToggleMouse", "None");
 
-	Window("ThemeZ");
+	Window("Themes");
 	Window("Settings");
 	Window("Copy");
 
-	Window("Toggles");
+	Window("Toggles").internal = true;
 	SetFlag("Toggles", "RightLabel", true);
 	SetFlag("Toggles", "GlowOnHover", true);
 	SetFlag("Toggles", "PulseOnHover", true);

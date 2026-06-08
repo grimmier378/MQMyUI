@@ -108,39 +108,73 @@ void CopyModule::OnPulse()
 		return;
 	}
 
-	if (m_ctx.Settings)
+	// Build the changed rows once; the source is always our local DB (mirrored copy).
+	std::vector<SettingRow> rows;
+	rows.reserve(m_queue.size());
+	for (const PendingWrite& write : m_queue)
 	{
-		m_ctx.Settings->BeginTransaction();
-		for (const PendingWrite& write : m_queue)
-		{
-			for (const CharIdent& dst : m_pendingDsts)
-			{
-				m_ctx.Settings->SetRaw(dst.server, dst.character, write.module, write.name, write.type, write.value);
-			}
-		}
-		m_ctx.Settings->CommitTransaction();
+		rows.push_back(SettingRow{ write.module, write.name, write.type, write.value });
 	}
 	m_queue.clear();
 
-	std::string targetList;
+	auto writeLocal = [&](const CharIdent& dst) {
+		if (!m_ctx.Settings)
+		{
+			return;
+		}
+		m_ctx.Settings->BeginTransaction();
+		for (const SettingRow& r : rows)
+		{
+			m_ctx.Settings->SetRaw(dst.server, dst.character, r.module, r.name, r.type, r.value);
+		}
+		m_ctx.Settings->CommitTransaction();
+	};
+
 	bool selfTargeted = false;
 	for (const CharIdent& dst : m_pendingDsts)
 	{
-		if (!targetList.empty())
+		const bool isSelf = m_ctx.Settings
+			&& ci_equals(dst.server, m_ctx.Settings->Server())
+			&& ci_equals(dst.character, m_ctx.Settings->Character());
+
+		const myui::PeerRecord* peer = nullptr;
+		if (m_ctx.Actors)
 		{
-			targetList += ";";
+			const auto& peers = m_ctx.Actors->Peers();
+			auto it = peers.find(myui::PeerKey(dst.server, dst.character));
+			if (it != peers.end())
+			{
+				peer = &it->second;
+			}
 		}
-		targetList += dst.server + "|" + dst.character;
-		if (m_ctx.Settings && dst.server == m_ctx.Settings->Server() && dst.character == m_ctx.Settings->Character())
+		const bool online = (peer != nullptr);
+		const bool sameStore = peer && m_ctx.Actors && m_ctx.Actors->IsSameStore(*peer);
+
+		if (isSelf)
 		{
+			writeLocal(dst);
 			selfTargeted = true;
+		}
+		else if (online && !sameStore)
+		{
+			// Remote store: push rows for them to apply authoritatively; mirror locally for instant feedback.
+			writeLocal(dst);
+			if (m_ctx.Actors)
+			{
+				m_ctx.Actors->SendSettingsPush(dst.server, dst.character, rows, false);
+			}
+		}
+		else
+		{
+			// Same-store online (shared DB) or offline (local mirror): write directly.
+			writeLocal(dst);
+			if (online && sameStore && m_ctx.Actors)
+			{
+				m_ctx.Actors->SendCommand(dst.server, dst.character, "ReloadSettings");
+			}
 		}
 	}
 
-	if (m_ctx.Actors)
-	{
-		m_ctx.Actors->BroadcastReload(targetList);
-	}
 	if (selfTargeted && m_ctx.UI)
 	{
 		m_ctx.UI->Load();
@@ -182,12 +216,50 @@ void CopyModule::OnRenderGUI()
 			return m_chars[idx].server + " / " + m_chars[idx].character;
 		};
 
+		auto onlineState = [&](int idx, bool& online, bool& sameStore) {
+			online = false;
+			sameStore = false;
+			if (idx < 0 || idx >= (int)m_chars.size() || !m_ctx.Actors)
+			{
+				return;
+			}
+			const auto& peers = m_ctx.Actors->Peers();
+			auto it = peers.find(myui::PeerKey(m_chars[idx].server, m_chars[idx].character));
+			if (it != peers.end())
+			{
+				online = true;
+				sameStore = m_ctx.Actors->IsSameStore(it->second);
+			}
+		};
+
+		// Render a character entry colored by online state, with an offline tooltip.
+		auto charSelectable = [&](int idx, bool selected, ImGuiSelectableFlags flags) -> bool {
+			bool online = false, sameStore = false;
+			onlineState(idx, online, sameStore);
+			std::string label = charLabel(idx) + (online ? " (online)" : " (offline)");
+			ImVec4 color = online ? ImVec4(0.45f, 0.9f, 0.45f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			bool clicked = ImGui::Selectable((label + "##c" + std::to_string(idx)).c_str(), selected, flags);
+			ImGui::PopStyleColor();
+			if (!online && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Offline - copy writes only your local mirror DB; it syncs when this character next comes online.");
+			}
+			return clicked;
+		};
+
+		ImGui::TextWrapped("Source is always your local copy. Online targets receive the changes live and confirm them back; "
+			"offline targets are written to your local mirror and sync when they reconnect.");
+		ImGui::SameLine();
+		mq::imgui::HelpMarker("Characters on the same PC as you (sharing one settings DB) apply instantly with no network traffic. "
+			"Characters on another box receive a settings message; offline characters are written to your local mirror only.");
+
 		ImGui::SetNextItemWidth(220.0f);
 		if (ImGui::BeginCombo("Source", charLabel(m_srcIdx).c_str()))
 		{
 			for (int i = 0; i < (int)m_chars.size(); ++i)
 			{
-				if (ImGui::Selectable(charLabel(i).c_str(), i == m_srcIdx))
+				if (charSelectable(i, i == m_srcIdx, ImGuiSelectableFlags_None))
 				{
 					m_srcIdx = i;
 					RefreshRows();
@@ -207,7 +279,7 @@ void CopyModule::OnRenderGUI()
 					continue;
 				}
 				bool sel = m_dstSel.count(i) != 0;
-				if (ImGui::Selectable(charLabel(i).c_str(), sel, ImGuiSelectableFlags_NoAutoClosePopups))
+				if (charSelectable(i, sel, ImGuiSelectableFlags_NoAutoClosePopups))
 				{
 					if (sel)
 					{

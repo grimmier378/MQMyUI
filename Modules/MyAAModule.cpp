@@ -248,7 +248,7 @@ void MyAAModule::OnRenderGUI()
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(460, 560), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("MyAA##MyUIMyAA", &w.visible, flags))
+	if (ImGui::Begin("AA##MyUIAA", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);
 

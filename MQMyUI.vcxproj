@@ -76,6 +76,9 @@
     <ClCompile Include="Core\ChatBridge.cpp" />
     <ClCompile Include="Core\IconHelper.cpp" />
     <ClCompile Include="Core\ActorManager.cpp" />
+    <ClCompile Include="Core\StorageId.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Core\ModuleManager.cpp" />
     <ClCompile Include="Modules\PlayerModule.cpp" />
     <ClCompile Include="Modules\HudModule.cpp" />
@@ -124,6 +127,7 @@
     <ClInclude Include="Core\UiHelpers.h" />
     <ClInclude Include="Core\PeerData.h" />
     <ClInclude Include="Core\ActorManager.h" />
+    <ClInclude Include="Core\StorageId.h" />
     <ClInclude Include="Core\ModuleManager.h" />
     <ClInclude Include="Modules\PlayerModule.h" />
     <ClInclude Include="Modules\HudModule.h" />

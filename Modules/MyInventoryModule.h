@@ -8,7 +8,7 @@
 class MyInventoryModule : public ModuleBase
 {
 public:
-	const char* GetName() const override { return "MyInventory"; }
+	const char* GetName() const override { return "Inventory"; }
 
 	void OnRenderGUI() override;
 

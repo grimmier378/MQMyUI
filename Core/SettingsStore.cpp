@@ -422,6 +422,47 @@ void SettingsStore::SetRaw(const std::string& server, const std::string& charact
 	}
 }
 
+std::vector<SettingRow> SettingsStore::ApplySettingRows(const std::string& server, const std::string& character,
+	const std::vector<SettingRow>& rows)
+{
+	if (rows.empty())
+	{
+		return {};
+	}
+
+	BeginTransaction();
+	for (const SettingRow& row : rows)
+	{
+		if (row.module.empty() || row.name.empty())
+		{
+			continue;
+		}
+		SetRaw(server, character, row.module, row.name, row.type, row.value);
+	}
+	CommitTransaction();
+
+	std::vector<SettingRow> current = GetAllSettings(server, character);
+
+	std::vector<SettingRow> result;
+	result.reserve(rows.size());
+	for (const SettingRow& row : rows)
+	{
+		if (row.module.empty() || row.name.empty())
+		{
+			continue;
+		}
+		for (const SettingRow& cur : current)
+		{
+			if (cur.module == row.module && cur.name == row.name)
+			{
+				result.push_back(cur);
+				break;
+			}
+		}
+	}
+	return result;
+}
+
 void SettingsStore::DeleteSetting(const std::string& module, const std::string& name)
 {
 	sqlite3_stmt* stmt = nullptr;

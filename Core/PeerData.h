@@ -53,6 +53,9 @@ struct PeerRecord
 
 	std::vector<BuffInfo> buffs;
 
+	std::string storageId;
+	std::string host;
+
 	bool hasVitals = false;
 	bool hasAA = false;
 	bool hasBuffs = false;

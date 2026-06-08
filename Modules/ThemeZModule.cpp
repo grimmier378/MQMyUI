@@ -6,34 +6,234 @@
 #include <cstring>
 #include <vector>
 
+namespace themeeditor
+{
+void LoadSelected(ThemeManager* themes, const std::string& name, Theme& edit, std::string& selected, char* nameBuf, size_t nameBufSize)
+{
+	if (!themes)
+	{
+		return;
+	}
+
+	selected = name;
+
+	if (name == "Default")
+	{
+		edit = themes->DefaultStyle();
+		edit.name = "Default";
+	}
+	else if (const Theme* t = themes->GetTheme(name))
+	{
+		edit = *t;
+	}
+
+	strncpy_s(nameBuf, nameBufSize, edit.name.c_str(), _TRUNCATE);
+}
+
+void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* nameBuf, size_t nameBufSize)
+{
+	ImGui::TextDisabled("Active: %s", themes->ActiveName().c_str());
+
+	ImGui::SetNextItemWidth(200.0f);
+	if (ImGui::BeginCombo("Edit Theme", selected.c_str()))
+	{
+		for (const std::string& n : themes->GetThemeNames())
+		{
+			bool isSelected = (n == selected);
+			if (ImGui::Selectable(n.c_str(), isSelected))
+			{
+				LoadSelected(themes, n, edit, selected, nameBuf, nameBufSize);
+			}
+			if (isSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::SetNextItemWidth(200.0f);
+	ImGui::InputText("Name", nameBuf, nameBufSize);
+
+	const bool isDefaultSelected = (selected == "Default");
+	const std::string targetName = nameBuf;
+	const bool canSave = !targetName.empty() && targetName != "Default";
+
+	if (ImGui::Button("New"))
+	{
+		std::string base = "New Theme";
+		std::string name = base;
+		int counter = 2;
+		auto exists = [&](const std::string& nm) {
+			for (const std::string& e : themes->GetThemeNames())
+			{
+				if (e == nm)
+				{
+					return true;
+				}
+			}
+			return false;
+		};
+		while (exists(name))
+		{
+			name = fmt::format("{} {}", base, counter++);
+		}
+
+		Theme dup = edit;
+		dup.name = name;
+		dup.isEmpty = false;
+		themes->SaveTheme(dup);
+		LoadSelected(themes, name, edit, selected, nameBuf, nameBufSize);
+	}
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!canSave);
+	if (ImGui::Button("Save"))
+	{
+		edit.name = targetName;
+		themes->SaveTheme(edit);
+		selected = targetName;
+	}
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(isDefaultSelected);
+	if (ImGui::Button("Delete"))
+	{
+		themes->DeleteTheme(selected);
+		LoadSelected(themes, "Default", edit, selected, nameBuf, nameBufSize);
+	}
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	if (ImGui::Button("Apply"))
+	{
+		themes->SetActiveTheme(selected);
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Revert"))
+	{
+		LoadSelected(themes, selected, edit, selected, nameBuf, nameBufSize);
+	}
+}
+
+void DrawColorsSection(ThemeManager* themes, Theme& edit)
+{
+	if (!ImGui::CollapsingHeader("Colors"))
+	{
+		return;
+	}
+
+	if (ImGui::Button("Reset Colors"))
+	{
+		const Theme& d = themes->DefaultStyle();
+		for (int i = 0; i < ImGuiCol_COUNT; ++i)
+		{
+			edit.colors[i] = d.colors[i];
+		}
+	}
+
+	std::vector<int> order;
+	order.reserve(ImGuiCol_COUNT);
+	for (int i = 0; i < ImGuiCol_COUNT; ++i)
+	{
+		order.push_back(i);
+	}
+	std::sort(order.begin(), order.end(), [](int a, int b) {
+		return std::strcmp(ImGui::GetStyleColorName(a), ImGui::GetStyleColorName(b)) < 0;
+	});
+
+	for (int i : order)
+	{
+		ImGui::ColorEdit4(ImGui::GetStyleColorName(i), reinterpret_cast<float*>(&edit.colors[i]),
+			ImGuiColorEditFlags_AlphaBar);
+	}
+}
+
+void DrawStylesSection(ThemeManager* themes, Theme& edit)
+{
+	if (!ImGui::CollapsingHeader("Styles"))
+	{
+		return;
+	}
+
+	if (ImGui::Button("Reset Styles"))
+	{
+		const Theme& d = themes->DefaultStyle();
+		edit.windowRounding    = d.windowRounding;
+		edit.frameRounding     = d.frameRounding;
+		edit.childRounding     = d.childRounding;
+		edit.popupRounding     = d.popupRounding;
+		edit.scrollbarRounding = d.scrollbarRounding;
+		edit.grabRounding      = d.grabRounding;
+		edit.tabRounding       = d.tabRounding;
+		edit.windowBorderSize  = d.windowBorderSize;
+		edit.frameBorderSize   = d.frameBorderSize;
+		edit.childBorderSize   = d.childBorderSize;
+		edit.popupBorderSize   = d.popupBorderSize;
+		edit.tabBarBorderSize  = d.tabBarBorderSize;
+		edit.indentSpacing     = d.indentSpacing;
+		edit.scrollbarSize     = d.scrollbarSize;
+		edit.grabMinSize       = d.grabMinSize;
+		edit.windowPadding     = d.windowPadding;
+		edit.framePadding      = d.framePadding;
+		edit.cellPadding       = d.cellPadding;
+		edit.itemSpacing       = d.itemSpacing;
+		edit.itemInnerSpacing  = d.itemInnerSpacing;
+	}
+
+	auto boolEdit = [](const char* label, float& field) {
+		bool b = field > 0.5f;
+		if (ImGui::Checkbox(label, &b))
+		{
+			field = b ? 1.0f : 0.0f;
+		}
+	};
+
+	ImGui::SeparatorText("Borders");
+	boolEdit("WindowBorderSize", edit.windowBorderSize);
+	boolEdit("FrameBorderSize", edit.frameBorderSize);
+	boolEdit("ChildBorderSize", edit.childBorderSize);
+	boolEdit("PopupBorderSize", edit.popupBorderSize);
+	boolEdit("TabBarBorderSize", edit.tabBarBorderSize);
+
+	auto v2Edit = [](const char* label, ImVec2& v) {
+		float a[2] = { v.x, v.y };
+		if (ImGui::DragFloat2(label, a, 0.1f, 0.0f, 40.0f, "%.0f"))
+		{
+			v.x = a[0];
+			v.y = a[1];
+		}
+	};
+
+	ImGui::SeparatorText("Spacing");
+	v2Edit("WindowPadding", edit.windowPadding);
+	v2Edit("FramePadding", edit.framePadding);
+	v2Edit("CellPadding", edit.cellPadding);
+	v2Edit("ItemSpacing", edit.itemSpacing);
+	v2Edit("ItemInnerSpacing", edit.itemInnerSpacing);
+	ImGui::SliderFloat("IndentSpacing", &edit.indentSpacing, 0.0f, 30.0f, "%.0f");
+	ImGui::SliderFloat("ScrollbarSize", &edit.scrollbarSize, 0.0f, 20.0f, "%.0f");
+	ImGui::SliderFloat("GrabMinSize", &edit.grabMinSize, 0.0f, 20.0f, "%.0f");
+
+	ImGui::SeparatorText("Rounding");
+	ImGui::SliderFloat("WindowRounding", &edit.windowRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("FrameRounding", &edit.frameRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("ChildRounding", &edit.childRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("PopupRounding", &edit.popupRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("ScrollbarRounding", &edit.scrollbarRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("GrabRounding", &edit.grabRounding, 0.0f, 12.0f, "%.0f");
+	ImGui::SliderFloat("TabRounding", &edit.tabRounding, 0.0f, 12.0f, "%.0f");
+}
+} // namespace themeeditor
+
 void ThemeZModule::OnShutdown()
 {
 	if (m_ctx.Themes)
 	{
 		m_ctx.Themes->ClearPreview();
 	}
-}
-
-void ThemeZModule::LoadSelected(const std::string& name)
-{
-	if (!m_ctx.Themes)
-	{
-		return;
-	}
-
-	m_selected = name;
-
-	if (name == "Default")
-	{
-		m_edit = m_ctx.Themes->DefaultStyle();
-		m_edit.name = "Default";
-	}
-	else if (const Theme* t = m_ctx.Themes->GetTheme(name))
-	{
-		m_edit = *t;
-	}
-
-	strncpy_s(m_nameBuf, m_edit.name.c_str(), _TRUNCATE);
 }
 
 void ThemeZModule::OnRenderGUI()
@@ -58,7 +258,7 @@ void ThemeZModule::OnRenderGUI()
 
 	if (!m_wasOpen)
 	{
-		LoadSelected(themes->ActiveName());
+		themeeditor::LoadSelected(themes, themes->ActiveName(), m_edit, m_selected, m_nameBuf, sizeof(m_nameBuf));
 		m_wasOpen = true;
 	}
 
@@ -72,12 +272,12 @@ void ThemeZModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove;
 	}
 
-	if (ImGui::Begin("MyUI ThemeZ##MyUIThemeZ", &w.visible, flags))
+	if (ImGui::Begin("MyUI Themes##MyUIThemes", &w.visible, flags))
 	{
-		DrawTopBar();
+		themeeditor::DrawTopBar(themes, m_edit, m_selected, m_nameBuf, sizeof(m_nameBuf));
 		ImGui::Separator();
-		DrawColorsSection();
-		DrawStylesSection();
+		themeeditor::DrawColorsSection(themes, m_edit);
+		themeeditor::DrawStylesSection(themes, m_edit);
 	}
 	ImGui::End();
 
@@ -85,203 +285,4 @@ void ThemeZModule::OnRenderGUI()
 	{
 		m_ctx.UI->PersistVisibility(GetName());
 	}
-}
-
-void ThemeZModule::DrawTopBar()
-{
-	ThemeManager* themes = m_ctx.Themes;
-
-	ImGui::TextDisabled("Active: %s", themes->ActiveName().c_str());
-
-	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::BeginCombo("Edit Theme", m_selected.c_str()))
-	{
-		for (const std::string& n : themes->GetThemeNames())
-		{
-			bool selected = (n == m_selected);
-			if (ImGui::Selectable(n.c_str(), selected))
-			{
-				LoadSelected(n);
-			}
-			if (selected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
-	}
-
-	ImGui::SetNextItemWidth(200.0f);
-	ImGui::InputText("Name", m_nameBuf, sizeof(m_nameBuf));
-
-	const bool isDefaultSelected = (m_selected == "Default");
-	const std::string targetName = m_nameBuf;
-	const bool canSave = !targetName.empty() && targetName != "Default";
-
-	if (ImGui::Button("New"))
-	{
-		std::string base = "New Theme";
-		std::string name = base;
-		int counter = 2;
-		auto exists = [&](const std::string& nm) {
-			for (const std::string& e : themes->GetThemeNames())
-			{
-				if (e == nm)
-				{
-					return true;
-				}
-			}
-			return false;
-		};
-		while (exists(name))
-		{
-			name = fmt::format("{} {}", base, counter++);
-		}
-
-		Theme dup = m_edit;
-		dup.name = name;
-		dup.isEmpty = false;
-		themes->SaveTheme(dup);
-		LoadSelected(name);
-	}
-
-	ImGui::SameLine();
-	ImGui::BeginDisabled(!canSave);
-	if (ImGui::Button("Save"))
-	{
-		m_edit.name = targetName;
-		themes->SaveTheme(m_edit);
-		m_selected = targetName;
-	}
-	ImGui::EndDisabled();
-
-	ImGui::SameLine();
-	ImGui::BeginDisabled(isDefaultSelected);
-	if (ImGui::Button("Delete"))
-	{
-		themes->DeleteTheme(m_selected);
-		LoadSelected("Default");
-	}
-	ImGui::EndDisabled();
-
-	ImGui::SameLine();
-	if (ImGui::Button("Apply"))
-	{
-		themes->SetActiveTheme(m_selected);
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Revert"))
-	{
-		LoadSelected(m_selected);
-	}
-}
-
-void ThemeZModule::DrawColorsSection()
-{
-	if (!ImGui::CollapsingHeader("Colors"))
-	{
-		return;
-	}
-
-	if (ImGui::Button("Reset Colors"))
-	{
-		const Theme& d = m_ctx.Themes->DefaultStyle();
-		for (int i = 0; i < ImGuiCol_COUNT; ++i)
-		{
-			m_edit.colors[i] = d.colors[i];
-		}
-	}
-
-	std::vector<int> order;
-	order.reserve(ImGuiCol_COUNT);
-	for (int i = 0; i < ImGuiCol_COUNT; ++i)
-	{
-		order.push_back(i);
-	}
-	std::sort(order.begin(), order.end(), [](int a, int b) {
-		return std::strcmp(ImGui::GetStyleColorName(a), ImGui::GetStyleColorName(b)) < 0;
-	});
-
-	for (int i : order)
-	{
-		ImGui::ColorEdit4(ImGui::GetStyleColorName(i), reinterpret_cast<float*>(&m_edit.colors[i]),
-			ImGuiColorEditFlags_AlphaBar);
-	}
-}
-
-void ThemeZModule::DrawStylesSection()
-{
-	if (!ImGui::CollapsingHeader("Styles"))
-	{
-		return;
-	}
-
-	if (ImGui::Button("Reset Styles"))
-	{
-		const Theme& d = m_ctx.Themes->DefaultStyle();
-		m_edit.windowRounding    = d.windowRounding;
-		m_edit.frameRounding     = d.frameRounding;
-		m_edit.childRounding     = d.childRounding;
-		m_edit.popupRounding     = d.popupRounding;
-		m_edit.scrollbarRounding = d.scrollbarRounding;
-		m_edit.grabRounding      = d.grabRounding;
-		m_edit.tabRounding       = d.tabRounding;
-		m_edit.windowBorderSize  = d.windowBorderSize;
-		m_edit.frameBorderSize   = d.frameBorderSize;
-		m_edit.childBorderSize   = d.childBorderSize;
-		m_edit.popupBorderSize   = d.popupBorderSize;
-		m_edit.tabBarBorderSize  = d.tabBarBorderSize;
-		m_edit.indentSpacing     = d.indentSpacing;
-		m_edit.scrollbarSize     = d.scrollbarSize;
-		m_edit.grabMinSize       = d.grabMinSize;
-		m_edit.windowPadding     = d.windowPadding;
-		m_edit.framePadding      = d.framePadding;
-		m_edit.cellPadding       = d.cellPadding;
-		m_edit.itemSpacing       = d.itemSpacing;
-		m_edit.itemInnerSpacing  = d.itemInnerSpacing;
-	}
-
-	auto boolEdit = [](const char* label, float& field) {
-		bool b = field > 0.5f;
-		if (ImGui::Checkbox(label, &b))
-		{
-			field = b ? 1.0f : 0.0f;
-		}
-	};
-
-	ImGui::SeparatorText("Borders");
-	boolEdit("WindowBorderSize", m_edit.windowBorderSize);
-	boolEdit("FrameBorderSize", m_edit.frameBorderSize);
-	boolEdit("ChildBorderSize", m_edit.childBorderSize);
-	boolEdit("PopupBorderSize", m_edit.popupBorderSize);
-	boolEdit("TabBarBorderSize", m_edit.tabBarBorderSize);
-
-	auto v2Edit = [](const char* label, ImVec2& v) {
-		float a[2] = { v.x, v.y };
-		if (ImGui::DragFloat2(label, a, 0.1f, 0.0f, 40.0f, "%.0f"))
-		{
-			v.x = a[0];
-			v.y = a[1];
-		}
-	};
-
-	ImGui::SeparatorText("Spacing");
-	v2Edit("WindowPadding", m_edit.windowPadding);
-	v2Edit("FramePadding", m_edit.framePadding);
-	v2Edit("CellPadding", m_edit.cellPadding);
-	v2Edit("ItemSpacing", m_edit.itemSpacing);
-	v2Edit("ItemInnerSpacing", m_edit.itemInnerSpacing);
-	ImGui::SliderFloat("IndentSpacing", &m_edit.indentSpacing, 0.0f, 30.0f, "%.0f");
-	ImGui::SliderFloat("ScrollbarSize", &m_edit.scrollbarSize, 0.0f, 20.0f, "%.0f");
-	ImGui::SliderFloat("GrabMinSize", &m_edit.grabMinSize, 0.0f, 20.0f, "%.0f");
-
-	ImGui::SeparatorText("Rounding");
-	ImGui::SliderFloat("WindowRounding", &m_edit.windowRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("FrameRounding", &m_edit.frameRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("ChildRounding", &m_edit.childRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("PopupRounding", &m_edit.popupRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("ScrollbarRounding", &m_edit.scrollbarRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("GrabRounding", &m_edit.grabRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("TabRounding", &m_edit.tabRounding, 0.0f, 12.0f, "%.0f");
 }

@@ -70,6 +70,8 @@ public:
 
 	std::vector<CharIdent>  GetCharacterList();
 	std::vector<SettingRow> GetAllSettings(const std::string& server, const std::string& character);
+	std::vector<SettingRow> ApplySettingRows(const std::string& server, const std::string& character,
+		const std::vector<SettingRow>& rows);
 	void SetRaw(const std::string& server, const std::string& character,
 		const std::string& module, const std::string& name, const std::string& type, const std::string& value);
 	void DeleteSetting(const std::string& module, const std::string& name);

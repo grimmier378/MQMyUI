@@ -48,7 +48,7 @@ Proto/            (Phase 3) myui.proto peer messages
 
 - Modular (no 4,000-line monolith); each module owns its own settings.
 - SQLite is the single source of truth for settings (no duplicated metadata vectors).
-- Themes are DB-backed and editable in-game (ThemeZ), not hardcoded.
+- Themes are DB-backed and editable in-game (Themes window), not hardcoded.
 
 ## Status
 

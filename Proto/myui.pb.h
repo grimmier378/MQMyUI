@@ -28,6 +28,7 @@
 #include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 // @@protoc_insertion_point(includes)
 
@@ -55,6 +56,8 @@ extern const ::google::protobuf::internal::DescriptorTable descriptor_table_myui
 namespace mq {
 namespace proto {
 namespace myui {
+enum SettingsSync_Kind : int;
+extern const uint32_t SettingsSync_Kind_internal_data_[];
 class AAInfo;
 struct AAInfoDefaultTypeInternal;
 extern AAInfoDefaultTypeInternal _AAInfo_default_instance_;
@@ -87,21 +90,315 @@ class MyUIEnvelope;
 struct MyUIEnvelopeDefaultTypeInternal;
 extern MyUIEnvelopeDefaultTypeInternal _MyUIEnvelope_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull MyUIEnvelope_class_data_;
+class SettingRow;
+struct SettingRowDefaultTypeInternal;
+extern SettingRowDefaultTypeInternal _SettingRow_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SettingRow_class_data_;
+class SettingsSync;
+struct SettingsSyncDefaultTypeInternal;
+extern SettingsSyncDefaultTypeInternal _SettingsSync_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SettingsSync_class_data_;
 }  // namespace myui
 }  // namespace proto
 }  // namespace mq
 namespace google {
 namespace protobuf {
+template <>
+internal::EnumTraitsT<::mq::proto::myui::SettingsSync_Kind_internal_data_>
+    internal::EnumTraitsImpl::value<::mq::proto::myui::SettingsSync_Kind>;
 }  // namespace protobuf
 }  // namespace google
 
 namespace mq {
 namespace proto {
 namespace myui {
+enum SettingsSync_Kind : int {
+  SettingsSync_Kind_PUSH = 0,
+  SettingsSync_Kind_REPLY = 1,
+  SettingsSync_Kind_REQUEST = 2,
+  SettingsSync_Kind_SettingsSync_Kind_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  SettingsSync_Kind_SettingsSync_Kind_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t SettingsSync_Kind_internal_data_[];
+inline constexpr SettingsSync_Kind SettingsSync_Kind_Kind_MIN =
+    static_cast<SettingsSync_Kind>(0);
+inline constexpr SettingsSync_Kind SettingsSync_Kind_Kind_MAX =
+    static_cast<SettingsSync_Kind>(2);
+inline bool SettingsSync_Kind_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+inline constexpr int SettingsSync_Kind_Kind_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL SettingsSync_Kind_descriptor();
+template <typename T>
+const ::std::string& SettingsSync_Kind_Name(T value) {
+  static_assert(::std::is_same<T, SettingsSync_Kind>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to Kind_Name().");
+  return SettingsSync_Kind_Name(static_cast<SettingsSync_Kind>(value));
+}
+template <>
+inline const ::std::string& SettingsSync_Kind_Name(SettingsSync_Kind value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<SettingsSync_Kind_descriptor, 0, 2>(
+      static_cast<int>(value));
+}
+inline bool SettingsSync_Kind_Parse(
+    ::absl::string_view name, SettingsSync_Kind* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SettingsSync_Kind>(SettingsSync_Kind_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class SettingRow final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mq.proto.myui.SettingRow) */ {
+ public:
+  inline SettingRow() : SettingRow(nullptr) {}
+  ~SettingRow() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SettingRow* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SettingRow));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SettingRow(::google::protobuf::internal::ConstantInitialized);
+
+  inline SettingRow(const SettingRow& from) : SettingRow(nullptr, from) {}
+  inline SettingRow(SettingRow&& from) noexcept
+      : SettingRow(nullptr, ::std::move(from)) {}
+  inline SettingRow& operator=(const SettingRow& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SettingRow& operator=(SettingRow&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SettingRow& default_instance() {
+    return *reinterpret_cast<const SettingRow*>(
+        &_SettingRow_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(SettingRow& a, SettingRow& b) { a.Swap(&b); }
+  inline void Swap(SettingRow* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SettingRow* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SettingRow* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SettingRow>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SettingRow& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SettingRow& from) { SettingRow::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SettingRow* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mq.proto.myui.SettingRow"; }
+
+  explicit SettingRow(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SettingRow(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SettingRow& from);
+  SettingRow(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SettingRow&& from) noexcept
+      : SettingRow(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kModuleFieldNumber = 1,
+    kNameFieldNumber = 2,
+    kTypeFieldNumber = 3,
+    kValueFieldNumber = 4,
+  };
+  // string module = 1;
+  void clear_module() ;
+  const ::std::string& module() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_module(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_module();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_module();
+  void set_allocated_module(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_module() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_module(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_module();
+
+  public:
+  // string name = 2;
+  void clear_name() ;
+  const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // string type = 3;
+  void clear_type() ;
+  const ::std::string& type() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_type(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_type();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_type();
+  void set_allocated_type(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_type() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_type(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_type();
+
+  public:
+  // string value = 4;
+  void clear_value() ;
+  const ::std::string& value() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_value(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_value();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_value();
+  void set_allocated_value(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_value() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_value(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_value();
+
+  public:
+  // @@protoc_insertion_point(class_scope:mq.proto.myui.SettingRow)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 52,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SettingRow& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr module_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
+    ::google::protobuf::internal::ArenaStringPtr type_;
+    ::google::protobuf::internal::ArenaStringPtr value_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_myui_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SettingRow_class_data_;
 // -------------------------------------------------------------------
 
 class InventoryItemCount final : public ::google::protobuf::Message
@@ -746,6 +1043,8 @@ class CharVitals final : public ::google::protobuf::Message
     kZoneNameFieldNumber = 12,
     kPetNameFieldNumber = 18,
     kGroupLeaderFieldNumber = 19,
+    kStorageIdFieldNumber = 21,
+    kHostFieldNumber = 22,
     kLevelFieldNumber = 4,
     kCurHpFieldNumber = 5,
     kMaxHpFieldNumber = 6,
@@ -849,6 +1148,36 @@ class CharVitals final : public ::google::protobuf::Message
   const ::std::string& _internal_group_leader() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_group_leader(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_group_leader();
+
+  public:
+  // string storage_id = 21;
+  void clear_storage_id() ;
+  const ::std::string& storage_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_storage_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_storage_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_storage_id();
+  void set_allocated_storage_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_storage_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_storage_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_storage_id();
+
+  public:
+  // string host = 22;
+  void clear_host() ;
+  const ::std::string& host() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_host(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_host();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_host();
+  void set_allocated_host(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_host() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_host(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_host();
 
   public:
   // int32 level = 4;
@@ -995,8 +1324,8 @@ class CharVitals final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<5, 20,
-                                   0, 104,
+  static const ::google::protobuf::internal::TcParseTable<5, 22,
+                                   0, 118,
                                    2>
       _table_;
 
@@ -1023,6 +1352,8 @@ class CharVitals final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr zone_name_;
     ::google::protobuf::internal::ArenaStringPtr pet_name_;
     ::google::protobuf::internal::ArenaStringPtr group_leader_;
+    ::google::protobuf::internal::ArenaStringPtr storage_id_;
+    ::google::protobuf::internal::ArenaStringPtr host_;
     ::int32_t level_;
     ::int32_t cur_hp_;
     ::int32_t max_hp_;
@@ -1677,6 +2008,316 @@ class AAInfo final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull AAInfo_class_data_;
 // -------------------------------------------------------------------
 
+class SettingsSync final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:mq.proto.myui.SettingsSync) */ {
+ public:
+  inline SettingsSync() : SettingsSync(nullptr) {}
+  ~SettingsSync() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SettingsSync* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SettingsSync));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SettingsSync(::google::protobuf::internal::ConstantInitialized);
+
+  inline SettingsSync(const SettingsSync& from) : SettingsSync(nullptr, from) {}
+  inline SettingsSync(SettingsSync&& from) noexcept
+      : SettingsSync(nullptr, ::std::move(from)) {}
+  inline SettingsSync& operator=(const SettingsSync& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SettingsSync& operator=(SettingsSync&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SettingsSync& default_instance() {
+    return *reinterpret_cast<const SettingsSync*>(
+        &_SettingsSync_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(SettingsSync& a, SettingsSync& b) { a.Swap(&b); }
+  inline void Swap(SettingsSync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SettingsSync* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SettingsSync* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SettingsSync>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SettingsSync& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SettingsSync& from) { SettingsSync::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SettingsSync* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "mq.proto.myui.SettingsSync"; }
+
+  explicit SettingsSync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SettingsSync(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SettingsSync& from);
+  SettingsSync(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SettingsSync&& from) noexcept
+      : SettingsSync(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+  using Kind = SettingsSync_Kind;
+  static constexpr Kind PUSH = SettingsSync_Kind_PUSH;
+  static constexpr Kind REPLY = SettingsSync_Kind_REPLY;
+  static constexpr Kind REQUEST = SettingsSync_Kind_REQUEST;
+  static inline bool Kind_IsValid(int value) {
+    return SettingsSync_Kind_IsValid(value);
+  }
+  static constexpr Kind Kind_MIN = SettingsSync_Kind_Kind_MIN;
+  static constexpr Kind Kind_MAX = SettingsSync_Kind_Kind_MAX;
+  static constexpr int Kind_ARRAYSIZE = SettingsSync_Kind_Kind_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL Kind_descriptor() {
+    return SettingsSync_Kind_descriptor();
+  }
+  template <typename T>
+  static inline const ::std::string& Kind_Name(T value) {
+    return SettingsSync_Kind_Name(value);
+  }
+  static inline bool Kind_Parse(
+      ::absl::string_view name, Kind* PROTOBUF_NONNULL value) {
+    return SettingsSync_Kind_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRowsFieldNumber = 6,
+    kFromServerFieldNumber = 1,
+    kFromCharFieldNumber = 2,
+    kToServerFieldNumber = 3,
+    kToCharFieldNumber = 4,
+    kKindFieldNumber = 5,
+    kFullFieldNumber = 7,
+  };
+  // repeated .mq.proto.myui.SettingRow rows = 6;
+  int rows_size() const;
+  private:
+  int _internal_rows_size() const;
+
+  public:
+  void clear_rows() ;
+  ::mq::proto::myui::SettingRow* PROTOBUF_NONNULL mutable_rows(int index);
+  ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>* PROTOBUF_NONNULL mutable_rows();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>& _internal_rows() const;
+  ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>* PROTOBUF_NONNULL _internal_mutable_rows();
+  public:
+  const ::mq::proto::myui::SettingRow& rows(int index) const;
+  ::mq::proto::myui::SettingRow* PROTOBUF_NONNULL add_rows();
+  const ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>& rows() const;
+  // string from_server = 1;
+  void clear_from_server() ;
+  const ::std::string& from_server() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_from_server(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_from_server();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_from_server();
+  void set_allocated_from_server(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_from_server() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_from_server(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_from_server();
+
+  public:
+  // string from_char = 2;
+  void clear_from_char() ;
+  const ::std::string& from_char() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_from_char(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_from_char();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_from_char();
+  void set_allocated_from_char(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_from_char() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_from_char(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_from_char();
+
+  public:
+  // string to_server = 3;
+  void clear_to_server() ;
+  const ::std::string& to_server() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_to_server(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_to_server();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_to_server();
+  void set_allocated_to_server(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_to_server() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_to_server(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_to_server();
+
+  public:
+  // string to_char = 4;
+  void clear_to_char() ;
+  const ::std::string& to_char() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_to_char(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_to_char();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_to_char();
+  void set_allocated_to_char(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_to_char() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_to_char(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_to_char();
+
+  public:
+  // .mq.proto.myui.SettingsSync.Kind kind = 5;
+  void clear_kind() ;
+  ::mq::proto::myui::SettingsSync_Kind kind() const;
+  void set_kind(::mq::proto::myui::SettingsSync_Kind value);
+
+  private:
+  ::mq::proto::myui::SettingsSync_Kind _internal_kind() const;
+  void _internal_set_kind(::mq::proto::myui::SettingsSync_Kind value);
+
+  public:
+  // bool full = 7;
+  void clear_full() ;
+  bool full() const;
+  void set_full(bool value);
+
+  private:
+  bool _internal_full() const;
+  void _internal_set_full(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:mq.proto.myui.SettingsSync)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
+                                   1, 71,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SettingsSync& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::mq::proto::myui::SettingRow > rows_;
+    ::google::protobuf::internal::ArenaStringPtr from_server_;
+    ::google::protobuf::internal::ArenaStringPtr from_char_;
+    ::google::protobuf::internal::ArenaStringPtr to_server_;
+    ::google::protobuf::internal::ArenaStringPtr to_char_;
+    int kind_;
+    bool full_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_myui_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SettingsSync_class_data_;
+// -------------------------------------------------------------------
+
 class InventorySnapshot final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:mq.proto.myui.InventorySnapshot) */ {
  public:
@@ -2241,9 +2882,10 @@ class MyUIEnvelope final : public ::google::protobuf::Message
     kBuffs = 3,
     kCommand = 4,
     kInventory = 5,
+    kSettings = 6,
     PAYLOAD_NOT_SET = 0,
   };
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(MyUIEnvelope& a, MyUIEnvelope& b) { a.Swap(&b); }
   inline void Swap(MyUIEnvelope* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2335,6 +2977,7 @@ class MyUIEnvelope final : public ::google::protobuf::Message
     kBuffsFieldNumber = 3,
     kCommandFieldNumber = 4,
     kInventoryFieldNumber = 5,
+    kSettingsFieldNumber = 6,
   };
   // .mq.proto.myui.CharVitals vitals = 1;
   bool has_vitals() const;
@@ -2431,6 +3074,25 @@ class MyUIEnvelope final : public ::google::protobuf::Message
   ::mq::proto::myui::InventorySnapshot* PROTOBUF_NONNULL _internal_mutable_inventory();
 
   public:
+  // .mq.proto.myui.SettingsSync settings = 6;
+  bool has_settings() const;
+  private:
+  bool _internal_has_settings() const;
+
+  public:
+  void clear_settings() ;
+  const ::mq::proto::myui::SettingsSync& settings() const;
+  [[nodiscard]] ::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE release_settings();
+  ::mq::proto::myui::SettingsSync* PROTOBUF_NONNULL mutable_settings();
+  void set_allocated_settings(::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_settings(::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE value);
+  ::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE unsafe_arena_release_settings();
+
+  private:
+  const ::mq::proto::myui::SettingsSync& _internal_settings() const;
+  ::mq::proto::myui::SettingsSync* PROTOBUF_NONNULL _internal_mutable_settings();
+
+  public:
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:mq.proto.myui.MyUIEnvelope)
@@ -2441,11 +3103,12 @@ class MyUIEnvelope final : public ::google::protobuf::Message
   void set_has_buffs();
   void set_has_command();
   void set_has_inventory();
+  void set_has_settings();
   inline bool has_payload() const;
   inline void clear_has_payload();
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 5,
-                                   5, 0,
+  static const ::google::protobuf::internal::TcParseTable<0, 6,
+                                   6, 0,
                                    2>
       _table_;
 
@@ -2472,6 +3135,7 @@ class MyUIEnvelope final : public ::google::protobuf::Message
       ::google::protobuf::Message* PROTOBUF_NULLABLE buffs_;
       ::google::protobuf::Message* PROTOBUF_NULLABLE command_;
       ::google::protobuf::Message* PROTOBUF_NULLABLE inventory_;
+      ::google::protobuf::Message* PROTOBUF_NULLABLE settings_;
     } payload_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t _oneof_case_[1];
@@ -2699,7 +3363,7 @@ inline void CharVitals::clear_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000040U);
+                  0x00000100U);
 }
 inline ::int32_t CharVitals::level() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.level)
@@ -2707,7 +3371,7 @@ inline ::int32_t CharVitals::level() const {
 }
 inline void CharVitals::set_level(::int32_t value) {
   _internal_set_level(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.level)
 }
 inline ::int32_t CharVitals::_internal_level() const {
@@ -2724,7 +3388,7 @@ inline void CharVitals::clear_cur_hp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cur_hp_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000080U);
+                  0x00000200U);
 }
 inline ::int32_t CharVitals::cur_hp() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.cur_hp)
@@ -2732,7 +3396,7 @@ inline ::int32_t CharVitals::cur_hp() const {
 }
 inline void CharVitals::set_cur_hp(::int32_t value) {
   _internal_set_cur_hp(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.cur_hp)
 }
 inline ::int32_t CharVitals::_internal_cur_hp() const {
@@ -2749,7 +3413,7 @@ inline void CharVitals::clear_max_hp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_hp_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000100U);
+                  0x00000400U);
 }
 inline ::int32_t CharVitals::max_hp() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.max_hp)
@@ -2757,7 +3421,7 @@ inline ::int32_t CharVitals::max_hp() const {
 }
 inline void CharVitals::set_max_hp(::int32_t value) {
   _internal_set_max_hp(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.max_hp)
 }
 inline ::int32_t CharVitals::_internal_max_hp() const {
@@ -2774,7 +3438,7 @@ inline void CharVitals::clear_cur_mana() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cur_mana_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000200U);
+                  0x00000800U);
 }
 inline ::int32_t CharVitals::cur_mana() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.cur_mana)
@@ -2782,7 +3446,7 @@ inline ::int32_t CharVitals::cur_mana() const {
 }
 inline void CharVitals::set_cur_mana(::int32_t value) {
   _internal_set_cur_mana(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.cur_mana)
 }
 inline ::int32_t CharVitals::_internal_cur_mana() const {
@@ -2799,7 +3463,7 @@ inline void CharVitals::clear_max_mana() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_mana_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000400U);
+                  0x00001000U);
 }
 inline ::int32_t CharVitals::max_mana() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.max_mana)
@@ -2807,7 +3471,7 @@ inline ::int32_t CharVitals::max_mana() const {
 }
 inline void CharVitals::set_max_mana(::int32_t value) {
   _internal_set_max_mana(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.max_mana)
 }
 inline ::int32_t CharVitals::_internal_max_mana() const {
@@ -2824,7 +3488,7 @@ inline void CharVitals::clear_cur_end() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.cur_end_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000800U);
+                  0x00002000U);
 }
 inline ::int32_t CharVitals::cur_end() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.cur_end)
@@ -2832,7 +3496,7 @@ inline ::int32_t CharVitals::cur_end() const {
 }
 inline void CharVitals::set_cur_end(::int32_t value) {
   _internal_set_cur_end(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.cur_end)
 }
 inline ::int32_t CharVitals::_internal_cur_end() const {
@@ -2849,7 +3513,7 @@ inline void CharVitals::clear_max_end() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_end_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00001000U);
+                  0x00004000U);
 }
 inline ::int32_t CharVitals::max_end() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.max_end)
@@ -2857,7 +3521,7 @@ inline ::int32_t CharVitals::max_end() const {
 }
 inline void CharVitals::set_max_end(::int32_t value) {
   _internal_set_max_end(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.max_end)
 }
 inline ::int32_t CharVitals::_internal_max_end() const {
@@ -2874,7 +3538,7 @@ inline void CharVitals::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00002000U);
+                  0x00008000U);
 }
 inline ::int32_t CharVitals::zone_id() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.zone_id)
@@ -2882,7 +3546,7 @@ inline ::int32_t CharVitals::zone_id() const {
 }
 inline void CharVitals::set_zone_id(::int32_t value) {
   _internal_set_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.zone_id)
 }
 inline ::int32_t CharVitals::_internal_zone_id() const {
@@ -2964,7 +3628,7 @@ inline void CharVitals::clear_pct_aggro() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pct_aggro_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00004000U);
+                  0x00010000U);
 }
 inline ::int32_t CharVitals::pct_aggro() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.pct_aggro)
@@ -2972,7 +3636,7 @@ inline ::int32_t CharVitals::pct_aggro() const {
 }
 inline void CharVitals::set_pct_aggro(::int32_t value) {
   _internal_set_pct_aggro(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.pct_aggro)
 }
 inline ::int32_t CharVitals::_internal_pct_aggro() const {
@@ -2989,7 +3653,7 @@ inline void CharVitals::clear_stand_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stand_state_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00008000U);
+                  0x00020000U);
 }
 inline ::int32_t CharVitals::stand_state() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.stand_state)
@@ -2997,7 +3661,7 @@ inline ::int32_t CharVitals::stand_state() const {
 }
 inline void CharVitals::set_stand_state(::int32_t value) {
   _internal_set_stand_state(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.stand_state)
 }
 inline ::int32_t CharVitals::_internal_stand_state() const {
@@ -3014,7 +3678,7 @@ inline void CharVitals::clear_velocity() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.velocity_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00010000U);
+                  0x00040000U);
 }
 inline float CharVitals::velocity() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.velocity)
@@ -3022,7 +3686,7 @@ inline float CharVitals::velocity() const {
 }
 inline void CharVitals::set_velocity(float value) {
   _internal_set_velocity(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.velocity)
 }
 inline float CharVitals::_internal_velocity() const {
@@ -3039,7 +3703,7 @@ inline void CharVitals::clear_pet_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_id_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00020000U);
+                  0x00080000U);
 }
 inline ::int32_t CharVitals::pet_id() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.pet_id)
@@ -3047,7 +3711,7 @@ inline ::int32_t CharVitals::pet_id() const {
 }
 inline void CharVitals::set_pet_id(::int32_t value) {
   _internal_set_pet_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.pet_id)
 }
 inline ::int32_t CharVitals::_internal_pet_id() const {
@@ -3064,7 +3728,7 @@ inline void CharVitals::clear_pet_pct_hp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_pct_hp_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00040000U);
+                  0x00100000U);
 }
 inline ::int32_t CharVitals::pet_pct_hp() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.pet_pct_hp)
@@ -3072,7 +3736,7 @@ inline ::int32_t CharVitals::pet_pct_hp() const {
 }
 inline void CharVitals::set_pet_pct_hp(::int32_t value) {
   _internal_set_pet_pct_hp(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.pet_pct_hp)
 }
 inline ::int32_t CharVitals::_internal_pet_pct_hp() const {
@@ -3219,7 +3883,7 @@ inline void CharVitals::clear_role_mask() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_mask_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00080000U);
+                  0x00200000U);
 }
 inline ::int32_t CharVitals::role_mask() const {
   // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.role_mask)
@@ -3227,7 +3891,7 @@ inline ::int32_t CharVitals::role_mask() const {
 }
 inline void CharVitals::set_role_mask(::int32_t value) {
   _internal_set_role_mask(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
   // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.role_mask)
 }
 inline ::int32_t CharVitals::_internal_role_mask() const {
@@ -3237,6 +3901,136 @@ inline ::int32_t CharVitals::_internal_role_mask() const {
 inline void CharVitals::_internal_set_role_mask(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_mask_ = value;
+}
+
+// string storage_id = 21;
+inline void CharVitals::clear_storage_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.storage_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000040U);
+}
+inline const ::std::string& CharVitals::storage_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.storage_id)
+  return _internal_storage_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CharVitals::set_storage_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  _impl_.storage_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.storage_id)
+}
+inline ::std::string* PROTOBUF_NONNULL CharVitals::mutable_storage_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ::std::string* _s = _internal_mutable_storage_id();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.CharVitals.storage_id)
+  return _s;
+}
+inline const ::std::string& CharVitals::_internal_storage_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.storage_id_.Get();
+}
+inline void CharVitals::_internal_set_storage_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.storage_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CharVitals::_internal_mutable_storage_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.storage_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CharVitals::release_storage_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.CharVitals.storage_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000040U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  auto* released = _impl_.storage_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.storage_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CharVitals::set_allocated_storage_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  }
+  _impl_.storage_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.storage_id_.IsDefault()) {
+    _impl_.storage_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.CharVitals.storage_id)
+}
+
+// string host = 22;
+inline void CharVitals::clear_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000080U);
+}
+inline const ::std::string& CharVitals::host() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.host)
+  return _internal_host();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CharVitals::set_host(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  _impl_.host_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.host)
+}
+inline ::std::string* PROTOBUF_NONNULL CharVitals::mutable_host()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ::std::string* _s = _internal_mutable_host();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.CharVitals.host)
+  return _s;
+}
+inline const ::std::string& CharVitals::_internal_host() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.host_.Get();
+}
+inline void CharVitals::_internal_set_host(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.host_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CharVitals::_internal_mutable_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.host_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CharVitals::release_host() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.CharVitals.host)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000080U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  auto* released = _impl_.host_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.host_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CharVitals::set_allocated_host(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  }
+  _impl_.host_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.host_.IsDefault()) {
+    _impl_.host_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.CharVitals.host)
 }
 
 // -------------------------------------------------------------------
@@ -5019,6 +5813,640 @@ inline void InventorySnapshot::set_allocated_remove(::std::string* PROTOBUF_NULL
 
 // -------------------------------------------------------------------
 
+// SettingRow
+
+// string module = 1;
+inline void SettingRow::clear_module() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.module_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SettingRow::module() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingRow.module)
+  return _internal_module();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingRow::set_module(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.module_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingRow.module)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::mutable_module()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_module();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingRow.module)
+  return _s;
+}
+inline const ::std::string& SettingRow::_internal_module() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.module_.Get();
+}
+inline void SettingRow::_internal_set_module(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.module_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::_internal_mutable_module() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.module_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingRow::release_module() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingRow.module)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.module_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.module_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingRow::set_allocated_module(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.module_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.module_.IsDefault()) {
+    _impl_.module_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingRow.module)
+}
+
+// string name = 2;
+inline void SettingRow::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& SettingRow::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingRow.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingRow::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingRow.name)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingRow.name)
+  return _s;
+}
+inline const ::std::string& SettingRow::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void SettingRow::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingRow::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingRow.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingRow::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingRow.name)
+}
+
+// string type = 3;
+inline void SettingRow::clear_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& SettingRow::type() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingRow.type)
+  return _internal_type();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingRow::set_type(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingRow.type)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::mutable_type()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_type();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingRow.type)
+  return _s;
+}
+inline const ::std::string& SettingRow::_internal_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.type_.Get();
+}
+inline void SettingRow::_internal_set_type(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::_internal_mutable_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.type_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingRow::release_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingRow.type)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.type_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.type_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingRow::set_allocated_type(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.type_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.type_.IsDefault()) {
+    _impl_.type_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingRow.type)
+}
+
+// string value = 4;
+inline void SettingRow::clear_value() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.value_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline const ::std::string& SettingRow::value() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingRow.value)
+  return _internal_value();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingRow::set_value(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.value_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingRow.value)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::mutable_value()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_value();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingRow.value)
+  return _s;
+}
+inline const ::std::string& SettingRow::_internal_value() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.value_.Get();
+}
+inline void SettingRow::_internal_set_value(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.value_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingRow::_internal_mutable_value() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.value_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingRow::release_value() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingRow.value)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.value_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.value_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingRow::set_allocated_value(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.value_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.value_.IsDefault()) {
+    _impl_.value_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingRow.value)
+}
+
+// -------------------------------------------------------------------
+
+// SettingsSync
+
+// string from_server = 1;
+inline void SettingsSync::clear_from_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_server_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& SettingsSync::from_server() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.from_server)
+  return _internal_from_server();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingsSync::set_from_server(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.from_server_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.from_server)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::mutable_from_server()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_from_server();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingsSync.from_server)
+  return _s;
+}
+inline const ::std::string& SettingsSync::_internal_from_server() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.from_server_.Get();
+}
+inline void SettingsSync::_internal_set_from_server(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_server_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::_internal_mutable_from_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.from_server_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingsSync::release_from_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingsSync.from_server)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.from_server_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.from_server_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingsSync::set_allocated_from_server(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.from_server_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.from_server_.IsDefault()) {
+    _impl_.from_server_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingsSync.from_server)
+}
+
+// string from_char = 2;
+inline void SettingsSync::clear_from_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_char_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& SettingsSync::from_char() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.from_char)
+  return _internal_from_char();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingsSync::set_from_char(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.from_char_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.from_char)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::mutable_from_char()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_from_char();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingsSync.from_char)
+  return _s;
+}
+inline const ::std::string& SettingsSync::_internal_from_char() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.from_char_.Get();
+}
+inline void SettingsSync::_internal_set_from_char(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.from_char_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::_internal_mutable_from_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.from_char_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingsSync::release_from_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingsSync.from_char)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.from_char_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.from_char_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingsSync::set_allocated_from_char(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.from_char_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.from_char_.IsDefault()) {
+    _impl_.from_char_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingsSync.from_char)
+}
+
+// string to_server = 3;
+inline void SettingsSync::clear_to_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_server_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline const ::std::string& SettingsSync::to_server() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.to_server)
+  return _internal_to_server();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingsSync::set_to_server(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.to_server_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.to_server)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::mutable_to_server()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_to_server();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingsSync.to_server)
+  return _s;
+}
+inline const ::std::string& SettingsSync::_internal_to_server() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.to_server_.Get();
+}
+inline void SettingsSync::_internal_set_to_server(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_server_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::_internal_mutable_to_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.to_server_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingsSync::release_to_server() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingsSync.to_server)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.to_server_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.to_server_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingsSync::set_allocated_to_server(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.to_server_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.to_server_.IsDefault()) {
+    _impl_.to_server_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingsSync.to_server)
+}
+
+// string to_char = 4;
+inline void SettingsSync::clear_to_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_char_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline const ::std::string& SettingsSync::to_char() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.to_char)
+  return _internal_to_char();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SettingsSync::set_to_char(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  _impl_.to_char_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.to_char)
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::mutable_to_char()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::std::string* _s = _internal_mutable_to_char();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingsSync.to_char)
+  return _s;
+}
+inline const ::std::string& SettingsSync::_internal_to_char() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.to_char_.Get();
+}
+inline void SettingsSync::_internal_set_to_char(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.to_char_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SettingsSync::_internal_mutable_to_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.to_char_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SettingsSync::release_to_char() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:mq.proto.myui.SettingsSync.to_char)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000010U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  auto* released = _impl_.to_char_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.to_char_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SettingsSync::set_allocated_to_char(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  _impl_.to_char_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.to_char_.IsDefault()) {
+    _impl_.to_char_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.SettingsSync.to_char)
+}
+
+// .mq.proto.myui.SettingsSync.Kind kind = 5;
+inline void SettingsSync::clear_kind() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.kind_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline ::mq::proto::myui::SettingsSync_Kind SettingsSync::kind() const {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.kind)
+  return _internal_kind();
+}
+inline void SettingsSync::set_kind(::mq::proto::myui::SettingsSync_Kind value) {
+  _internal_set_kind(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.kind)
+}
+inline ::mq::proto::myui::SettingsSync_Kind SettingsSync::_internal_kind() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::mq::proto::myui::SettingsSync_Kind>(_impl_.kind_);
+}
+inline void SettingsSync::_internal_set_kind(::mq::proto::myui::SettingsSync_Kind value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.kind_ = value;
+}
+
+// repeated .mq.proto.myui.SettingRow rows = 6;
+inline int SettingsSync::_internal_rows_size() const {
+  return static_cast<int>(_internal_rows().size());
+}
+inline int SettingsSync::rows_size() const {
+  return _internal_rows_size();
+}
+inline void SettingsSync::clear_rows() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rows_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::mq::proto::myui::SettingRow* PROTOBUF_NONNULL SettingsSync::mutable_rows(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.SettingsSync.rows)
+  return _internal_mutable_rows()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>* PROTOBUF_NONNULL SettingsSync::mutable_rows()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:mq.proto.myui.SettingsSync.rows)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_rows();
+}
+inline const ::mq::proto::myui::SettingRow& SettingsSync::rows(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.rows)
+  return _internal_rows().Get(index);
+}
+inline ::mq::proto::myui::SettingRow* PROTOBUF_NONNULL SettingsSync::add_rows()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::mq::proto::myui::SettingRow* _add =
+      _internal_mutable_rows()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:mq.proto.myui.SettingsSync.rows)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>& SettingsSync::rows() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:mq.proto.myui.SettingsSync.rows)
+  return _internal_rows();
+}
+inline const ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>&
+SettingsSync::_internal_rows() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rows_;
+}
+inline ::google::protobuf::RepeatedPtrField<::mq::proto::myui::SettingRow>* PROTOBUF_NONNULL
+SettingsSync::_internal_mutable_rows() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.rows_;
+}
+
+// bool full = 7;
+inline void SettingsSync::clear_full() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.full_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000040U);
+}
+inline bool SettingsSync::full() const {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.SettingsSync.full)
+  return _internal_full();
+}
+inline void SettingsSync::set_full(bool value) {
+  _internal_set_full(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:mq.proto.myui.SettingsSync.full)
+}
+inline bool SettingsSync::_internal_full() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.full_;
+}
+inline void SettingsSync::_internal_set_full(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.full_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // MyUIEnvelope
 
 // .mq.proto.myui.CharVitals vitals = 1;
@@ -5431,6 +6859,88 @@ inline ::mq::proto::myui::InventorySnapshot* PROTOBUF_NONNULL MyUIEnvelope::muta
   return _msg;
 }
 
+// .mq.proto.myui.SettingsSync settings = 6;
+inline bool MyUIEnvelope::has_settings() const {
+  return payload_case() == kSettings;
+}
+inline bool MyUIEnvelope::_internal_has_settings() const {
+  return payload_case() == kSettings;
+}
+inline void MyUIEnvelope::set_has_settings() {
+  _impl_._oneof_case_[0] = kSettings;
+}
+inline void MyUIEnvelope::clear_settings() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (payload_case() == kSettings) {
+    if (GetArena() == nullptr) {
+      delete _impl_.payload_.settings_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.payload_.settings_);
+    }
+    clear_has_payload();
+  }
+}
+inline ::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE MyUIEnvelope::release_settings() {
+  // @@protoc_insertion_point(field_release:mq.proto.myui.MyUIEnvelope.settings)
+  if (payload_case() == kSettings) {
+    clear_has_payload();
+    auto* temp = reinterpret_cast<::mq::proto::myui::SettingsSync*>(_impl_.payload_.settings_);
+    if (GetArena() != nullptr) {
+      temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.payload_.settings_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::mq::proto::myui::SettingsSync& MyUIEnvelope::_internal_settings() const {
+  return payload_case() == kSettings ? static_cast<const ::mq::proto::myui::SettingsSync&>(*reinterpret_cast<::mq::proto::myui::SettingsSync*>(_impl_.payload_.settings_))
+                     : reinterpret_cast<const ::mq::proto::myui::SettingsSync&>(::mq::proto::myui::_SettingsSync_default_instance_);
+}
+inline const ::mq::proto::myui::SettingsSync& MyUIEnvelope::settings() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.MyUIEnvelope.settings)
+  return _internal_settings();
+}
+inline ::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE MyUIEnvelope::unsafe_arena_release_settings() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:mq.proto.myui.MyUIEnvelope.settings)
+  if (payload_case() == kSettings) {
+    clear_has_payload();
+    auto* temp = reinterpret_cast<::mq::proto::myui::SettingsSync*>(_impl_.payload_.settings_);
+    _impl_.payload_.settings_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void MyUIEnvelope::unsafe_arena_set_allocated_settings(
+    ::mq::proto::myui::SettingsSync* PROTOBUF_NULLABLE value) {
+  // We rely on the oneof clear method to free the earlier contents
+  // of this oneof. We can directly use the pointer we're given to
+  // set the new value.
+  clear_payload();
+  if (value) {
+    set_has_settings();
+    _impl_.payload_.settings_ = reinterpret_cast<::google::protobuf::Message*>(value);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:mq.proto.myui.MyUIEnvelope.settings)
+}
+inline ::mq::proto::myui::SettingsSync* PROTOBUF_NONNULL MyUIEnvelope::_internal_mutable_settings() {
+  if (payload_case() != kSettings) {
+    clear_payload();
+    set_has_settings();
+    _impl_.payload_.settings_ = reinterpret_cast<::google::protobuf::Message*>(
+        ::google::protobuf::Message::DefaultConstruct<::mq::proto::myui::SettingsSync>(GetArena()));
+  }
+  return reinterpret_cast<::mq::proto::myui::SettingsSync*>(_impl_.payload_.settings_);
+}
+inline ::mq::proto::myui::SettingsSync* PROTOBUF_NONNULL MyUIEnvelope::mutable_settings()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::mq::proto::myui::SettingsSync* _msg = _internal_mutable_settings();
+  // @@protoc_insertion_point(field_mutable:mq.proto.myui.MyUIEnvelope.settings)
+  return _msg;
+}
+
 inline bool MyUIEnvelope::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -5449,6 +6959,19 @@ inline MyUIEnvelope::PayloadCase MyUIEnvelope::payload_case() const {
 }  // namespace proto
 }  // namespace mq
 
+
+namespace google {
+namespace protobuf {
+
+template <>
+struct is_proto_enum<::mq::proto::myui::SettingsSync_Kind> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::mq::proto::myui::SettingsSync_Kind>() {
+  return ::mq::proto::myui::SettingsSync_Kind_descriptor();
+}
+
+}  // namespace protobuf
+}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

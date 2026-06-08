@@ -23,6 +23,8 @@ message CharVitals {
     string pet_name = 18;
     string group_leader = 19;
     int32 role_mask = 20;
+    string storage_id = 21;
+    string host = 22;
 }
 
 message AAInfo {
@@ -80,6 +82,28 @@ message InventorySnapshot {
     string remove = 5;
 }
 
+message SettingRow {
+    string module = 1;
+    string name = 2;
+    string type = 3;
+    string value = 4;
+}
+
+message SettingsSync {
+    enum Kind {
+        PUSH = 0;
+        REPLY = 1;
+        REQUEST = 2;
+    }
+    string from_server = 1;
+    string from_char = 2;
+    string to_server = 3;
+    string to_char = 4;
+    Kind kind = 5;
+    repeated SettingRow rows = 6;
+    bool full = 7;
+}
+
 message MyUIEnvelope {
     oneof payload {
         CharVitals vitals = 1;
@@ -87,5 +111,6 @@ message MyUIEnvelope {
         BuffList buffs = 3;
         Command command = 4;
         InventorySnapshot inventory = 5;
+        SettingsSync settings = 6;
     }
 }

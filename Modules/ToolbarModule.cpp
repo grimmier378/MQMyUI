@@ -94,10 +94,10 @@ void ToolbarModule::OnRenderGUI()
 		ImGui::PopID();
 
 		place();
-		ImGui::PushID("MyInventory");
+		ImGui::PushID("Inventory");
 		if (IconButton(3515, icon, "Inventory"))
 		{
-			ui->ToggleVisible("MyInventory");
+			ui->ToggleVisible("Inventory");
 		}
 		ImGui::PopID();
 
@@ -110,10 +110,10 @@ void ToolbarModule::OnRenderGUI()
 		ImGui::PopID();
 
 		place();
-		ImGui::PushID("MyAA");
+		ImGui::PushID("AA");
 		if (IconButton(2305, icon, "AA"))
 		{
-			ui->ToggleVisible("MyAA");
+			ui->ToggleVisible("AA");
 		}
 		ImGui::PopID();
 	}

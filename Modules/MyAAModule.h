@@ -8,7 +8,7 @@
 class MyAAModule : public ModuleBase
 {
 public:
-	const char* GetName() const override { return "MyAA"; }
+	const char* GetName() const override { return "AA"; }
 
 	void OnRenderGUI() override;
 	void OnPulse() override;

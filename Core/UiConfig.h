@@ -54,6 +54,7 @@ struct WindowConfig
 {
 	bool  visible   = false;
 	bool  locked    = false;
+	bool  internal  = false;
 	float textScale = 1.0f;
 	float iconScale = 1.0f;
 
