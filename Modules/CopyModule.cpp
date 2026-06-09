@@ -2,6 +2,7 @@
 
 #include "../Core/UiConfig.h"
 #include "../Core/ActorManager.h"
+#include "../Core/Widgets.h"
 
 #include "mq/imgui/ImGuiUtils.h"
 
@@ -300,7 +301,7 @@ void CopyModule::OnRenderGUI()
 		const bool ready = (m_srcIdx >= 0 && !m_dstSel.empty());
 
 		ImGui::BeginDisabled(!ready);
-		if (ImGui::Button("Copy All Differences"))
+		if (myui::StyledButton("Copy All Differences"))
 		{
 			for (const SettingRow& s : m_src)
 			{
@@ -337,7 +338,7 @@ void CopyModule::OnRenderGUI()
 					continue;
 				}
 
-				if (ImGui::SmallButton((std::string("Copy section##") + module).c_str()))
+				if (myui::StyledSmallButton((std::string("Copy section##") + module).c_str()))
 				{
 					for (const std::string& n : names)
 					{
@@ -380,7 +381,7 @@ void CopyModule::OnRenderGUI()
 						ImGui::TableNextColumn();
 						if (s && differ)
 						{
-							if (ImGui::SmallButton((std::string("->##") + module + n).c_str()))
+							if (myui::StyledSmallButton((std::string("->##") + module + n).c_str()))
 							{
 								QueueCopy(module, n, s->type, s->value);
 								RequestApply();

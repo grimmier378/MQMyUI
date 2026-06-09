@@ -5,6 +5,7 @@
 #include "../Core/ActorManager.h"
 #include "../Core/InventoryData.h"
 #include "../Core/CharData.h"
+#include "../Core/Widgets.h"
 
 void ITrackModule::OnRenderGUI()
 {
@@ -42,7 +43,7 @@ void ITrackModule::OnRenderGUI()
 		bool entered = ImGui::InputTextWithHint("##additem", "Enter Item Name...", m_input, sizeof(m_input),
 			ImGuiInputTextFlags_EnterReturnsTrue);
 		ImGui::SameLine();
-		if (ImGui::Button("Add") || entered)
+		if (myui::StyledButton("Add") || entered)
 		{
 			if (m_input[0] != 0)
 			{
@@ -53,7 +54,7 @@ void ITrackModule::OnRenderGUI()
 		if (myui::CursorHasItem())
 		{
 			ImGui::SameLine();
-			if (ImGui::Button("Add Cursor Item"))
+			if (myui::StyledButton("Add Cursor Item"))
 			{
 				myui::ItemRef cursor = myui::CursorItem();
 				if (cursor.valid())

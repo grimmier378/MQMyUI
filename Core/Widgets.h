@@ -25,6 +25,55 @@ void SetGlobalToggleStyle(int flags, ImVec2 size = ImVec2(0.0f, 0.0f));
 
 bool DrawToggle(const char* id, bool* value, int flags = kUseGlobalToggleFlags, ImVec2 size = ImVec2(0.0f, 0.0f));
 
+// Master switch for the animated widget effects (button glow/press/shimmer,
+// toggle glow/pulse/rock, toolbar hover glow). When off, widgets still render
+// from the theme but draw their resting state with no tweens. Pushed once per
+// frame from MQMyUI.cpp before RenderAll, driven by the per-char setting.
+void SetAnimationsEnabled(bool enabled);
+bool AnimationsEnabled();
+
+// Soft outer halo behind a rounded rect (a few expanding rounded rects with
+// falling alpha), scaled by intensity 0..1. Shared by the styled button and the
+// toolbar hover so their glows match. Colors come from the caller (theme-sourced).
+void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImVec4 col, float intensity);
+
+// --- Reusable animated-control primitives -----------------------------------
+// Theme-neutral building blocks for custom framed/animated controls (used by the
+// styled button + toolbar; available to any host). All honor SetAnimationsEnabled
+// and key their motion off the caller-supplied ImGuiID (use ImGui::GetID(...)).
+
+// Eased hover intensity 0..1 for an item. Snaps to 0/1 when animations are off.
+float HoverIntensity(ImGuiID id, bool hovered);
+
+// Spring press scale around 1.0: shrinks to pressedScale while active, then a
+// lightly-damped spring overshoots past 1.0 and settles on release. Returns 1.0
+// when animations are off. Apply to the *drawn* rect, not the layout rect.
+float PressScale(ImGuiID id, bool active, float pressedScale = 0.86f);
+
+// Diagonal white hover sheen swept across a rounded rect, stencil-masked to the
+// shape so it never spills into the corners. No-op when animations are off or
+// intensity <= 0.
+void DrawHoverShimmer(ImDrawList* dl, const ImVec2& p0, const ImVec2& p1, float rounding, float intensity);
+
+enum ButtonFlags
+{
+	ButtonFlags_None        = 0,
+	ButtonFlags_GlowOnHover = 1 << 0,
+	ButtonFlags_PressSink   = 1 << 1, // label/fill sinks slightly while held
+	ButtonFlags_Shimmer     = 1 << 2, // subtle hover sheen sweep
+};
+
+constexpr int kDefaultButtonFlags = ButtonFlags_GlowOnHover | ButtonFlags_PressSink | ButtonFlags_Shimmer;
+constexpr int kUseGlobalButtonFlags = -1;
+
+// Drop-in replacements for ImGui::Button / ImGui::SmallButton. Sized like ImGui
+// (text + frame padding; small = no vertical pad), colored live from the theme
+// (ImGuiCol_Button / ButtonHovered / ButtonActive / Border / Text) so they fit
+// any ThemeZ/DB theme, with imanim hover/press motion that respects the global
+// animation switch above. Pass flags = -1 to use kDefaultButtonFlags.
+bool StyledButton(const char* label, ImVec2 size = ImVec2(0.0f, 0.0f), int flags = kUseGlobalButtonFlags);
+bool StyledSmallButton(const char* label, int flags = kUseGlobalButtonFlags);
+
 // imanim-driven style widgets (see Widgets.cpp). Colors come from the active
 // ImGui theme; motion values are tuned in demos/style-playground.html.
 

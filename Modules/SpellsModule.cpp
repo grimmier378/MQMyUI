@@ -6,6 +6,7 @@
 #include "../Core/IconHelper.h"
 #include "../Core/SpellInfo.h"
 #include "../Core/Actions.h"
+#include "../Core/Widgets.h"
 
 #include "mq/imgui/Widgets.h"
 #include "mq/imgui/ImGuiUtils.h"
@@ -504,7 +505,7 @@ void SpellsModule::DrawOptionsButton()
 
 	ImGui::PushID("OptionsButton");
 
-	if (ImGui::Button(ICON_FA_COG, ImVec2(gemHeight, gemHeight)))
+	if (myui::StyledButton(ICON_FA_COG, ImVec2(gemHeight, gemHeight)))
 	{
 		m_managerOpen = !m_managerOpen;
 		if (m_managerOpen)
@@ -543,7 +544,7 @@ void SpellsModule::DrawQuickSetMenu()
 	ImGui::SameLine();
 	bool canSave = m_newNameBuf[0] != 0;
 	ImGui::BeginDisabled(!canSave);
-	if (ImGui::Button("Save"))
+	if (myui::StyledButton("Save"))
 	{
 		m_dbQueue.push_back(DbOp{ false, m_newNameBuf, CurrentLoadout() });
 		m_newNameBuf[0] = 0;
@@ -569,7 +570,7 @@ void SpellsModule::DrawQuickSetMenu()
 	}
 
 	ImGui::Separator();
-	if (ImGui::Button(ICON_FA_TRASH_O " Clear All Gems"))
+	if (myui::StyledButton(ICON_FA_TRASH_O " Clear All Gems"))
 	{
 		ClearAllGems();
 		ImGui::CloseCurrentPopup();
@@ -604,7 +605,7 @@ void SpellsModule::DrawSpellSetManager()
 		ImGui::SameLine();
 		bool canSave = m_newNameBuf[0] != 0;
 		ImGui::BeginDisabled(!canSave);
-		if (ImGui::Button("Save"))
+		if (myui::StyledButton("Save"))
 		{
 			m_dbQueue.push_back(DbOp{ false, m_newNameBuf, EditorRows() });
 			m_selectedSet = m_newNameBuf;
@@ -616,7 +617,7 @@ void SpellsModule::DrawSpellSetManager()
 		if (!m_selectedSet.empty())
 		{
 			ImGui::SameLine();
-			if (ImGui::Button("Update"))
+			if (myui::StyledButton("Update"))
 			{
 				m_dbQueue.push_back(DbOp{ false, m_selectedSet, EditorRows() });
 			}
@@ -625,7 +626,7 @@ void SpellsModule::DrawSpellSetManager()
 			ImGui::SameLine();
 			if (!m_confirmDelete)
 			{
-				if (ImGui::Button("Delete"))
+				if (myui::StyledButton("Delete"))
 				{
 					m_confirmDelete = true;
 				}
@@ -634,7 +635,7 @@ void SpellsModule::DrawSpellSetManager()
 			else
 			{
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.75f, 0.25f, 0.25f, 1.0f));
-				if (ImGui::Button("Confirm"))
+				if (myui::StyledButton("Confirm"))
 				{
 					m_dbQueue.push_back(DbOp{ true, m_selectedSet, {} });
 					m_selectedSet.clear();
@@ -642,7 +643,7 @@ void SpellsModule::DrawSpellSetManager()
 				}
 				ImGui::PopStyleColor();
 				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
+				if (myui::StyledButton("Cancel"))
 				{
 					m_confirmDelete = false;
 				}
@@ -718,7 +719,7 @@ void SpellsModule::DrawSpellSetManager()
 				ImGui::TableNextColumn();
 				if (id > 0)
 				{
-					if (ImGui::SmallButton(ICON_FA_TRASH_O))
+					if (myui::StyledSmallButton(ICON_FA_TRASH_O))
 					{
 						m_editSet[i] = 0;
 					}
@@ -734,7 +735,7 @@ void SpellsModule::DrawSpellSetManager()
 		ImGui::EndChild();
 
 		// Bottom: New | From Gems | Load to Game
-		if (ImGui::Button("New"))
+		if (myui::StyledButton("New"))
 		{
 			m_selectedSet.clear();
 			m_editSet.assign(GemCount(), 0);
@@ -742,7 +743,7 @@ void SpellsModule::DrawSpellSetManager()
 		}
 		ImGui::SetItemTooltip("Start a new, empty loadout.");
 		ImGui::SameLine();
-		if (ImGui::Button("From Gems"))
+		if (myui::StyledButton("From Gems"))
 		{
 			SeedEditorFromGems();
 			m_confirmDelete = false;
@@ -755,7 +756,7 @@ void SpellsModule::DrawSpellSetManager()
 		}
 		else
 		{
-			if (ImGui::Button("Load to Game"))
+			if (myui::StyledButton("Load to Game"))
 			{
 				ApplyEditorToGame();
 			}

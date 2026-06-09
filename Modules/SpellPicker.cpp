@@ -2,6 +2,7 @@
 #include "SpellPicker.h"
 
 #include "../Core/SpellInfo.h"
+#include "../Core/Widgets.h"
 
 #include <mq/imgui/Widgets.h>
 
@@ -187,7 +188,7 @@ void SpellPicker::DrawSpellPicker()
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Refresh##SpellPicker"))
+		if (myui::StyledButton("Refresh##SpellPicker"))
 		{
 			InitializeSpells();
 		}

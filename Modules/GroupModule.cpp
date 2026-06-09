@@ -8,6 +8,7 @@
 #include "../Core/UiHelpers.h"
 #include "../Core/IconHelper.h"
 #include "../Core/Actions.h"
+#include "../Core/Widgets.h"
 
 #include "imgui/fonts/IconsFontAwesome.h"
 #include "imgui/fonts/IconsMaterialDesign.h"
@@ -599,7 +600,7 @@ void GroupModule::DrawCommandButtons(const std::vector<GroupMemberSnap>& members
 	float spacing = ImGui::GetStyle().ItemSpacing.x;
 	float halfW = (ImGui::GetContentRegionAvail().x - spacing) * 0.5f;
 
-	if (ImGui::Button("Come to Me", ImVec2(halfW, 0.0f)))
+	if (myui::StyledButton("Come to Me", ImVec2(halfW, 0.0f)))
 	{
 		int zoneId = pZoneInfo ? static_cast<int>(pZoneInfo->ZoneID) : 0;
 		std::string loc = fmt::format("{:.2f} {:.2f} {:.2f}", pLocalPlayer->X, pLocalPlayer->Y, pLocalPlayer->Z);
@@ -617,7 +618,7 @@ void GroupModule::DrawCommandButtons(const std::vector<GroupMemberSnap>& members
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.35f, 0.60f, 1.0f));
 	}
-	if (ImGui::Button(active ? "Following" : "Follow Me", ImVec2(halfW, 0.0f)))
+	if (myui::StyledButton(active ? "Following" : "Follow Me", ImVec2(halfW, 0.0f)))
 	{
 		SendToMembers(members, active ? "FollowStop" : "FollowMe");
 		followActive = !active;

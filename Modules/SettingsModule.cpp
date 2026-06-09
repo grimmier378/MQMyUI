@@ -321,7 +321,7 @@ void SettingsModule::OnRenderGUI()
 				"Editing %s (remote) - Save applies the changes to that character.", m_targetChar.c_str());
 		}
 
-		if (ImGui::Button("Save Settings"))
+		if (myui::StyledButton("Save Settings"))
 		{
 			if (m_remoteActive)
 			{
@@ -372,7 +372,7 @@ void SettingsModule::OnRenderGUI()
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Revert"))
+		if (myui::StyledButton("Revert"))
 		{
 			if (m_remoteActive)
 			{
@@ -388,7 +388,7 @@ void SettingsModule::OnRenderGUI()
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Copy Settings..."))
+		if (myui::StyledButton("Copy Settings..."))
 		{
 			local->Window("Copy").visible = true;
 			local->PersistVisibility("Copy");
@@ -552,6 +552,16 @@ void SettingsModule::DrawGeneralDetail()
 {
 	UiConfig* ui = m_active ? m_active : m_ctx.UI;
 
+	ImGui::SeparatorText("Animations");
+	{
+		bool anim = ui->Flag("Global", "AnimatedWidgets", true);
+		if (myui::DrawToggle("Animated Widgets##tgAnimGlobal", &anim))
+		{
+			ui->SetFlag("Global", "AnimatedWidgets", anim);
+		}
+		ImGui::TextWrapped("Master switch for the animated styled-widget effects: button glow/press, toggle glow/pulse/rock, and toolbar hover. Off keeps the theme colors but draws the resting state with no motion.");
+	}
+
 	ImGui::SeparatorText("Toggle Switches");
 	ImGui::TextWrapped("Configure the look of every toggle switch in the UI.");
 
@@ -597,7 +607,7 @@ void SettingsModule::DrawGeneralDetail()
 	}
 
 	ImGui::SeparatorText("Theme");
-	ImGui::SetNextItemWidth(220.0f);
+	ImGui::SetNextItemWidth(110.0f);
 	if (myui::StyledBeginCombo("Active Theme", themes->ActiveName().c_str()))
 	{
 		for (const std::string& n : themes->GetThemeNames())
@@ -616,7 +626,7 @@ void SettingsModule::DrawGeneralDetail()
 		myui::StyledEndCombo();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Open Themes Editor"))
+	if (myui::StyledButton("Open Themes Editor"))
 	{
 		ui->Window("Themes").visible = true;
 		ui->PersistVisibility("Themes");
@@ -724,7 +734,7 @@ void SettingsModule::DrawWindowDetail(const std::string& name)
 
 		if (ci_equals(name, "XPBars"))
 		{
-			if (ImGui::Button("Fit to Tiles##XPBarsFit"))
+			if (myui::StyledButton("Fit to Tiles##XPBarsFit"))
 			{
 				m_ctx.UI->SetFlag("XPBars", "AutoSize", true);
 			}
@@ -914,7 +924,7 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 
 	ImGui::Text("%s / %s", window.c_str(), role.c_str());
 	ImGui::SameLine();
-	if (ImGui::SmallButton("Reset Effects"))
+	if (myui::StyledSmallButton("Reset Effects"))
 	{
 		b.gradientOn = false;
 		b.border = false;
@@ -924,7 +934,7 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 		b.tweenSeconds = 0.0f;
 	}
 
-	if (ImGui::Button("Copy this style to..."))
+	if (myui::StyledButton("Copy this style to..."))
 	{
 		ImGui::OpenPopup("##CopyBarTo");
 	}

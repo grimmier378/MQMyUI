@@ -1,6 +1,7 @@
 #include "ThemeZModule.h"
 
 #include "../Core/UiConfig.h"
+#include "../Core/Widgets.h"
 
 #include <algorithm>
 #include <cstring>
@@ -59,7 +60,7 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 	const std::string targetName = nameBuf;
 	const bool canSave = !targetName.empty() && targetName != "Default";
 
-	if (ImGui::Button("New"))
+	if (myui::StyledButton("New"))
 	{
 		std::string base = "New Theme";
 		std::string name = base;
@@ -88,7 +89,7 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 
 	ImGui::SameLine();
 	ImGui::BeginDisabled(!canSave);
-	if (ImGui::Button("Save"))
+	if (myui::StyledButton("Save"))
 	{
 		edit.name = targetName;
 		themes->SaveTheme(edit);
@@ -98,7 +99,7 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 
 	ImGui::SameLine();
 	ImGui::BeginDisabled(isDefaultSelected);
-	if (ImGui::Button("Delete"))
+	if (myui::StyledButton("Delete"))
 	{
 		themes->DeleteTheme(selected);
 		LoadSelected(themes, "Default", edit, selected, nameBuf, nameBufSize);
@@ -106,13 +107,13 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
-	if (ImGui::Button("Apply"))
+	if (myui::StyledButton("Apply"))
 	{
 		themes->SetActiveTheme(selected);
 	}
 
 	ImGui::SameLine();
-	if (ImGui::Button("Revert"))
+	if (myui::StyledButton("Revert"))
 	{
 		LoadSelected(themes, selected, edit, selected, nameBuf, nameBufSize);
 	}
@@ -125,7 +126,7 @@ void DrawColorsSection(ThemeManager* themes, Theme& edit)
 		return;
 	}
 
-	if (ImGui::Button("Reset Colors"))
+	if (myui::StyledButton("Reset Colors"))
 	{
 		const Theme& d = themes->DefaultStyle();
 		for (int i = 0; i < ImGuiCol_COUNT; ++i)
@@ -158,7 +159,7 @@ void DrawStylesSection(ThemeManager* themes, Theme& edit)
 		return;
 	}
 
-	if (ImGui::Button("Reset Styles"))
+	if (myui::StyledButton("Reset Styles"))
 	{
 		const Theme& d = themes->DefaultStyle();
 		edit.windowRounding    = d.windowRounding;

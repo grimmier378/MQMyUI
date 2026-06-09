@@ -13,6 +13,7 @@
 #include "Core/UiConfig.h"
 #include "Core/Actions.h"
 #include "Core/InventoryData.h"
+#include "Core/Widgets.h"
 
 #include "Modules/PlayerModule.h"
 #include "Modules/HudModule.h"
@@ -373,6 +374,10 @@ PLUGIN_API void OnUpdateImGui()
 	// context (ours included). We must NOT call it again or the clock advances
 	// twice and animations run at double speed — we only make our context current.
 	iam_context* prevCtx = iam_context_set_current(s_iamCtx);
+
+	// Per-char master switch for the animated widget effects, read live so the
+	// Settings checkbox applies instantly to every styled button/toggle/toolbar.
+	myui::SetAnimationsEnabled(s_ui.Flag("Global", "AnimatedWidgets", true));
 
 	ImGuiStyle saved = s_themes.ApplyTheme(s_themes.Resolved());
 	s_modules.RenderAll();

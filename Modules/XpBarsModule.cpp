@@ -6,6 +6,7 @@
 #include "../Core/PeerData.h"
 #include "../Core/CharData.h"
 #include "../Core/BarEngine.h"
+#include "../Core/Widgets.h"
 
 #include "imgui/fonts/IconsFontAwesome.h"
 
@@ -131,27 +132,27 @@ void XpBarsModule::DrawRow(const AARow& row)
 			alloc = "0";
 		}
 
-		if (ImGui::SmallButton(ICON_FA_ANGLE_DOUBLE_LEFT))
+		if (myui::StyledSmallButton(ICON_FA_ANGLE_DOUBLE_LEFT))
 		{
 			ac->SendCommand(row.server, row.name, "Min");
 		}
 		ImGui::SameLine();
-		if (ImGui::SmallButton(ICON_FA_ANGLE_LEFT))
+		if (myui::StyledSmallButton(ICON_FA_ANGLE_LEFT))
 		{
 			ac->SendCommand(row.server, row.name, "Less");
 		}
 		ImGui::SameLine();
-		if (ImGui::SmallButton(fmt::format("{}%", alloc).c_str()))
+		if (myui::StyledSmallButton(fmt::format("{}%", alloc).c_str()))
 		{
 			ac->SendCommand(row.server, row.name, "Mid");
 		}
 		ImGui::SameLine();
-		if (ImGui::SmallButton(ICON_FA_ANGLE_RIGHT))
+		if (myui::StyledSmallButton(ICON_FA_ANGLE_RIGHT))
 		{
 			ac->SendCommand(row.server, row.name, "More");
 		}
 		ImGui::SameLine();
-		if (ImGui::SmallButton(ICON_FA_ANGLE_DOUBLE_RIGHT))
+		if (myui::StyledSmallButton(ICON_FA_ANGLE_DOUBLE_RIGHT))
 		{
 			ac->SendCommand(row.server, row.name, "Max");
 		}

@@ -8,6 +8,7 @@
 #include "../Core/CharData.h"
 #include "../Core/BarEngine.h"
 #include "../Core/UiHelpers.h"
+#include "../Core/Widgets.h"
 
 #include "mq/imgui/Widgets.h"
 #include "imgui/fonts/IconsFontAwesome.h"
@@ -456,7 +457,7 @@ void MyInventoryModule::DrawInventoryFooter(bool& visible)
 	{
 		ImGui::SetCursorPosX(rightX);
 	}
-	if (ImGui::Button("Done"))
+	if (myui::StyledButton("Done"))
 	{
 		visible = false;
 	}
@@ -664,7 +665,7 @@ void MyInventoryModule::DrawContainerWindows(float cellSize, bool showBackground
 		ImGui::SetNextWindowSize(ImVec2(cellSize * 4.0f + 30.0f, 0.0f), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin(title, &windowOpen, cflags))
 		{
-			if (ImGui::SmallButton(locked ? ICON_FA_LOCK : ICON_FA_UNLOCK))
+			if (myui::StyledSmallButton(locked ? ICON_FA_LOCK : ICON_FA_UNLOCK))
 			{
 				ui->SetFlag(GetName(), lockKey, !locked);
 				ui->PersistField(GetName(), lockKey);

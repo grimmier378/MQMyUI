@@ -6,6 +6,7 @@
 #include "../Core/CharData.h"
 #include "../Core/Actions.h"
 #include "../Core/UiHelpers.h"
+#include "../Core/Widgets.h"
 
 #include <algorithm>
 
@@ -171,7 +172,7 @@ void BigBagModule::DrawControls()
 	ImGui::SetNextItemWidth(200.0f);
 	ImGui::InputTextWithHint("##filter", "Search...", m_filter, sizeof(m_filter));
 	ImGui::SameLine();
-	if (ImGui::Button("Clear"))
+	if (myui::StyledButton("Clear"))
 	{
 		m_filter[0] = 0;
 	}
@@ -228,7 +229,7 @@ void BigBagModule::DrawItemGrid(const std::vector<myui::ItemRef>& items, float c
 
 void BigBagModule::DrawDetails()
 {
-	if (ImGui::Button("Trade Selected Items"))
+	if (myui::StyledButton("Trade Selected Items"))
 	{
 		std::vector<std::string> names;
 		for (auto& [name, checked] : m_tradeChecked)
@@ -248,7 +249,7 @@ void BigBagModule::DrawDetails()
 		}
 	}
 	ImGui::SameLine();
-	bool checkAll = ImGui::Button("Check All");
+	bool checkAll = myui::StyledButton("Check All");
 
 	ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY
 		| ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable;

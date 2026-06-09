@@ -4,9 +4,13 @@
 #include "../Core/IconHelper.h"
 #include "../Core/InventoryData.h"
 #include "../Core/CharData.h"
+#include "../Core/Widgets.h"
 
 #include "mq/imgui/Widgets.h"
 
+#include <imgui/imgui_internal.h>
+
+#include <algorithm>
 #include <cstdio>
 
 void ToolbarModule::OnRenderGUI()
@@ -129,13 +133,60 @@ bool ToolbarModule::IconButton(int iconId, float size, const char* tooltip)
 		return false;
 	}
 
-	anim->SetCurCell(iconId - 500);
-	imgui::DrawTextureAnimation(anim, CXSize(static_cast<int>(size), static_cast<int>(size)),
-		MQColor(255, 255, 255, 255), MQColor(0, 0, 0, 0));
+	const ImVec2 p0 = ImGui::GetCursorScreenPos();
+	const float rounding = ImGui::GetStyle().FrameRounding;
 
-	if (tooltip && ImGui::IsItemHovered())
+	// One interaction item for the whole slot; everything else is drawn manually
+	// so the frame/background sit behind the icon and the boundaries are obvious.
+	ImGui::InvisibleButton("##slot", ImVec2(size, size));
+	const ImGuiID id = ImGui::GetID("##slot");
+	const bool hovered = ImGui::IsItemHovered();
+	const bool clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+
+	// Shared styled-widget motion: eased hover, spring press-scale, diagonal sheen.
+	const float hi = myui::HoverIntensity(id, hovered);
+	const float scale = myui::PressScale(id, ImGui::IsItemActive());
+
+	// Scaled slot rect (drawn only; layout/cursor are unchanged).
+	const ImVec2 cen(p0.x + size * 0.5f, p0.y + size * 0.5f);
+	const float half = size * 0.5f * scale;
+	const ImVec2 q0(cen.x - half, cen.y - half);
+	const ImVec2 q1(cen.x + half, cen.y + half);
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+
+	if (hi > 0.001f && myui::AnimationsEnabled())
+	{
+		ImVec4 glow = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+		glow.w = 1.0f;
+		myui::SoftGlowRoundRect(dl, q0, q1, rounding, glow, hi);
+	}
+
+	// Slot background, brightening on hover, so each icon reads as its own button.
+	const ImVec4 bg = ImLerp(ImGui::GetStyleColorVec4(ImGuiCol_Button),
+		ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered), ImClamp(hi, 0.0f, 1.0f));
+	dl->AddRectFilled(q0, q1, ImGui::GetColorU32(bg), rounding);
+
+	// Icon inset a hair so it never touches the frame, scaled with the slot.
+	const float slotPx = size * scale;
+	const float inset = std::max(slotPx * 0.08f, 1.0f);
+	const int iconPx = std::max(static_cast<int>(slotPx - inset * 2.0f), 1);
+	anim->SetCurCell(iconId - 500);
+	imgui::DrawTextureAnimation(dl, anim,
+		CXPoint(static_cast<int>(q0.x + inset), static_cast<int>(q0.y + inset)),
+		CXSize(iconPx, iconPx), MQColor(255, 255, 255, 255), MQColor(0, 0, 0, 0));
+
+	// Diagonal hover sheen (self-gated by the animation switch), masked to the slot.
+	myui::DrawHoverShimmer(dl, q0, q1, rounding, hi);
+
+	// Always-visible theme-accent rim, brightening on hover.
+	ImVec4 rim = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+	rim.w = 0.40f + 0.60f * ImClamp(hi, 0.0f, 1.0f);
+	dl->AddRect(q0, q1, ImGui::GetColorU32(rim), rounding, 0, std::max(ImGui::GetStyle().FrameBorderSize, 1.0f));
+
+	if (tooltip && hovered)
 	{
 		ImGui::SetTooltip("%s", tooltip);
 	}
-	return ImGui::IsItemClicked(ImGuiMouseButton_Left);
+	return clicked;
 }

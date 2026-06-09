@@ -7,6 +7,7 @@
 #include "../Core/IconHelper.h"
 #include "../Core/UiHelpers.h"
 #include "../Core/Actions.h"
+#include "../Core/Widgets.h"
 
 #include <cstring>
 
@@ -168,7 +169,7 @@ void PetModule::DrawPetButtons()
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f));
 		}
 
-		if (ImGui::Button(cmd.label, ImVec2(buttonWidth, 0)))
+		if (myui::StyledButton(cmd.label, ImVec2(buttonWidth, 0)))
 		{
 			EzCommand(cmd.command);
 		}

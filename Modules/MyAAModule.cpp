@@ -3,6 +3,7 @@
 #include "../Core/UiConfig.h"
 #include "../Core/CharData.h"
 #include "../Core/ChatBridge.h"
+#include "../Core/Widgets.h"
 
 #include "mq/base/String.h"
 
@@ -200,7 +201,7 @@ void MyAAModule::DrawTable(int type, float height)
 			if (e->canTrain)
 			{
 				ImGui::BeginDisabled(!affordable);
-				if (ImGui::SmallButton("Train"))
+				if (myui::StyledSmallButton("Train"))
 				{
 					if (confirmPurchase)
 					{
@@ -218,7 +219,7 @@ void MyAAModule::DrawTable(int type, float height)
 			ImGui::TableNextColumn();
 			if (showHotkey && !e->passive && e->curRank > 0)
 			{
-				if (ImGui::SmallButton("Hotkey"))
+				if (myui::StyledSmallButton("Hotkey"))
 				{
 					m_pendingHotkey = e->groupId;
 				}
@@ -367,13 +368,13 @@ void MyAAModule::OnRenderGUI()
 			if (ce)
 			{
 				ImGui::Text("Train %s rank %d for %d AA?", ce->name.c_str(), ce->curRank + 1, ce->nextCost);
-				if (ImGui::Button("Train"))
+				if (myui::StyledButton("Train"))
 				{
 					m_pendingBuy = m_confirmGroup;
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
+				if (myui::StyledButton("Cancel"))
 				{
 					ImGui::CloseCurrentPopup();
 				}

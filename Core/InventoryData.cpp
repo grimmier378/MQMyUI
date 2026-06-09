@@ -1,6 +1,7 @@
 #include "InventoryData.h"
 #include "IconHelper.h"
 #include "Actions.h"
+#include "Widgets.h"
 
 #include "mq/imgui/Widgets.h"
 
@@ -466,12 +467,12 @@ void DrawAugConfirmPopup()
 		ImGui::Text("into:");
 		ImGui::TextColored(kColYellow, "%s", s.targetName.c_str());
 		ImGui::Separator();
-		if (ImGui::Button("Yes##auginsert"))
+		if (myui::StyledButton("Yes##auginsert"))
 		{
 			s.phase = 2;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("No##auginsert"))
+		if (myui::StyledButton("No##auginsert"))
 		{
 			s.phase = 0;
 		}
@@ -1850,14 +1851,14 @@ void DrawCoinQuantityWindow(CoinPicker& picker)
 		bool entered = ImGui::InputTextWithHint("##Qty", hint.c_str(), picker.buf, sizeof(picker.buf),
 			ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsDecimal);
 
-		if (ImGui::Button("Max##maxqty"))
+		if (myui::StyledButton("Max##maxqty"))
 		{
 			sprintf_s(picker.buf, "%d", maxQty);
 		}
 		ImGui::SameLine();
-		bool ok = ImGui::Button("OK##qty") || entered;
+		bool ok = myui::StyledButton("OK##qty") || entered;
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel##qty"))
+		if (myui::StyledButton("Cancel##qty"))
 		{
 			picker.show = false;
 			picker.focus = false;
