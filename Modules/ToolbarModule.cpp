@@ -157,14 +157,14 @@ bool ToolbarModule::IconButton(int iconId, float size, const char* tooltip)
 
 	if (hi > 0.001f && myui::AnimationsEnabled())
 	{
-		ImVec4 glow = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+		ImVec4 glow = myui::Soften(ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
 		glow.w = 1.0f;
 		myui::SoftGlowRoundRect(dl, q0, q1, rounding, glow, hi);
 	}
 
 	// Slot background, brightening on hover, so each icon reads as its own button.
-	const ImVec4 bg = ImLerp(ImGui::GetStyleColorVec4(ImGuiCol_Button),
-		ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered), ImClamp(hi, 0.0f, 1.0f));
+	const ImVec4 bg = ImLerp(myui::Soften(ImGui::GetStyleColorVec4(ImGuiCol_Button)),
+		myui::Soften(ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered)), ImClamp(hi, 0.0f, 1.0f));
 	dl->AddRectFilled(q0, q1, ImGui::GetColorU32(bg), rounding);
 
 	// Icon inset a hair so it never touches the frame, scaled with the slot.
@@ -180,7 +180,7 @@ bool ToolbarModule::IconButton(int iconId, float size, const char* tooltip)
 	myui::DrawHoverShimmer(dl, q0, q1, rounding, hi);
 
 	// Always-visible theme-accent rim, brightening on hover.
-	ImVec4 rim = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+	ImVec4 rim = myui::Soften(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 	rim.w = 0.40f + 0.60f * ImClamp(hi, 0.0f, 1.0f);
 	dl->AddRect(q0, q1, ImGui::GetColorU32(rim), rounding, 0, std::max(ImGui::GetStyle().FrameBorderSize, 1.0f));
 
