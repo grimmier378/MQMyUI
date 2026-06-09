@@ -165,7 +165,25 @@ void ITrackModule::DrawItemDetails()
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
-				if (ImGui::Selectable(character.c_str(), false, ImGuiSelectableFlags_SpanAllColumns))
+				std::string disp = character;
+				if (mq::IsAnonymized())
+				{
+					if (pLocalPC && ci_equals(character, pLocalPC->Name))
+					{
+						disp = "Me";
+					}
+					else if (const myui::PeerRecord* pr = m_ctx.Actors ? m_ctx.Actors->FindPeerByName(character) : nullptr)
+					{
+						disp = pr->maskedName;
+					}
+					else
+					{
+						disp = "Player";
+					}
+				}
+				// Display the masked code but keep the real name as the id + switch target.
+				std::string label = disp + "##" + character;
+				if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns))
 				{
 					m_ctx.Actors->SwitchTo(character);
 				}

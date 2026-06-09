@@ -25,6 +25,7 @@ message CharVitals {
     int32 role_mask = 20;
     string storage_id = 21;
     string host = 22;
+    int32 race = 23; // real race id; the anonymized code is built locally
 }
 
 message AAInfo {

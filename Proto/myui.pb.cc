@@ -173,7 +173,8 @@ inline constexpr CharVitals::Impl_::Impl_(
         velocity_{0},
         pet_id_{0},
         pet_pct_hp_{0},
-        role_mask_{0} {}
+        role_mask_{0},
+        race_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR CharVitals::CharVitals(::_pbi::ConstantInitialized)
@@ -419,7 +420,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_._has_bits_),
-        25, // hasbit index offset
+        26, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.server_),
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.character_),
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.class_short_),
@@ -442,6 +443,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.role_mask_),
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.storage_id_),
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.host_),
+        PROTOBUF_FIELD_OFFSET(::mq::proto::myui::CharVitals, _impl_.race_),
         0,
         1,
         2,
@@ -464,6 +466,7 @@ const ::uint32_t
         21,
         6,
         7,
+        22,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::mq::proto::myui::AAInfo, _impl_._has_bits_),
         15, // hasbit index offset
@@ -598,15 +601,15 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::mq::proto::myui::CharVitals)},
-        {47, sizeof(::mq::proto::myui::AAInfo)},
-        {74, sizeof(::mq::proto::myui::BuffEntry)},
-        {93, sizeof(::mq::proto::myui::BuffList)},
-        {102, sizeof(::mq::proto::myui::Command)},
-        {117, sizeof(::mq::proto::myui::InventoryItemCount)},
-        {126, sizeof(::mq::proto::myui::InventorySnapshot)},
-        {139, sizeof(::mq::proto::myui::SettingRow)},
-        {150, sizeof(::mq::proto::myui::SettingsSync)},
-        {167, sizeof(::mq::proto::myui::MyUIEnvelope)},
+        {49, sizeof(::mq::proto::myui::AAInfo)},
+        {76, sizeof(::mq::proto::myui::BuffEntry)},
+        {95, sizeof(::mq::proto::myui::BuffList)},
+        {104, sizeof(::mq::proto::myui::Command)},
+        {119, sizeof(::mq::proto::myui::InventoryItemCount)},
+        {128, sizeof(::mq::proto::myui::InventorySnapshot)},
+        {141, sizeof(::mq::proto::myui::SettingRow)},
+        {152, sizeof(::mq::proto::myui::SettingsSync)},
+        {169, sizeof(::mq::proto::myui::MyUIEnvelope)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::mq::proto::myui::_CharVitals_default_instance_._instance,
@@ -622,7 +625,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_myui_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\nmyui.proto\022\rmq.proto.myui\"\230\003\n\nCharVita"
+    "\n\nmyui.proto\022\rmq.proto.myui\"\246\003\n\nCharVita"
     "ls\022\016\n\006server\030\001 \001(\t\022\021\n\tcharacter\030\002 \001(\t\022\023\n"
     "\013class_short\030\003 \001(\t\022\r\n\005level\030\004 \001(\005\022\016\n\006cur"
     "_hp\030\005 \001(\005\022\016\n\006max_hp\030\006 \001(\005\022\020\n\010cur_mana\030\007 "
@@ -632,49 +635,49 @@ const char descriptor_table_protodef_myui_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIA
     "state\030\016 \001(\005\022\020\n\010velocity\030\017 \001(\002\022\016\n\006pet_id\030"
     "\020 \001(\005\022\022\n\npet_pct_hp\030\021 \001(\005\022\020\n\010pet_name\030\022 "
     "\001(\t\022\024\n\014group_leader\030\023 \001(\t\022\021\n\trole_mask\030\024"
-    " \001(\005\022\022\n\nstorage_id\030\025 \001(\t\022\014\n\004host\030\026 \001(\t\"\343"
-    "\001\n\006AAInfo\022\016\n\006server\030\001 \001(\t\022\021\n\tcharacter\030\002"
-    " \001(\t\022\r\n\005level\030\003 \001(\005\022\020\n\010aa_spent\030\004 \001(\005\022\020\n"
-    "\010aa_total\030\005 \001(\005\022\024\n\014aa_available\030\006 \001(\005\022\022\n"
-    "\npct_aa_exp\030\007 \001(\002\022\017\n\007pct_exp\030\010 \001(\002\022\017\n\007pc"
-    "t_air\030\t \001(\002\022\r\n\005state\030\n \001(\t\022\022\n\nallocation"
-    "\030\013 \001(\t\022\024\n\014group_leader\030\014 \001(\t\"\225\001\n\tBuffEnt"
-    "ry\022\014\n\004name\030\001 \001(\t\022\020\n\010spell_id\030\002 \001(\005\022\023\n\013du"
-    "ration_ms\030\003 \001(\005\022\017\n\007icon_id\030\004 \001(\005\022\022\n\nbene"
-    "ficial\030\005 \001(\010\022\016\n\006caster\030\006 \001(\t\022\014\n\004slot\030\007 \001"
-    "(\005\022\020\n\010is_empty\030\010 \001(\010\"V\n\010BuffList\022\016\n\006serv"
-    "er\030\001 \001(\t\022\021\n\tcharacter\030\002 \001(\t\022\'\n\005buffs\030\003 \003"
-    "(\0132\030.mq.proto.myui.BuffEntry\"p\n\007Command\022"
-    "\023\n\013from_server\030\001 \001(\t\022\021\n\tfrom_char\030\002 \001(\t\022"
-    "\017\n\007to_char\030\003 \001(\t\022\016\n\006action\030\004 \001(\t\022\013\n\003arg\030"
-    "\005 \001(\005\022\017\n\007arg_str\030\006 \001(\t\"C\n\022InventoryItemC"
-    "ount\022\014\n\004name\030\001 \001(\t\022\021\n\tinventory\030\002 \001(\005\022\014\n"
-    "\004bank\030\003 \001(\005\"\212\001\n\021InventorySnapshot\022\016\n\006ser"
-    "ver\030\001 \001(\t\022\021\n\tcharacter\030\002 \001(\t\0220\n\005items\030\003 "
-    "\003(\0132!.mq.proto.myui.InventoryItemCount\022\020"
-    "\n\010tracking\030\004 \003(\t\022\016\n\006remove\030\005 \001(\t\"G\n\nSett"
-    "ingRow\022\016\n\006module\030\001 \001(\t\022\014\n\004name\030\002 \001(\t\022\014\n\004"
-    "type\030\003 \001(\t\022\r\n\005value\030\004 \001(\t\"\353\001\n\014SettingsSy"
-    "nc\022\023\n\013from_server\030\001 \001(\t\022\021\n\tfrom_char\030\002 \001"
-    "(\t\022\021\n\tto_server\030\003 \001(\t\022\017\n\007to_char\030\004 \001(\t\022."
-    "\n\004kind\030\005 \001(\0162 .mq.proto.myui.SettingsSyn"
-    "c.Kind\022\'\n\004rows\030\006 \003(\0132\031.mq.proto.myui.Set"
-    "tingRow\022\014\n\004full\030\007 \001(\010\"(\n\004Kind\022\010\n\004PUSH\020\000\022"
-    "\t\n\005REPLY\020\001\022\013\n\007REQUEST\020\002\"\250\002\n\014MyUIEnvelope"
-    "\022+\n\006vitals\030\001 \001(\0132\031.mq.proto.myui.CharVit"
-    "alsH\000\022#\n\002aa\030\002 \001(\0132\025.mq.proto.myui.AAInfo"
-    "H\000\022(\n\005buffs\030\003 \001(\0132\027.mq.proto.myui.BuffLi"
-    "stH\000\022)\n\007command\030\004 \001(\0132\026.mq.proto.myui.Co"
-    "mmandH\000\0225\n\tinventory\030\005 \001(\0132 .mq.proto.my"
-    "ui.InventorySnapshotH\000\022/\n\010settings\030\006 \001(\013"
-    "2\033.mq.proto.myui.SettingsSyncH\000B\t\n\007paylo"
-    "adb\006proto3"
+    " \001(\005\022\022\n\nstorage_id\030\025 \001(\t\022\014\n\004host\030\026 \001(\t\022\014"
+    "\n\004race\030\027 \001(\005\"\343\001\n\006AAInfo\022\016\n\006server\030\001 \001(\t\022"
+    "\021\n\tcharacter\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022\020\n\010aa_"
+    "spent\030\004 \001(\005\022\020\n\010aa_total\030\005 \001(\005\022\024\n\014aa_avai"
+    "lable\030\006 \001(\005\022\022\n\npct_aa_exp\030\007 \001(\002\022\017\n\007pct_e"
+    "xp\030\010 \001(\002\022\017\n\007pct_air\030\t \001(\002\022\r\n\005state\030\n \001(\t"
+    "\022\022\n\nallocation\030\013 \001(\t\022\024\n\014group_leader\030\014 \001"
+    "(\t\"\225\001\n\tBuffEntry\022\014\n\004name\030\001 \001(\t\022\020\n\010spell_"
+    "id\030\002 \001(\005\022\023\n\013duration_ms\030\003 \001(\005\022\017\n\007icon_id"
+    "\030\004 \001(\005\022\022\n\nbeneficial\030\005 \001(\010\022\016\n\006caster\030\006 \001"
+    "(\t\022\014\n\004slot\030\007 \001(\005\022\020\n\010is_empty\030\010 \001(\010\"V\n\010Bu"
+    "ffList\022\016\n\006server\030\001 \001(\t\022\021\n\tcharacter\030\002 \001("
+    "\t\022\'\n\005buffs\030\003 \003(\0132\030.mq.proto.myui.BuffEnt"
+    "ry\"p\n\007Command\022\023\n\013from_server\030\001 \001(\t\022\021\n\tfr"
+    "om_char\030\002 \001(\t\022\017\n\007to_char\030\003 \001(\t\022\016\n\006action"
+    "\030\004 \001(\t\022\013\n\003arg\030\005 \001(\005\022\017\n\007arg_str\030\006 \001(\t\"C\n\022"
+    "InventoryItemCount\022\014\n\004name\030\001 \001(\t\022\021\n\tinve"
+    "ntory\030\002 \001(\005\022\014\n\004bank\030\003 \001(\005\"\212\001\n\021InventoryS"
+    "napshot\022\016\n\006server\030\001 \001(\t\022\021\n\tcharacter\030\002 \001"
+    "(\t\0220\n\005items\030\003 \003(\0132!.mq.proto.myui.Invent"
+    "oryItemCount\022\020\n\010tracking\030\004 \003(\t\022\016\n\006remove"
+    "\030\005 \001(\t\"G\n\nSettingRow\022\016\n\006module\030\001 \001(\t\022\014\n\004"
+    "name\030\002 \001(\t\022\014\n\004type\030\003 \001(\t\022\r\n\005value\030\004 \001(\t\""
+    "\353\001\n\014SettingsSync\022\023\n\013from_server\030\001 \001(\t\022\021\n"
+    "\tfrom_char\030\002 \001(\t\022\021\n\tto_server\030\003 \001(\t\022\017\n\007t"
+    "o_char\030\004 \001(\t\022.\n\004kind\030\005 \001(\0162 .mq.proto.my"
+    "ui.SettingsSync.Kind\022\'\n\004rows\030\006 \003(\0132\031.mq."
+    "proto.myui.SettingRow\022\014\n\004full\030\007 \001(\010\"(\n\004K"
+    "ind\022\010\n\004PUSH\020\000\022\t\n\005REPLY\020\001\022\013\n\007REQUEST\020\002\"\250\002"
+    "\n\014MyUIEnvelope\022+\n\006vitals\030\001 \001(\0132\031.mq.prot"
+    "o.myui.CharVitalsH\000\022#\n\002aa\030\002 \001(\0132\025.mq.pro"
+    "to.myui.AAInfoH\000\022(\n\005buffs\030\003 \001(\0132\027.mq.pro"
+    "to.myui.BuffListH\000\022)\n\007command\030\004 \001(\0132\026.mq"
+    ".proto.myui.CommandH\000\0225\n\tinventory\030\005 \001(\013"
+    "2 .mq.proto.myui.InventorySnapshotH\000\022/\n\010"
+    "settings\030\006 \001(\0132\033.mq.proto.myui.SettingsS"
+    "yncH\000B\t\n\007payloadb\006proto3"
 };
 static ::absl::once_flag descriptor_table_myui_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_myui_2eproto = {
     false,
     false,
-    1850,
+    1864,
     descriptor_table_protodef_myui_2eproto,
     "myui.proto",
     &descriptor_table_myui_2eproto_once,
@@ -747,9 +750,9 @@ CharVitals::CharVitals(
                offsetof(Impl_, level_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, level_),
-           offsetof(Impl_, role_mask_) -
+           offsetof(Impl_, race_) -
                offsetof(Impl_, level_) +
-               sizeof(Impl_::role_mask_));
+               sizeof(Impl_::race_));
 
   // @@protoc_insertion_point(copy_constructor:mq.proto.myui.CharVitals)
 }
@@ -771,9 +774,9 @@ inline void CharVitals::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, level_),
            0,
-           offsetof(Impl_, role_mask_) -
+           offsetof(Impl_, race_) -
                offsetof(Impl_, level_) +
-               sizeof(Impl_::role_mask_));
+               sizeof(Impl_::race_));
 }
 CharVitals::~CharVitals() {
   // @@protoc_insertion_point(destructor:mq.proto.myui.CharVitals)
@@ -840,16 +843,16 @@ CharVitals::GetClassData() const {
   return CharVitals_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 22, 0, 118, 2>
+const ::_pbi::TcParseTable<5, 23, 0, 118, 2>
 CharVitals::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(CharVitals, _impl_._has_bits_),
     0, // no _extensions_
-    22, 248,  // max_field_number, fast_idx_mask
+    23, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4290772992,  // skipmap
+    4286578688,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    22,  // num_field_entries
+    23,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     CharVitals_class_data_.base(),
@@ -948,7 +951,10 @@ CharVitals::_table_ = {
     {::_pbi::TcParser::FastUS2,
      {434, 7, 0,
       PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.host_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // int32 race = 23;
+    {::_pbi::TcParser::FastV32S2,
+     {440, 22, 0,
+      PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.race_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -1004,6 +1010,8 @@ CharVitals::_table_ = {
     {PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.storage_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string host = 22;
     {PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.host_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 race = 23;
+    {PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.race_), _Internal::kHasBitsOffset + 22, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
@@ -1058,10 +1066,10 @@ PROTOBUF_NOINLINE void CharVitals::Clear() {
         reinterpret_cast<char*>(&_impl_.zone_id_) -
         reinterpret_cast<char*>(&_impl_.level_)) + sizeof(_impl_.zone_id_));
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x003f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
     ::memset(&_impl_.pct_aggro_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.role_mask_) -
-        reinterpret_cast<char*>(&_impl_.pct_aggro_)) + sizeof(_impl_.role_mask_));
+        reinterpret_cast<char*>(&_impl_.race_) -
+        reinterpret_cast<char*>(&_impl_.pct_aggro_)) + sizeof(_impl_.race_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1292,6 +1300,15 @@ PROTOBUF_NOINLINE void CharVitals::Clear() {
     }
   }
 
+  // int32 race = 23;
+  if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+    if (this_._internal_race() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+          23, this_._internal_race(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1433,7 +1450,7 @@ PROTOBUF_NOINLINE void CharVitals::Clear() {
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x003f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
     // int32 pct_aggro = 13;
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       if (this_._internal_pct_aggro() != 0) {
@@ -1473,6 +1490,13 @@ PROTOBUF_NOINLINE void CharVitals::Clear() {
       if (this_._internal_role_mask() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::Int32Size(
                                         this_._internal_role_mask());
+      }
+    }
+    // int32 race = 23;
+    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+      if (this_._internal_race() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::Int32Size(
+                                        this_._internal_race());
       }
     }
   }
@@ -1610,7 +1634,7 @@ void CharVitals::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x003f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       if (from._internal_pct_aggro() != 0) {
         _this->_impl_.pct_aggro_ = from._impl_.pct_aggro_;
@@ -1639,6 +1663,11 @@ void CharVitals::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00200000U)) {
       if (from._internal_role_mask() != 0) {
         _this->_impl_.role_mask_ = from._impl_.role_mask_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+      if (from._internal_race() != 0) {
+        _this->_impl_.race_ = from._impl_.race_;
       }
     }
   }
@@ -1670,8 +1699,8 @@ void CharVitals::InternalSwap(CharVitals* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.storage_id_, &other->_impl_.storage_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.host_, &other->_impl_.host_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.role_mask_)
-      + sizeof(CharVitals::_impl_.role_mask_)
+      PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.race_)
+      + sizeof(CharVitals::_impl_.race_)
       - PROTOBUF_FIELD_OFFSET(CharVitals, _impl_.level_)>(
           reinterpret_cast<char*>(&_impl_.level_),
           reinterpret_cast<char*>(&other->_impl_.level_));

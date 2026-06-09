@@ -23,6 +23,7 @@ struct CharSnapshot
 	std::string name;
 	std::string server;
 	std::string classShort;
+	int raceId  = 0; // broadcast to peers so they can build our anonymized code locally
 	int classId = 0;
 	int level   = 0;
 
@@ -101,6 +102,7 @@ std::string InvControlTooltip(const char* child);
 struct GroupMemberSnap
 {
 	std::string name;
+	std::string maskedName; // RACE_CLASS_LEVEL code (or "Me" for the local player)
 	std::string classShort;
 	int classId = 0;
 	int level = 0;

@@ -3,6 +3,7 @@
 #include "ChatBridge.h"
 #include "SettingsStore.h"
 #include "InventoryData.h"
+#include "UiHelpers.h"
 
 #include "../Proto/myui.pb.h"
 
@@ -116,6 +117,7 @@ void ActorManager::PublishVitals()
 	auto* v = env.mutable_vitals();
 	v->set_server(c.server);
 	v->set_character(c.name);
+	v->set_race(c.raceId);
 	v->set_class_short(c.classShort);
 	v->set_level(c.level);
 	v->set_cur_hp(c.curHP);
@@ -280,6 +282,9 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		p.character   = v.character();
 		p.classShort  = v.class_short();
 		p.level       = v.level();
+		// Masking is local-only: build the anonymized code here from the peer's
+		// real race/class/level (the wire only ever carries real names).
+		p.maskedName  = myui::MaskedCode(v.race(), v.class_short(), v.level());
 		p.curHP       = v.cur_hp();
 		p.maxHP       = v.max_hp();
 		p.curMana     = v.cur_mana();

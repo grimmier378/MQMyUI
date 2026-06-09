@@ -139,7 +139,30 @@ void BuffsModule::DrawTableView(float pulse)
 
 	const char* selfName = (pLocalPC && !mq::IsAnonymized()) ? pLocalPC->Name : "Me";
 
-	std::string current = m_selectedChar.empty() ? selfName : m_selectedChar;
+	std::string current;
+	if (m_selectedChar.empty())
+	{
+		current = selfName;
+	}
+	else if (!mq::IsAnonymized())
+	{
+		current = m_selectedChar;
+	}
+	else
+	{
+		current = "Player"; // anonymized preview of the selected character
+		if (m_ctx.Char)
+		{
+			for (const GroupMemberSnap& gm : m_ctx.Char->Group())
+			{
+				if (ci_equals(gm.name, m_selectedChar)) { current = gm.maskedName; break; }
+			}
+		}
+		if (current == "Player" && m_ctx.Actors)
+		{
+			if (const myui::PeerRecord* pr = m_ctx.Actors->FindPeerByName(m_selectedChar)) { current = pr->maskedName; }
+		}
+	}
 	ImGui::SetNextItemWidth(-1.0f);
 	if (ImGui::BeginCombo("##BuffChar", current.c_str()))
 	{
@@ -155,7 +178,8 @@ void BuffsModule::DrawTableView(float pulse)
 				{
 					continue;
 				}
-				if (ImGui::Selectable(gm.name.c_str(), ci_equals(m_selectedChar, gm.name)))
+				std::string disp = (mq::IsAnonymized() ? gm.maskedName : gm.name) + "##" + gm.name;
+				if (ImGui::Selectable(disp.c_str(), ci_equals(m_selectedChar, gm.name)))
 				{
 					m_selectedChar = gm.name;
 				}
@@ -169,7 +193,8 @@ void BuffsModule::DrawTableView(float pulse)
 				{
 					continue;
 				}
-				if (ImGui::Selectable(peer.character.c_str(), ci_equals(m_selectedChar, peer.character)))
+				std::string disp = (mq::IsAnonymized() ? peer.maskedName : peer.character) + "##" + peer.character;
+				if (ImGui::Selectable(disp.c_str(), ci_equals(m_selectedChar, peer.character)))
 				{
 					m_selectedChar = peer.character;
 				}
@@ -279,7 +304,7 @@ void BuffsModule::DrawIconView(float pulse)
 					continue;
 				}
 				const myui::PeerRecord* peer = m_ctx.Actors->FindPeerByName(gm.name);
-				DrawIconLineupRow(gm.name.c_str(), (peer && peer->hasBuffs) ? peer->buffs : kNoBuffs, pulse, gm.name);
+				DrawIconLineupRow((mq::IsAnonymized() ? gm.maskedName : gm.name).c_str(), (peer && peer->hasBuffs) ? peer->buffs : kNoBuffs, pulse, gm.name);
 			}
 		}
 		else
@@ -290,7 +315,7 @@ void BuffsModule::DrawIconView(float pulse)
 				{
 					continue;
 				}
-				DrawIconLineupRow(peer.character.c_str(), peer.hasBuffs ? peer.buffs : kNoBuffs, pulse, peer.character);
+				DrawIconLineupRow((mq::IsAnonymized() ? peer.maskedName : peer.character).c_str(), peer.hasBuffs ? peer.buffs : kNoBuffs, pulse, peer.character);
 			}
 		}
 	}
@@ -308,7 +333,7 @@ void BuffsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 	ImGui::TextUnformatted(rowName);
 
 	ImGui::TableSetColumnIndex(1);
-	ImGui::PushID(rowName);
+	ImGui::PushID(targetChar.empty() ? rowName : targetChar.c_str());
 
 	float avail = ImGui::GetContentRegionAvail().x;
 	float lineWidth = 0.0f;
@@ -351,7 +376,7 @@ void BuffsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 				}
 				if (!buff.caster.empty())
 				{
-					ImGui::Text("Caster: %s", buff.caster.c_str());
+					ImGui::Text("Caster: %s", mq::IsAnonymized() ? "Player" : buff.caster.c_str());
 				}
 				ImGui::EndTooltip();
 			}

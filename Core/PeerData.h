@@ -25,6 +25,7 @@ struct PeerRecord
 {
 	std::string server;
 	std::string character;
+	std::string maskedName; // RACE_CLASS_LEVEL code for anonymized display
 	std::string classShort;
 	int level = 0;
 

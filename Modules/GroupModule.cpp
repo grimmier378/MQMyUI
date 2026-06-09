@@ -22,6 +22,7 @@
 struct GroupRowData
 {
 	std::string name;
+	std::string maskedName;
 	std::string classShort;
 	std::string zoneName;
 	std::string server;
@@ -57,6 +58,7 @@ GroupRowData GroupModule::BuildRow(const GroupMemberSnap& snap) const
 {
 	GroupRowData row;
 	row.name       = snap.name;
+	row.maskedName = snap.maskedName;
 	row.classShort = snap.classShort;
 	row.level      = snap.level;
 	row.isSelf     = snap.isSelf;
@@ -240,7 +242,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f));
 		}
-		bool clicked = ImGui::Selectable(row.name.c_str(), false);
+		bool clicked = ImGui::Selectable((mq::IsAnonymized() ? row.maskedName : row.name).c_str(), false);
 		if (row.isLeader)
 		{
 			ImGui::PopStyleColor();
@@ -417,7 +419,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 			}
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetItemTooltip("%s: %d%%", row.petName.empty() ? "Pet" : row.petName.c_str(), row.petPctHP);
+				ImGui::SetItemTooltip("%s: %d%%", (mq::IsAnonymized() || row.petName.empty()) ? "Pet" : row.petName.c_str(), row.petPctHP);
 			}
 			ImGui::EndTable();
 		}
@@ -437,7 +439,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 			}
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetItemTooltip("%s: %d%%", row.petName.empty() ? "Pet" : row.petName.c_str(), row.petPctHP);
+				ImGui::SetItemTooltip("%s: %d%%", (mq::IsAnonymized() || row.petName.empty()) ? "Pet" : row.petName.c_str(), row.petPctHP);
 			}
 		}
 	}
@@ -515,7 +517,7 @@ void GroupModule::DrawVitalBars(const GroupRowData& row)
 void GroupModule::DrawMemberTooltip(const GroupRowData& row)
 {
 	ImGui::BeginTooltip();
-	ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "%s (%d)", row.name.c_str(), row.level);
+	ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "%s (%d)", (mq::IsAnonymized() ? row.maskedName : row.name).c_str(), row.level);
 	if (!row.classShort.empty())
 	{
 		ImGui::Text("Class: %s", row.classShort.c_str());
@@ -553,7 +555,7 @@ void GroupModule::DrawMemberTooltip(const GroupRowData& row)
 	}
 	if (row.hasPet)
 	{
-		ImGui::Text("Pet: %s (%d%% health)", row.petName.empty() ? "pet" : row.petName.c_str(), row.petPctHP);
+		ImGui::Text("Pet: %s (%d%% health)", (mq::IsAnonymized() || row.petName.empty()) ? "pet" : row.petName.c_str(), row.petPctHP);
 	}
 
 	if (row.roleMask & myui::kRoleMainTank)
@@ -606,9 +608,12 @@ void GroupModule::DrawCommandButtons(const std::vector<GroupMemberSnap>& members
 		std::string loc = fmt::format("{:.2f} {:.2f} {:.2f}", pLocalPlayer->X, pLocalPlayer->Y, pLocalPlayer->Z);
 		SendToMembers(members, "ComeLoc", zoneId, loc);
 	}
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered() && ImGui::BeginTooltip())
 	{
-		ImGui::SetItemTooltip("Send a /nav to your exact location to every %s member running MyUI (only those in your zone respond).", scopeLabel);
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 18.0f);
+		ImGui::Text("Send a /nav to your exact location to every %s member running MyUI (only those in your zone respond).", scopeLabel);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
 	}
 
 	ImGui::SameLine();
@@ -627,9 +632,12 @@ void GroupModule::DrawCommandButtons(const std::vector<GroupMemberSnap>& members
 	{
 		ImGui::PopStyleColor(1);
 	}
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered() && ImGui::BeginTooltip())
 	{
-		ImGui::SetItemTooltip("Toggle every %s member running MyUI to /afollow you (only those in your zone start following). Resets on zone.", scopeLabel);
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 18.0f);
+		ImGui::Text("Toggle every %s member running MyUI to /afollow you (only those in your zone start following). Resets on zone.", scopeLabel);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
 	}
 }
 

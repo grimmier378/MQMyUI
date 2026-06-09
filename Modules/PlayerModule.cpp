@@ -121,7 +121,7 @@ void PlayerModule::OnRenderGUI()
 void PlayerModule::DrawPlayer()
 {
 	const CharSnapshot& c = m_ctx.Char->Get();
-	const char* name = mq::IsAnonymized() ? "Player" : c.name.c_str();
+	const char* name = mq::IsAnonymized() ? "Me" : c.name.c_str();
 
 	float barH = m_ctx.UI->Bar(GetName(), "HP").height;
 	bool combatPulse = m_ctx.UI->Flag(GetName(), "CombatPulse", true);
@@ -241,7 +241,16 @@ void PlayerModule::DrawTarget()
 	ImGui::BeginChild("##tgtblk", ImVec2(0.0f, 0.0f),
 		ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoScrollbar);
 
-	std::string targetName = mq::IsAnonymized() ? "Target" : myui::TrimName(pTarget->DisplayedName);
+	std::string targetName;
+	if (mq::IsAnonymized() && pTarget->Type == SPAWN_PLAYER)
+	{
+		const char* tcls = pTarget->GetClassThreeLetterCode();
+		targetName = myui::MaskedCode(pTarget->GetRace(), tcls ? tcls : "", pTarget->GetLevel());
+	}
+	else
+	{
+		targetName = myui::TrimName(pTarget->DisplayedName);
+	}
 
 	int pct = static_cast<int>(pTarget->HPCurrent);
 	bool overlayText = m_ctx.UI->Flag(GetName(), "TargetTextOverlay", false);

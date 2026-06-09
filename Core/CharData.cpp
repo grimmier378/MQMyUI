@@ -1,5 +1,6 @@
 #include "CharData.h"
 #include "PeerData.h"
+#include "UiHelpers.h"
 
 #include <mq/Plugin.h>
 
@@ -101,6 +102,9 @@ void CharData::Refresh()
 	{
 		m_snap.classShort = cls;
 	}
+	// Real race is broadcast to peers; the anonymized code is built locally on each
+	// side. Our own local displays just show "Me".
+	m_snap.raceId = pLocalPlayer->GetRace();
 
 	m_snap.curHP   = GetCurHPS();
 	m_snap.maxHP   = GetMaxHPS();
@@ -350,6 +354,7 @@ void CharData::RefreshGroupRaid()
 				{
 					m.classShort = cls;
 				}
+				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(sp->GetRace(), m.classShort, m.level);
 				if (PlayerClient* pPet = GetSpawnByID(sp->PetID))
 				{
 					m.petPctHP = static_cast<int>(pPet->HPCurrent);
@@ -362,6 +367,10 @@ void CharData::RefreshGroupRaid()
 				m.classShort = m_snap.classShort;
 			}
 
+			if (m.maskedName.empty())
+			{
+				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(0, m.classShort, m.level);
+			}
 			m_group.push_back(std::move(m));
 		}
 	}
@@ -413,8 +422,16 @@ void CharData::RefreshGroupRaid()
 					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
 				}
 				m.pctHP      = m.isSelf ? m_snap.PctHP() : static_cast<int>(sp->HPCurrent);
+				if (!m.isSelf)
+				{
+					m.maskedName = myui::MaskedCode(sp->GetRace(), m.classShort, m.level);
+				}
 			}
 
+			if (m.maskedName.empty())
+			{
+				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(0, m.classShort, m.level);
+			}
 			m_raid.push_back(std::move(m));
 		}
 	}

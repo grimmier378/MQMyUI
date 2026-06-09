@@ -87,7 +87,16 @@ void PetModule::OnRenderGUI()
 
 			if (PlayerClient* pPetTarget = pPet->WhoFollowing)
 			{
-				std::string targetName = mq::IsAnonymized() ? "Pet Target" : myui::TrimName(pPetTarget->DisplayedName);
+				std::string targetName;
+				if (mq::IsAnonymized() && pPetTarget->Type == SPAWN_PLAYER)
+				{
+					const char* pcls = pPetTarget->GetClassThreeLetterCode();
+					targetName = myui::MaskedCode(pPetTarget->GetRace(), pcls ? pcls : "", pPetTarget->GetLevel());
+				}
+				else
+				{
+					targetName = myui::TrimName(pPetTarget->DisplayedName);
+				}
 				ImGui::Text("Target: %s", targetName.c_str());
 				myui::DrawStyledBar("##pettht", static_cast<float>(pPetTarget->HPCurrent), m_ctx.UI->Bar(GetName(), "PetTarget"));
 			}

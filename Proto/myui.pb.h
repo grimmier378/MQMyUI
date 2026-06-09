@@ -1059,6 +1059,7 @@ class CharVitals final : public ::google::protobuf::Message
     kPetIdFieldNumber = 16,
     kPetPctHpFieldNumber = 17,
     kRoleMaskFieldNumber = 20,
+    kRaceFieldNumber = 23,
   };
   // string server = 1;
   void clear_server() ;
@@ -1320,11 +1321,21 @@ class CharVitals final : public ::google::protobuf::Message
   void _internal_set_role_mask(::int32_t value);
 
   public:
+  // int32 race = 23;
+  void clear_race() ;
+  ::int32_t race() const;
+  void set_race(::int32_t value);
+
+  private:
+  ::int32_t _internal_race() const;
+  void _internal_set_race(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:mq.proto.myui.CharVitals)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<5, 22,
+  static const ::google::protobuf::internal::TcParseTable<5, 23,
                                    0, 118,
                                    2>
       _table_;
@@ -1368,6 +1379,7 @@ class CharVitals final : public ::google::protobuf::Message
     ::int32_t pet_id_;
     ::int32_t pet_pct_hp_;
     ::int32_t role_mask_;
+    ::int32_t race_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4031,6 +4043,31 @@ inline void CharVitals::set_allocated_host(::std::string* PROTOBUF_NULLABLE valu
     _impl_.host_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:mq.proto.myui.CharVitals.host)
+}
+
+// int32 race = 23;
+inline void CharVitals::clear_race() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.race_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00400000U);
+}
+inline ::int32_t CharVitals::race() const {
+  // @@protoc_insertion_point(field_get:mq.proto.myui.CharVitals.race)
+  return _internal_race();
+}
+inline void CharVitals::set_race(::int32_t value) {
+  _internal_set_race(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
+  // @@protoc_insertion_point(field_set:mq.proto.myui.CharVitals.race)
+}
+inline ::int32_t CharVitals::_internal_race() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.race_;
+}
+inline void CharVitals::_internal_set_race(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.race_ = value;
 }
 
 // -------------------------------------------------------------------

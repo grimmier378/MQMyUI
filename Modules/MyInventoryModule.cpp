@@ -306,7 +306,7 @@ void MyInventoryModule::DrawInventoryStats()
 		StatGameTip(tipControl);
 	};
 
-	ImGui::TextColored(colName, "%s", self.name.c_str());
+	ImGui::TextColored(colName, "%s", mq::IsAnonymized() ? "Me" : self.name.c_str());
 	ImGui::TextColored(kStWhite, "%d %s", self.level,
 		st.className.empty() ? self.classShort.c_str() : st.className.c_str());
 	if (!st.deityName.empty())

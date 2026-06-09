@@ -16,6 +16,7 @@
 struct AARow
 {
 	std::string name;
+	std::string maskedName;
 	std::string server;
 	std::string groupLeader;
 	std::string allocation;
@@ -66,7 +67,7 @@ void XpBarsModule::DrawRow(const AARow& row)
 		ImGui::TableSetupColumn("pts", ImGuiTableColumnFlags_WidthFixed, 38.0f * scale);
 
 		ImGui::TableNextColumn();
-		ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "%s", row.name.c_str());
+		ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "%s", (mq::IsAnonymized() ? row.maskedName : row.name).c_str());
 		ImGui::SameLine();
 		ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "%d", row.level);
 
@@ -108,7 +109,7 @@ void XpBarsModule::DrawRow(const AARow& row)
 	if (showTooltip && tileHovered)
 	{
 		ImGui::BeginTooltip();
-		ImGui::Text("%s (Level %d)", row.name.c_str(), row.level);
+		ImGui::Text("%s (Level %d)", (mq::IsAnonymized() ? row.maskedName : row.name).c_str(), row.level);
 		ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.3f, 1.0f), "Exp:    %.2f%%", row.pctExp);
 		ImGui::TextColored(ImVec4(0.3f, 0.9f, 1.0f, 1.0f), "AA Exp: %.2f%%", row.pctAAExp);
 		ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Avail:  %d", row.aaAvail);
@@ -183,6 +184,7 @@ void XpBarsModule::OnRenderGUI()
 	{
 		AARow r;
 		r.name        = self.name;
+		r.maskedName  = "Me";
 		r.server      = self.server;
 		r.groupLeader = self.groupLeader;
 		r.level       = self.level;
@@ -212,6 +214,7 @@ void XpBarsModule::OnRenderGUI()
 
 			AARow r;
 			r.name        = peer.character;
+			r.maskedName  = peer.maskedName;
 			r.server      = peer.server;
 			r.groupLeader = peer.groupLeader;
 			r.level       = peer.level;
@@ -271,7 +274,7 @@ void XpBarsModule::OnRenderGUI()
 			if (showLeader && (first || !ci_equals(row.groupLeader, lastLeader)))
 			{
 				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Leader: %s",
-					row.groupLeader.empty() ? "NoGroup" : row.groupLeader.c_str());
+					mq::IsAnonymized() ? "Leader" : (row.groupLeader.empty() ? "NoGroup" : row.groupLeader.c_str()));
 				ImGui::Separator();
 				lastLeader = row.groupLeader;
 				rowUsed = 0.0f;
