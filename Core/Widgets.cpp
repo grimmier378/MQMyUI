@@ -2,6 +2,7 @@
 
 #include <imgui/imgui_internal.h>
 #include "imgui/imanim/im_anim.h"
+#include "imgui/fonts/IconsFontAwesome.h"
 #include "mq/imgui/AlphaMask.h"
 
 #include <cmath>
@@ -572,9 +573,52 @@ void EndAnimatedHeader()
 
 namespace
 {
-// One slider edit popup is ever open at a time, so a single scratch buffer is fine.
-char g_sliderEditBuf[64] = {};
-ImVec2 g_sliderEditPos = ImVec2(0.0f, 0.0f);
+// One edit popup is open at a time, so a single scratch buffer / position is shared
+// by the slider Ctrl+click popup and the cursor-anchored InputPopup.
+char g_editPopupBuf[256] = {};
+ImVec2 g_editPopupPos = ImVec2(0.0f, 0.0f);
+
+// Shared cursor-anchored edit-popup body: a focused input + styled Accept/Cancel
+// buttons, Enter accepts / Esc cancels. Returns 1 = accepted, -1 = cancelled,
+// 0 = nothing yet. The caller seeds g_editPopupBuf / g_editPopupPos before opening.
+int EditPopupRun(const char* popupId, float width, ImGuiInputTextFlags extraFlags, const char* hint)
+{
+	int result = 0;
+	ImGui::SetNextWindowPos(g_editPopupPos, ImGuiCond_Appearing);
+	if (ImGui::BeginPopup(popupId))
+	{
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere();
+		}
+		ImGui::SetNextItemWidth(width);
+		const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | extraFlags;
+		bool enter = false;
+		if (hint && hint[0] != '\0')
+		{
+			enter = ImGui::InputTextWithHint("##in", hint, g_editPopupBuf, sizeof(g_editPopupBuf), flags);
+		}
+		else
+		{
+			enter = ImGui::InputText("##in", g_editPopupBuf, sizeof(g_editPopupBuf), flags);
+		}
+		const bool accept = StyledButton("Accept");
+		ImGui::SameLine();
+		const bool cancel = StyledButton("Cancel");
+		if (enter || accept)
+		{
+			result = 1;
+			ImGui::CloseCurrentPopup();
+		}
+		else if (cancel || ImGui::IsKeyPressed(ImGuiKey_Escape))
+		{
+			result = -1;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+	return result;
+}
 
 // imanim-style slider visual: thin glowing rail, accent fill, white thumb with an
 // accent ring that scales up on hover/drag, and the value text on the right.
@@ -623,34 +667,13 @@ void DrawAnimatedSlider(ImGuiID id, ImVec2 pos, float w, float h, float trackT, 
 // writes the parsed value to *out when accepted.
 bool SliderEditPopup(const char* popupId, bool asInt, double* out)
 {
-	bool accepted = false;
-	ImGui::SetNextWindowPos(g_sliderEditPos, ImGuiCond_Appearing);
-	if (ImGui::BeginPopup(popupId))
+	const ImGuiInputTextFlags extra = asInt ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsScientific;
+	if (EditPopupRun(popupId, 110.0f, extra, nullptr) == 1)
 	{
-		const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll
-			| (asInt ? ImGuiInputTextFlags_CharsDecimal : ImGuiInputTextFlags_CharsScientific);
-		if (ImGui::IsWindowAppearing())
-		{
-			ImGui::SetKeyboardFocusHere();
-		}
-		ImGui::SetNextItemWidth(110.0f);
-		const bool enter = ImGui::InputText("##val", g_sliderEditBuf, sizeof(g_sliderEditBuf), flags);
-		const bool apply = myui::StyledButton("Apply");
-		ImGui::SameLine();
-		const bool cancel = myui::StyledButton("Cancel");
-		if (enter || apply)
-		{
-			*out = atof(g_sliderEditBuf);
-			accepted = true;
-			ImGui::CloseCurrentPopup();
-		}
-		else if (cancel || ImGui::IsKeyPressed(ImGuiKey_Escape))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
+		*out = atof(g_editPopupBuf);
+		return true;
 	}
-	return accepted;
+	return false;
 }
 
 void SliderLabel(const char* label)
@@ -684,8 +707,8 @@ bool StyledSliderFloat(const char* label, float* v, float vmin, float vmax, cons
 
 	if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl)
 	{
-		ImFormatString(g_sliderEditBuf, sizeof(g_sliderEditBuf), fmt, *v);
-		g_sliderEditPos = io.MousePos;
+		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), fmt, *v);
+		g_editPopupPos = io.MousePos;
 		ImGui::OpenPopup(popupId);
 	}
 	else if (active && !io.KeyCtrl)
@@ -731,8 +754,8 @@ bool StyledSliderInt(const char* label, int* v, int vmin, int vmax, const char* 
 
 	if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl)
 	{
-		ImFormatString(g_sliderEditBuf, sizeof(g_sliderEditBuf), fmt, *v);
-		g_sliderEditPos = io.MousePos;
+		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), fmt, *v);
+		g_editPopupPos = io.MousePos;
 		ImGui::OpenPopup(popupId);
 	}
 	else if (active && !io.KeyCtrl)
@@ -1074,5 +1097,130 @@ bool StyledButton(const char* label, ImVec2 size, int flags)
 bool StyledSmallButton(const char* label, int flags)
 {
 	return DrawButtonCore(label, ImVec2(0.0f, 0.0f), flags, true);
+}
+
+void HelpMarker(const char* desc)
+{
+	ImGui::TextDisabled("(?)");
+
+	// Temporarily widen the shared hover delay to ~0.5s just for this check so
+	// the tooltip waits half a second without altering MQ's other tooltips.
+	ImGuiStyle& st = ImGui::GetStyle();
+	const float prevDelay = st.HoverDelayNormal;
+	st.HoverDelayNormal = 0.5f;
+	const bool show = ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay);
+	st.HoverDelayNormal = prevDelay;
+
+	if (show && ImGui::BeginTooltip())
+	{
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
+void OpenInputPopup(const char* popupId, const char* initialText)
+{
+	strncpy_s(g_editPopupBuf, sizeof(g_editPopupBuf), initialText ? initialText : "", _TRUNCATE);
+	g_editPopupPos = ImGui::GetIO().MousePos;
+	ImGui::OpenPopup(popupId);
+}
+
+bool InputPopup(const char* popupId, std::string& out, const char* hint)
+{
+	if (EditPopupRun(popupId, 200.0f, 0, hint) == 1)
+	{
+		out = g_editPopupBuf;
+		return true;
+	}
+	return false;
+}
+
+namespace
+{
+// Read-only framed display of `current`; clicking it opens the shared InputPopup
+// to edit. Returns true (with `out` set) only when the popup is accepted.
+bool EditFieldCore(const char* label, const char* current, std::string& out, const char* hint)
+{
+	ImGui::PushID(label);
+	const float w = ImGui::CalcItemWidth();
+	const float h = ImGui::GetFrameHeight();
+	const ImVec2 p0 = ImGui::GetCursorScreenPos();
+	const ImVec2 p1(p0.x + w, p0.y + h);
+
+	const bool clicked = ImGui::InvisibleButton("##field", ImVec2(w, h));
+	const bool hovered = ImGui::IsItemHovered();
+	const ImGuiID fid = ImGui::GetID("##field");
+
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	const float rounding = ImMax(ImGui::GetStyle().FrameRounding, h * 0.30f);
+	const float hi = HoverIntensity(fid, hovered);
+
+	const ImVec4 bg = ImLerp(ImGui::GetStyleColorVec4(ImGuiCol_FrameBg),
+		ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered), ImClamp(hi, 0.0f, 1.0f));
+	dl->AddRectFilled(p0, p1, ImGui::GetColorU32(bg), rounding);
+
+	ImVec4 rim = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+	rim.w = 0.30f + 0.50f * ImClamp(hi, 0.0f, 1.0f);
+	dl->AddRect(p0, p1, ImGui::GetColorU32(rim), rounding, 0, ImMax(ImGui::GetStyle().FrameBorderSize, 1.0f));
+
+	const bool empty = (current == nullptr || current[0] == '\0');
+	const char* shown = empty ? (hint && hint[0] ? hint : "") : current;
+	const ImVec4 tcol = ImGui::GetStyleColorVec4(empty ? ImGuiCol_TextDisabled : ImGuiCol_Text);
+	const float pad = ImMax(rounding, 6.0f);
+	const float ty = p0.y + (h - ImGui::GetTextLineHeight()) * 0.5f;
+	dl->PushClipRect(p0, ImVec2(p1.x - h * 0.85f, p1.y), true);
+	dl->AddText(ImVec2(p0.x + pad, ty), ImGui::GetColorU32(tcol), shown);
+	dl->PopClipRect();
+
+	// Pencil affordance on the right, brightening on hover.
+	ImVec4 pen = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+	pen.w *= 0.45f + 0.55f * ImClamp(hi, 0.0f, 1.0f);
+	const ImVec2 penSz = ImGui::CalcTextSize(ICON_FA_PENCIL);
+	dl->AddText(ImVec2(p1.x - penSz.x - pad, ty), ImGui::GetColorU32(pen), ICON_FA_PENCIL);
+
+	char popupKey[24];
+	ImFormatString(popupKey, sizeof(popupKey), "##ef%08X", fid);
+	if (clicked)
+	{
+		OpenInputPopup(popupKey, current ? current : "");
+	}
+	const bool changed = InputPopup(popupKey, out, hint);
+
+	ImGui::PopID();
+	SliderLabel(label); // visible label (text before "##") drawn after the field
+	return changed;
+}
+} // namespace
+
+bool StyledEditField(const char* label, std::string* value, const char* hint)
+{
+	if (!value)
+	{
+		return false;
+	}
+	std::string out;
+	if (EditFieldCore(label, value->c_str(), out, hint))
+	{
+		*value = out;
+		return true;
+	}
+	return false;
+}
+
+bool StyledEditField(const char* label, char* buf, size_t bufSize, const char* hint)
+{
+	if (!buf || bufSize == 0)
+	{
+		return false;
+	}
+	std::string out;
+	if (EditFieldCore(label, buf, out, hint))
+	{
+		strncpy_s(buf, bufSize, out.c_str(), _TRUNCATE);
+		return true;
+	}
+	return false;
 }
 } // namespace myui

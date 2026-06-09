@@ -54,7 +54,7 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 	}
 
 	ImGui::SetNextItemWidth(200.0f);
-	ImGui::InputText("Name", nameBuf, nameBufSize);
+	myui::StyledEditField("Name", nameBuf, nameBufSize);
 
 	const bool isDefaultSelected = (selected == "Default");
 	const std::string targetName = nameBuf;

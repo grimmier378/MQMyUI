@@ -833,13 +833,8 @@ void SettingsModule::DrawWindowDetail(const std::string& name)
 					continue;
 				}
 				labelCol(key);
-				char buf[128];
-				strncpy_s(buf, val.c_str(), _TRUNCATE);
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				if (ImGui::InputText((std::string("##str") + name + key).c_str(), buf, sizeof(buf)))
-				{
-					val = buf;
-				}
+				myui::StyledEditField((std::string("##str") + name + key).c_str(), &val);
 			}
 
 			ImGui::EndTable();
@@ -1018,12 +1013,7 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 		{
 			if (b.textMode == 1)
 			{
-				char fmt[32];
-				strncpy_s(fmt, b.textFormat.c_str(), _TRUNCATE);
-				if (ImGui::InputText("Format", fmt, sizeof(fmt)))
-				{
-					b.textFormat = fmt;
-				}
+				myui::StyledEditField("Format", &b.textFormat);
 			}
 			myui::StyledSliderFloat("Text Scale", &b.textScale, 0.3f, 3.0f, "%.2f");
 			myui::StyledCheckbox("Drop Shadow", &b.textDropShadow);

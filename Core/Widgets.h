@@ -2,6 +2,8 @@
 
 #include <mq/Plugin.h>
 
+#include <string>
+
 namespace myui
 {
 enum ToggleFlags
@@ -113,4 +115,24 @@ void StyledEndCombo();
 // Animated checkbox: rounded box, accent fill that scales in, and a checkmark
 // that draws itself in (out_back), all theme-colored. Drop-in for ImGui::Checkbox.
 bool StyledCheckbox(const char* label, bool* v);
+
+// (?) help marker: a TextDisabled("(?)") that shows a wrapped tooltip after a
+// half-second hover. Pair with ImGui::SameLine() to trail a control.
+void HelpMarker(const char* desc);
+
+// Cursor-anchored single-line input popup with Accept/Cancel. Call
+// OpenInputPopup(id, initial) to open it at the mouse, then each frame call
+// InputPopup(id, out) which returns true (and fills out) only when accepted.
+// Only one such popup is open at a time (shared internal buffer).
+void OpenInputPopup(const char* popupId, const char* initialText);
+bool InputPopup(const char* popupId, std::string& out, const char* hint = nullptr);
+
+// Click-to-edit field: a rounded, read-only display of the current text with a
+// pencil affordance; clicking it opens the cursor-anchored InputPopup (Accept/
+// Cancel) to edit. Returns true and writes the value only when accepted. Width
+// follows SetNextItemWidth/CalcItemWidth; the visible label (text after "##") is
+// drawn after the field; the optional hint shows when the value is empty.
+// Drop-in for a plain ImGui::InputText on persistent value fields.
+bool StyledEditField(const char* label, std::string* value, const char* hint = nullptr);
+bool StyledEditField(const char* label, char* buf, size_t bufSize, const char* hint = nullptr);
 }
