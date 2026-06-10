@@ -5,6 +5,7 @@
 
 #include <mq/Plugin.h>
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -36,6 +37,12 @@ private:
 	std::vector<CharIdent>  m_chars;
 	std::vector<SettingRow> m_src;
 	std::vector<SettingRow> m_dst;
+
+	// Rebuilt in RefreshRows alongside m_src/m_dst; pointers index into those vectors.
+	std::map<std::string, std::map<std::string, const SettingRow*>> m_srcRowIdx;
+	std::map<std::string, std::map<std::string, const SettingRow*>> m_dstRowIdx;
+	std::map<std::string, std::set<std::string>>                    m_byModule;
+
 	int  m_srcIdx = -1;
 	std::set<int> m_dstSel;
 	bool m_wasOpen = false;

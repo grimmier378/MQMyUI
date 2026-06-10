@@ -12,16 +12,16 @@
 
 namespace
 {
-const SettingRow* Find(const std::vector<SettingRow>& rows, const std::string& module, const std::string& name)
+const SettingRow* Lookup(const std::map<std::string, std::map<std::string, const SettingRow*>>& idx,
+	const std::string& module, const std::string& name)
 {
-	for (const SettingRow& r : rows)
+	auto mit = idx.find(module);
+	if (mit == idx.end())
 	{
-		if (r.module == module && r.name == name)
-		{
-			return &r;
-		}
+		return nullptr;
 	}
-	return nullptr;
+	auto nit = mit->second.find(name);
+	return nit == mit->second.end() ? nullptr : nit->second;
 }
 } // namespace
 
@@ -58,6 +58,9 @@ void CopyModule::RefreshRows()
 {
 	m_src.clear();
 	m_dst.clear();
+	m_srcRowIdx.clear();
+	m_dstRowIdx.clear();
+	m_byModule.clear();
 	if (!m_ctx.Settings)
 	{
 		return;
@@ -70,6 +73,17 @@ void CopyModule::RefreshRows()
 	if (primary >= 0 && primary < (int)m_chars.size())
 	{
 		m_dst = m_ctx.Settings->GetAllSettings(m_chars[primary].server, m_chars[primary].character);
+	}
+
+	for (const SettingRow& r : m_src)
+	{
+		m_srcRowIdx[r.module][r.name] = &r;
+		m_byModule[r.module].insert(r.name);
+	}
+	for (const SettingRow& r : m_dst)
+	{
+		m_dstRowIdx[r.module][r.name] = &r;
+		m_byModule[r.module].insert(r.name);
 	}
 }
 
@@ -306,7 +320,7 @@ void CopyModule::OnRenderGUI()
 		{
 			for (const SettingRow& s : m_src)
 			{
-				const SettingRow* d = Find(m_dst, s.module, s.name);
+				const SettingRow* d = Lookup(m_dstRowIdx, s.module, s.name);
 				if (!d || d->value != s.value)
 				{
 					QueueCopy(s.module, s.name, s.type, s.value);
@@ -321,18 +335,8 @@ void CopyModule::OnRenderGUI()
 
 		if (ready && w.visible)
 		{
-			std::map<std::string, std::set<std::string>> byModule;
-			for (const SettingRow& r : m_src)
-			{
-				byModule[r.module].insert(r.name);
-			}
-			for (const SettingRow& r : m_dst)
-			{
-				byModule[r.module].insert(r.name);
-			}
-
 			ImGui::BeginChild("##diff");
-			for (auto& [module, names] : byModule)
+			for (auto& [module, names] : m_byModule)
 			{
 				if (!ImGui::CollapsingHeader(module.c_str()))
 				{
@@ -343,12 +347,12 @@ void CopyModule::OnRenderGUI()
 				{
 					for (const std::string& n : names)
 					{
-						const SettingRow* s = Find(m_src, module, n);
+						const SettingRow* s = Lookup(m_srcRowIdx, module, n);
 						if (!s)
 						{
 							continue;
 						}
-						const SettingRow* d = Find(m_dst, module, n);
+						const SettingRow* d = Lookup(m_dstRowIdx, module, n);
 						if (!d || d->value != s->value)
 						{
 							QueueCopy(module, n, s->type, s->value);
@@ -361,8 +365,8 @@ void CopyModule::OnRenderGUI()
 				{
 					for (const std::string& n : names)
 					{
-						const SettingRow* s = Find(m_src, module, n);
-						const SettingRow* d = Find(m_dst, module, n);
+						const SettingRow* s = Lookup(m_srcRowIdx, module, n);
+						const SettingRow* d = Lookup(m_dstRowIdx, module, n);
 						bool differ = (!d) || (!s) || (s->value != d->value);
 
 						ImGui::TableNextRow();

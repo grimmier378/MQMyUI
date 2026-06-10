@@ -57,6 +57,75 @@ int ColorIndexByName(const std::string& name)
 	return -1;
 }
 
+// Single source of truth for the scalar/vec2 style fields. These arrays drive
+// ToRows/FromRows serialization, the shared-style defaults, the captured ImGui
+// default, and ApplyTheme — adding a style field is one row here.
+struct ScalarField
+{
+	const char*         name;
+	float Theme::*      t;
+	float ImGuiStyle::* s;
+	float               def;
+};
+
+struct Vec2Field
+{
+	const char*          name;
+	ImVec2 Theme::*      t;
+	ImVec2 ImGuiStyle::* s;
+	ImVec2               def;
+};
+
+const ScalarField kScalarFields[] = {
+	{ "WindowRounding",    &Theme::windowRounding,    &ImGuiStyle::WindowRounding,    0.0f },
+	{ "FrameRounding",     &Theme::frameRounding,     &ImGuiStyle::FrameRounding,     0.0f },
+	{ "ChildRounding",     &Theme::childRounding,     &ImGuiStyle::ChildRounding,     0.0f },
+	{ "PopupRounding",     &Theme::popupRounding,     &ImGuiStyle::PopupRounding,     0.0f },
+	{ "ScrollbarRounding", &Theme::scrollbarRounding, &ImGuiStyle::ScrollbarRounding, 0.0f },
+	{ "GrabRounding",      &Theme::grabRounding,      &ImGuiStyle::GrabRounding,      0.0f },
+	{ "TabRounding",       &Theme::tabRounding,       &ImGuiStyle::TabRounding,       4.0f },
+	{ "WindowBorderSize",  &Theme::windowBorderSize,  &ImGuiStyle::WindowBorderSize,  1.0f },
+	{ "FrameBorderSize",   &Theme::frameBorderSize,   &ImGuiStyle::FrameBorderSize,   0.0f },
+	{ "ChildBorderSize",   &Theme::childBorderSize,   &ImGuiStyle::ChildBorderSize,   1.0f },
+	{ "PopupBorderSize",   &Theme::popupBorderSize,   &ImGuiStyle::PopupBorderSize,   1.0f },
+	{ "TabBarBorderSize",  &Theme::tabBarBorderSize,  &ImGuiStyle::TabBarBorderSize,  1.0f },
+	{ "IndentSpacing",     &Theme::indentSpacing,     &ImGuiStyle::IndentSpacing,     21.0f },
+	{ "ScrollbarSize",     &Theme::scrollbarSize,     &ImGuiStyle::ScrollbarSize,     14.0f },
+	{ "GrabMinSize",       &Theme::grabMinSize,       &ImGuiStyle::GrabMinSize,       12.0f },
+};
+
+const Vec2Field kVec2Fields[] = {
+	{ "WindowPadding",    &Theme::windowPadding,    &ImGuiStyle::WindowPadding,    ImVec2(8.0f, 8.0f) },
+	{ "FramePadding",     &Theme::framePadding,     &ImGuiStyle::FramePadding,     ImVec2(4.0f, 3.0f) },
+	{ "CellPadding",      &Theme::cellPadding,      &ImGuiStyle::CellPadding,      ImVec2(4.0f, 2.0f) },
+	{ "ItemSpacing",      &Theme::itemSpacing,      &ImGuiStyle::ItemSpacing,      ImVec2(8.0f, 4.0f) },
+	{ "ItemInnerSpacing", &Theme::itemInnerSpacing, &ImGuiStyle::ItemInnerSpacing, ImVec2(4.0f, 4.0f) },
+};
+
+const ScalarField* FindScalarField(const std::string& name)
+{
+	for (const ScalarField& f : kScalarFields)
+	{
+		if (name == f.name)
+		{
+			return &f;
+		}
+	}
+	return nullptr;
+}
+
+const Vec2Field* FindVec2Field(const std::string& name)
+{
+	for (const Vec2Field& f : kVec2Fields)
+	{
+		if (name == f.name)
+		{
+			return &f;
+		}
+	}
+	return nullptr;
+}
+
 std::vector<ThemeRow> ToRows(const Theme& t)
 {
 	std::vector<ThemeRow> rows;
@@ -69,30 +138,15 @@ std::vector<ThemeRow> ToRows(const Theme& t)
 			fmt::format("{{{},{},{},{}}}", c.x, c.y, c.z, c.w) });
 	}
 
-	auto fl = [&](const char* n, float v) { rows.push_back(ThemeRow{ n, "float", fmt::format("{}", v) }); };
-	auto bl = [&](const char* n, float v) { rows.push_back(ThemeRow{ n, "bool", v > 0.5f ? "1" : "0" }); };
-	auto v2 = [&](const char* n, const ImVec2& v) { rows.push_back(ThemeRow{ n, "imvec2", fmt::format("{{{},{}}}", v.x, v.y) }); };
-
-	fl("WindowRounding", t.windowRounding);
-	fl("FrameRounding", t.frameRounding);
-	fl("ChildRounding", t.childRounding);
-	fl("PopupRounding", t.popupRounding);
-	fl("ScrollbarRounding", t.scrollbarRounding);
-	fl("GrabRounding", t.grabRounding);
-	fl("TabRounding", t.tabRounding);
-	bl("WindowBorderSize", t.windowBorderSize);
-	bl("FrameBorderSize", t.frameBorderSize);
-	bl("ChildBorderSize", t.childBorderSize);
-	bl("PopupBorderSize", t.popupBorderSize);
-	bl("TabBarBorderSize", t.tabBarBorderSize);
-	fl("IndentSpacing", t.indentSpacing);
-	fl("ScrollbarSize", t.scrollbarSize);
-	fl("GrabMinSize", t.grabMinSize);
-	v2("WindowPadding", t.windowPadding);
-	v2("FramePadding", t.framePadding);
-	v2("CellPadding", t.cellPadding);
-	v2("ItemSpacing", t.itemSpacing);
-	v2("ItemInnerSpacing", t.itemInnerSpacing);
+	for (const ScalarField& f : kScalarFields)
+	{
+		rows.push_back(ThemeRow{ f.name, "float", fmt::format("{}", t.*f.t) });
+	}
+	for (const Vec2Field& f : kVec2Fields)
+	{
+		const ImVec2& v = t.*f.t;
+		rows.push_back(ThemeRow{ f.name, "imvec2", fmt::format("{{{},{}}}", v.x, v.y) });
+	}
 
 	return rows;
 }
@@ -126,95 +180,23 @@ Theme FromRows(const std::string& name, const std::vector<ThemeRow>& rows, const
 			{
 				continue;
 			}
-			ImVec2 v(f[0], f[1]);
-			if (r.name == "WindowPadding")
+			if (const Vec2Field* field = FindVec2Field(r.name))
 			{
-				t.windowPadding = v;
-			}
-			else if (r.name == "FramePadding")
-			{
-				t.framePadding = v;
-			}
-			else if (r.name == "CellPadding")
-			{
-				t.cellPadding = v;
-			}
-			else if (r.name == "ItemSpacing")
-			{
-				t.itemSpacing = v;
-			}
-			else if (r.name == "ItemInnerSpacing")
-			{
-				t.itemInnerSpacing = v;
+				t.*field->t = ImVec2(f[0], f[1]);
 			}
 		}
 		else
 		{
+			// Scalars: parse the value as float regardless of the row's stored
+			// type so legacy border-size rows saved as "bool" (0/1) still load.
 			std::vector<float> f = ParseFloats(r.value);
 			if (f.empty())
 			{
 				continue;
 			}
-			float v = f[0];
-			if (r.name == "WindowRounding")
+			if (const ScalarField* field = FindScalarField(r.name))
 			{
-				t.windowRounding = v;
-			}
-			else if (r.name == "FrameRounding")
-			{
-				t.frameRounding = v;
-			}
-			else if (r.name == "ChildRounding")
-			{
-				t.childRounding = v;
-			}
-			else if (r.name == "PopupRounding")
-			{
-				t.popupRounding = v;
-			}
-			else if (r.name == "ScrollbarRounding")
-			{
-				t.scrollbarRounding = v;
-			}
-			else if (r.name == "GrabRounding")
-			{
-				t.grabRounding = v;
-			}
-			else if (r.name == "TabRounding")
-			{
-				t.tabRounding = v;
-			}
-			else if (r.name == "WindowBorderSize")
-			{
-				t.windowBorderSize = v;
-			}
-			else if (r.name == "FrameBorderSize")
-			{
-				t.frameBorderSize = v;
-			}
-			else if (r.name == "ChildBorderSize")
-			{
-				t.childBorderSize = v;
-			}
-			else if (r.name == "PopupBorderSize")
-			{
-				t.popupBorderSize = v;
-			}
-			else if (r.name == "TabBarBorderSize")
-			{
-				t.tabBarBorderSize = v;
-			}
-			else if (r.name == "IndentSpacing")
-			{
-				t.indentSpacing = v;
-			}
-			else if (r.name == "ScrollbarSize")
-			{
-				t.scrollbarSize = v;
-			}
-			else if (r.name == "GrabMinSize")
-			{
-				t.grabMinSize = v;
+				t.*field->t = f[0];
 			}
 		}
 	}
@@ -224,26 +206,14 @@ Theme FromRows(const std::string& name, const std::vector<ThemeRow>& rows, const
 
 void ApplySharedStyle(Theme& t)
 {
-	t.windowRounding = 0.0f;
-	t.frameRounding = 0.0f;
-	t.childRounding = 0.0f;
-	t.popupRounding = 0.0f;
-	t.scrollbarRounding = 0.0f;
-	t.grabRounding = 0.0f;
-	t.tabRounding = 4.0f;
-	t.windowBorderSize = 1.0f;
-	t.frameBorderSize = 0.0f;
-	t.childBorderSize = 1.0f;
-	t.popupBorderSize = 1.0f;
-	t.tabBarBorderSize = 1.0f;
-	t.indentSpacing = 21.0f;
-	t.scrollbarSize = 14.0f;
-	t.grabMinSize = 12.0f;
-	t.windowPadding = ImVec2(8.0f, 8.0f);
-	t.framePadding = ImVec2(4.0f, 3.0f);
-	t.cellPadding = ImVec2(4.0f, 2.0f);
-	t.itemSpacing = ImVec2(8.0f, 4.0f);
-	t.itemInnerSpacing = ImVec2(4.0f, 4.0f);
+	for (const ScalarField& f : kScalarFields)
+	{
+		t.*f.t = f.def;
+	}
+	for (const Vec2Field& f : kVec2Fields)
+	{
+		t.*f.t = f.def;
+	}
 }
 
 // Byte-identical derived/default tail shared by every builtin theme. Call after
@@ -286,26 +256,14 @@ void ThemeManager::CaptureImGuiDefault()
 		m_defaultTheme.colors[i] = s.Colors[i];
 	}
 
-	m_defaultTheme.windowRounding = s.WindowRounding;
-	m_defaultTheme.frameRounding = s.FrameRounding;
-	m_defaultTheme.childRounding = s.ChildRounding;
-	m_defaultTheme.popupRounding = s.PopupRounding;
-	m_defaultTheme.scrollbarRounding = s.ScrollbarRounding;
-	m_defaultTheme.grabRounding = s.GrabRounding;
-	m_defaultTheme.tabRounding = s.TabRounding;
-	m_defaultTheme.windowBorderSize = s.WindowBorderSize;
-	m_defaultTheme.frameBorderSize = s.FrameBorderSize;
-	m_defaultTheme.childBorderSize = s.ChildBorderSize;
-	m_defaultTheme.popupBorderSize = s.PopupBorderSize;
-	m_defaultTheme.tabBarBorderSize = s.TabBarBorderSize;
-	m_defaultTheme.indentSpacing = s.IndentSpacing;
-	m_defaultTheme.scrollbarSize = s.ScrollbarSize;
-	m_defaultTheme.grabMinSize = s.GrabMinSize;
-	m_defaultTheme.windowPadding = s.WindowPadding;
-	m_defaultTheme.framePadding = s.FramePadding;
-	m_defaultTheme.cellPadding = s.CellPadding;
-	m_defaultTheme.itemSpacing = s.ItemSpacing;
-	m_defaultTheme.itemInnerSpacing = s.ItemInnerSpacing;
+	for (const ScalarField& f : kScalarFields)
+	{
+		m_defaultTheme.*f.t = s.*f.s;
+	}
+	for (const Vec2Field& f : kVec2Fields)
+	{
+		m_defaultTheme.*f.t = s.*f.s;
+	}
 }
 
 void ThemeManager::EnsureDefaultSentinel()
@@ -400,26 +358,14 @@ ImGuiStyle ThemeManager::ApplyTheme(const Theme& theme) const
 		style.Colors[i] = theme.colors[i];
 	}
 
-	style.WindowRounding = theme.windowRounding;
-	style.FrameRounding = theme.frameRounding;
-	style.ChildRounding = theme.childRounding;
-	style.PopupRounding = theme.popupRounding;
-	style.ScrollbarRounding = theme.scrollbarRounding;
-	style.GrabRounding = theme.grabRounding;
-	style.TabRounding = theme.tabRounding;
-	style.WindowBorderSize = theme.windowBorderSize;
-	style.FrameBorderSize = theme.frameBorderSize;
-	style.ChildBorderSize = theme.childBorderSize;
-	style.PopupBorderSize = theme.popupBorderSize;
-	style.TabBarBorderSize = theme.tabBarBorderSize;
-	style.IndentSpacing = theme.indentSpacing;
-	style.ScrollbarSize = theme.scrollbarSize;
-	style.GrabMinSize = theme.grabMinSize;
-	style.WindowPadding = theme.windowPadding;
-	style.FramePadding = theme.framePadding;
-	style.CellPadding = theme.cellPadding;
-	style.ItemSpacing = theme.itemSpacing;
-	style.ItemInnerSpacing = theme.itemInnerSpacing;
+	for (const ScalarField& f : kScalarFields)
+	{
+		style.*f.s = theme.*f.t;
+	}
+	for (const Vec2Field& f : kVec2Fields)
+	{
+		style.*f.s = theme.*f.t;
+	}
 
 	return old;
 }

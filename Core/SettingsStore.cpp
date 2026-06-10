@@ -5,6 +5,30 @@
 
 #include <charconv>
 
+namespace
+{
+constexpr char kInsertSettingSql[] =
+	"INSERT OR REPLACE INTO settings (server, character, module, name, type, value) "
+	"VALUES (?, ?, ?, ?, ?, ?)";
+
+// Returns the column as a std::string, mapping a SQL NULL to "".
+std::string ColText(sqlite3_stmt* stmt, int col)
+{
+	const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, col));
+	return text ? text : "";
+}
+
+// Binds the (server, character, module, name) key columns starting at parameter idx.
+void BindContext(sqlite3_stmt* stmt, int idx, const std::string& server, const std::string& character,
+	const std::string& module, const std::string& name)
+{
+	sqlite3_bind_text(stmt, idx + 0, server.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, idx + 1, character.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, idx + 2, module.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stmt, idx + 3, name.c_str(), -1, SQLITE_TRANSIENT);
+}
+} // namespace
+
 SettingsStore::~SettingsStore()
 {
 	Close();
@@ -211,16 +235,12 @@ std::string SettingsStore::Fetch(const std::string& module, const std::string& n
 		return std::string();
 	}
 
-	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 3, module.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 4, name.c_str(), -1, SQLITE_TRANSIENT);
+	BindContext(stmt, 1, m_server, m_character, module, name);
 
 	std::string value;
 	if (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		value = text ? text : "";
+		value = ColText(stmt, 0);
 		found = true;
 		m_cache[key] = CacheEntry{ value, true };
 	}
@@ -234,17 +254,12 @@ void SettingsStore::WriteRow(const std::string& module, const std::string& name,
 	m_cache[MakeKey(module, name)] = CacheEntry{ value, true };
 
 	sqlite3_stmt* stmt = nullptr;
-	if (!PrepareAndStep(
-		"INSERT OR REPLACE INTO settings (server, character, module, name, type, value) "
-		"VALUES (?, ?, ?, ?, ?, ?)", stmt))
+	if (!PrepareAndStep(kInsertSettingSql, stmt))
 	{
 		return;
 	}
 
-	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 3, module.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 4, name.c_str(), -1, SQLITE_TRANSIENT);
+	BindContext(stmt, 1, m_server, m_character, module, name);
 	sqlite3_bind_text(stmt, 5, type, -1, SQLITE_TRANSIENT);
 	sqlite3_bind_text(stmt, 6, value.c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_step(stmt);
@@ -359,9 +374,7 @@ std::vector<CharIdent> SettingsStore::GetCharacterList()
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* s = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		const char* c = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-		chars.push_back(CharIdent{ s ? s : "", c ? c : "" });
+		chars.push_back(CharIdent{ ColText(stmt, 0), ColText(stmt, 1) });
 	}
 
 	sqlite3_finalize(stmt);
@@ -385,11 +398,7 @@ std::vector<SettingRow> SettingsStore::GetAllSettings(const std::string& server,
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* m = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		const char* n = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-		const char* t = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-		const char* v = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-		rows.push_back(SettingRow{ m ? m : "", n ? n : "", t ? t : "", v ? v : "" });
+		rows.push_back(SettingRow{ ColText(stmt, 0), ColText(stmt, 1), ColText(stmt, 2), ColText(stmt, 3) });
 	}
 
 	sqlite3_finalize(stmt);
@@ -400,17 +409,12 @@ void SettingsStore::SetRaw(const std::string& server, const std::string& charact
 	const std::string& module, const std::string& name, const std::string& type, const std::string& value)
 {
 	sqlite3_stmt* stmt = nullptr;
-	if (!PrepareAndStep(
-		"INSERT OR REPLACE INTO settings (server, character, module, name, type, value) "
-		"VALUES (?, ?, ?, ?, ?, ?)", stmt))
+	if (!PrepareAndStep(kInsertSettingSql, stmt))
 	{
 		return;
 	}
 
-	sqlite3_bind_text(stmt, 1, server.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 2, character.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 3, module.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 4, name.c_str(), -1, SQLITE_TRANSIENT);
+	BindContext(stmt, 1, server, character, module, name);
 	sqlite3_bind_text(stmt, 5, type.c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_bind_text(stmt, 6, value.c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_step(stmt);
@@ -472,10 +476,7 @@ void SettingsStore::DeleteSetting(const std::string& module, const std::string& 
 		return;
 	}
 
-	sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 2, m_character.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 3, module.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(stmt, 4, name.c_str(), -1, SQLITE_TRANSIENT);
+	BindContext(stmt, 1, m_server, m_character, module, name);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 
@@ -497,8 +498,7 @@ std::string SettingsStore::GetGlobal(const std::string& module, const std::strin
 	std::string value = defaultVal;
 	if (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		value = text ? text : "";
+		value = ColText(stmt, 0);
 	}
 
 	sqlite3_finalize(stmt);
@@ -573,10 +573,7 @@ std::vector<ThemeRow> SettingsStore::LoadTheme(const std::string& themeName)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* n = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		const char* t = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-		const char* v = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-		rows.push_back(ThemeRow{ n ? n : "", t ? t : "", v ? v : "" });
+		rows.push_back(ThemeRow{ ColText(stmt, 0), ColText(stmt, 1), ColText(stmt, 2) });
 	}
 
 	sqlite3_finalize(stmt);
@@ -595,11 +592,7 @@ std::vector<std::string> SettingsStore::GetThemeNames()
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		if (text)
-		{
-			names.emplace_back(text);
-		}
+		names.push_back(ColText(stmt, 0));
 	}
 
 	sqlite3_finalize(stmt);
@@ -702,11 +695,7 @@ std::vector<std::string> SettingsStore::GetSpellSetNames()
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 	{
-		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-		if (text)
-		{
-			names.emplace_back(text);
-		}
+		names.push_back(ColText(stmt, 0));
 	}
 
 	sqlite3_finalize(stmt);
