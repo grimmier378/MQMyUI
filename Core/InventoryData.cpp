@@ -4,6 +4,7 @@
 #include "Widgets.h"
 
 #include "mq/imgui/Widgets.h"
+#include "imgui/fonts/IconsFontAwesome.h"
 
 #include <algorithm>
 #include <cassert>
@@ -1142,6 +1143,107 @@ bool IsAugment(const ItemRef& ref)
 	return def && def->AugType != 0;
 }
 
+bool ItemUsableByMe(const ItemRef& ref, bool checkLevel)
+{
+	if (!ref.valid())
+	{
+		return false;
+	}
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	bool consumable = def && (def->ItemClass == ItemClass_Food || def->ItemClass == ItemClass_Drink
+		|| def->ItemClass == ItemClass_Combinable || def->ItemClass == ItemClass_Potion);
+	bool canUse = pLocalPC && pLocalPC->CanUseItem(ref.item, checkLevel, false);
+	return consumable || canUse;
+}
+
+bool ItemBelowReqLevel(const ItemRef& ref)
+{
+	if (!ref.valid())
+	{
+		return false;
+	}
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	return def && def->RequiredLevel > 0 && PlayerLevel() < def->RequiredLevel;
+}
+
+bool ItemAlreadyKnown(const ItemRef& ref)
+{
+	if (!ref.valid() || !pLocalPC)
+	{
+		return false;
+	}
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	if (!def)
+	{
+		return false;
+	}
+	// Spell scroll: the scroll effect names the spell it teaches. Disciplines /
+	// skill tomes aren't held in the spellbook, so they degrade to unmarked here.
+	int spellId = def->SpellData.GetSpellId(ItemSpellType_Scroll);
+	if (spellId <= 0)
+	{
+		return false;
+	}
+	for (int i = 0; i < NUM_BOOK_SLOTS; ++i)
+	{
+		if (pLocalPC->GetSpellBook(i) == spellId)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool SpellLearnableByMyClass(int spellId)
+{
+	if (!pLocalPC || spellId <= 0)
+	{
+		return false;
+	}
+	EQ_Spell* sp = mq::GetSpellByID(spellId);
+	if (!sp)
+	{
+		return false;
+	}
+	int lvl = sp->GetSpellLevelNeeded(pLocalPC->GetClass());
+	return lvl > 0 && lvl <= MAX_PC_LEVEL;
+}
+
+bool IsUseableGearItem(const ItemRef& ref)
+{
+	if (!ref.valid())
+	{
+		return false;
+	}
+	ItemDefinition* def = ref.item->GetItemDefinition();
+	if (!def)
+	{
+		return false;
+	}
+	// Always drop food and drink.
+	if (def->ItemClass == ItemClass_Food || def->ItemClass == ItemClass_Drink)
+	{
+		return false;
+	}
+	// Learnable spells / skills (spell scrolls, discipline tomes): keep only those your
+	// class can actually learn, so other classes' scrolls/tomes are hidden. The
+	// already-known indicator marks the ones already in your book.
+	int scrollSpell = def->SpellData.GetSpellId(ItemSpellType_Scroll);
+	if (def->ItemClass == ItemClass_Spell || scrollSpell > 0)
+	{
+		return SpellLearnableByMyClass(scrollSpell);
+	}
+	// Otherwise keep only equippable gear or clickies you can use; this drops
+	// tradeskill / research clutter (runes, gems, quest mats). Required level is
+	// surfaced as an icon, not filtered.
+	bool equippable = def->EquipSlots != 0;
+	if (!equippable && !IsClicky(ref))
+	{
+		return false;
+	}
+	return ItemUsableByMe(ref, false);
+}
+
 bool ItemFitsSlot(const ItemRef& ref, int wornSlot)
 {
 	if (!ref.valid())
@@ -1456,16 +1558,9 @@ void DrawItemIcon(IconHelper* icons, const ItemRef& ref, const DrawItemOptions& 
 	}
 
 	MQColor tint(255, 255, 255, 255);
-	if (opts.highlightUseable)
+	if (opts.highlightUseable && !ItemUsableByMe(ref, true))
 	{
-		ItemDefinition* def = ref.item->GetItemDefinition();
-		bool consumable = def && (def->ItemClass == ItemClass_Food || def->ItemClass == ItemClass_Drink
-			|| def->ItemClass == ItemClass_Combinable || def->ItemClass == ItemClass_Potion);
-		bool canUse = pLocalPC && pLocalPC->CanUseItem(ref.item, true, false);
-		if (!consumable && !canUse)
-		{
-			tint = MQColor(100, 100, 100, 255);
-		}
+		tint = MQColor(100, 100, 100, 255);
 	}
 
 	int cell = ref.icon() > 0 ? ref.icon() - 500 : 0;
@@ -1487,6 +1582,26 @@ void DrawItemIcon(IconHelper* icons, const ItemRef& ref, const DrawItemOptions& 
 		char buf[16];
 		sprintf_s(buf, "%d", ref.charges());
 		dl->AddText(ImVec2(origin.x + 2.0f, origin.y + 1.0f), IM_COL32(235, 220, 90, 255), buf);
+	}
+	if (opts.annotate)
+	{
+		float rx = origin.x + size - 1.0f;
+		const float ty = origin.y + 1.0f;
+		auto mark = [&](const char* glyph, ImU32 col) {
+			ImVec2 ts = ImGui::CalcTextSize(glyph);
+			rx -= ts.x;
+			dl->AddText(ImVec2(rx + 1.0f, ty + 1.0f), IM_COL32(0, 0, 0, 200), glyph);
+			dl->AddText(ImVec2(rx, ty), col, glyph);
+			rx -= 2.0f;
+		};
+		if (ItemBelowReqLevel(ref))
+		{
+			mark(ICON_FA_LOCK, IM_COL32(230, 70, 70, 255));
+		}
+		if (ItemAlreadyKnown(ref))
+		{
+			mark(ICON_FA_CHECK, IM_COL32(70, 220, 90, 255));
+		}
 	}
 
 	if (hovered)

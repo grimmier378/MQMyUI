@@ -63,6 +63,19 @@ bool IsAugment(const ItemRef& ref);
 bool IsTwoHandedWeapon(const ItemRef& ref);
 bool ItemFitsSlot(const ItemRef& ref, int wornSlot);
 
+// Usable by the local character. checkLevel=false ignores the required-level gate
+// (class/race/deity only) so it can drive the "Useable Only" filter while the
+// level is surfaced separately. Consumables (food/drink/combine/potion) always pass.
+bool ItemUsableByMe(const ItemRef& ref, bool checkLevel);
+// True when the item has a required level the character hasn't reached.
+bool ItemBelowReqLevel(const ItemRef& ref);
+// True when the item is a spell scroll teaching a spell already in the spellbook.
+bool ItemAlreadyKnown(const ItemRef& ref);
+// Item belongs in the "Useable Only" gear view: usable by my class/race/deity AND
+// either equippable or clicky. Drops food/drink and non-equippable no-click clutter
+// (tradeskill/research mats: runes, gems, ...). Required level is NOT enforced here.
+bool IsUseableGearItem(const ItemRef& ref);
+
 int CountInventory(const std::string& name);
 int CountBank(const std::string& name);
 
@@ -75,6 +88,7 @@ struct DrawItemOptions
 	float size = 40.0f;
 	bool  showBackground = true;
 	bool  highlightUseable = false;
+	bool  annotate = false; // draw top-right level-not-met / already-known markers
 	bool  handleLeftClick = true;
 	bool  handleUse = true;
 	bool  handlePopInfo = true;

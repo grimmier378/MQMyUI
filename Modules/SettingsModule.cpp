@@ -249,7 +249,7 @@ const char* FlagDescription(const std::string& window, const std::string& flag)
 		{ "ShowHpMana",          "Show HP / Mana readouts on the floating status HUD." },
 		{ "ShowSlotBackground",  "Draw the slot background art behind item icons." },
 		{ "AutoInventoryOnSwap", "Automatically stow the displaced item when you equip-swap a slot." },
-		{ "DimUnusable",         "Dim items your class / race can't use." },
+		{ "UseableOnly",         "Show only gear/clickies you can use (class / race / deity) plus spell scrolls your class can learn; hides food, drink, other classes' spells, and non-equippable no-click clutter (tradeskill mats, runes, gems). Required level isn't filtered — too-high items stay, flagged with a lock icon; scribed scrolls get a check icon." },
 		{ "SortName",            "Sort items by name." },
 		{ "SortStack",           "Sort items by stack size." },
 		{ "SortType",            "Sort items by item type." },

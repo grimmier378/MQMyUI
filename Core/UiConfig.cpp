@@ -414,7 +414,7 @@ void UiConfig::SeedDefaults()
 
 	Window("BigBag");
 	SetFlag("BigBag", "ShowSlotBackground", true);
-	SetFlag("BigBag", "DimUnusable", true);
+	SetFlag("BigBag", "UseableOnly", false);
 	SetFlag("BigBag", "SortName", true);
 	SetFlag("BigBag", "SortStack", true);
 	SetFlag("BigBag", "SortType", true);

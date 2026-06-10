@@ -12,7 +12,11 @@
 
 namespace
 {
-const char* kPresetNames[] = { "All", "Weapons", "Ranged", "Charm", "Ears", "Face", "Neck", "Rings" };
+const char* kPresetNames[] = { "All", "Armor", "Weapons", "Ranged", "Charm", "Ears", "Face", "Neck", "Rings" };
+
+// Worn slots counted as armor for the Armor category (head, shoulders, arms, back,
+// wrists, hands, chest, legs, feet, waist).
+const int kArmorSlots[] = { 2, 6, 7, 8, 9, 10, 12, 17, 18, 19, 20 };
 } // namespace
 
 void BigBagModule::OnRenderGUI()
@@ -44,7 +48,6 @@ void BigBagModule::OnRenderGUI()
 
 	float cell = ui->Num(GetName(), "ItemSize", 40.0f) * w.iconScale;
 	bool showBackground = ui->Flag(GetName(), "ShowSlotBackground", true);
-	bool highlight = ui->Flag(GetName(), "DimUnusable", true);
 	float iconSize = 20.0f * w.iconScale;
 
 	ImGui::SetNextWindowSize(ImVec2(520.0f, 560.0f), ImGuiCond_FirstUseEver);
@@ -56,88 +59,73 @@ void BigBagModule::OnRenderGUI()
 		DrawControls();
 		ImGui::Separator();
 
-		if (ImGui::BeginTabBar("##BigBagTabs", ImGuiTabBarFlags_Reorderable))
+		static const char* const kTabs[] = { "Items", "Clickies", "Augments", "Bank", "Details" };
+		m_tab = myui::PillTabBar("##BigBagTabs", kTabs, IM_ARRAYSIZE(kTabs), m_tab);
+
+		if (m_tab == 0)
 		{
-			if (ImGui::BeginTabItem("Items"))
+			ImGui::SetNextItemWidth(140.0f);
+			myui::StyledCombo("Category", &m_preset, kPresetNames, IM_ARRAYSIZE(kPresetNames));
+			ImGui::SameLine();
+			bool useableOnly = ui->Flag(GetName(), "UseableOnly", false);
+			if (myui::StyledCheckbox("Useable Only", &useableOnly))
 			{
-				ImGui::SetNextItemWidth(140.0f);
-				if (ImGui::BeginCombo("Category", kPresetNames[m_preset]))
-				{
-					for (int i = 0; i < IM_ARRAYSIZE(kPresetNames); ++i)
-					{
-						if (ImGui::Selectable(kPresetNames[i], i == m_preset))
-						{
-							m_preset = i;
-						}
-					}
-					ImGui::EndCombo();
-				}
-
-				std::vector<myui::ItemRef> items;
-				for (myui::ItemRef& ref : myui::GetBagContents())
-				{
-					if (PassesNameFilter(ref) && PassesPreset(ref))
-					{
-						items.push_back(ref);
-					}
-				}
-				SortItems(items);
-				DrawItemGrid(items, cell, showBackground, highlight);
-				ImGui::EndTabItem();
+				ui->SetFlag(GetName(), "UseableOnly", useableOnly);
 			}
 
-			if (ImGui::BeginTabItem("Clickies"))
+			std::vector<myui::ItemRef> items;
+			for (myui::ItemRef& ref : myui::GetBagContents())
 			{
-				std::vector<myui::ItemRef> items;
-				for (myui::ItemRef& ref : myui::GetBagContents())
+				if (PassesNameFilter(ref) && PassesPreset(ref) && PassesUseableFilter(ref))
 				{
-					if (myui::IsClicky(ref) && PassesNameFilter(ref))
-					{
-						items.push_back(ref);
-					}
+					items.push_back(ref);
 				}
-				SortItems(items);
-				DrawItemGrid(items, cell, showBackground, highlight);
-				ImGui::EndTabItem();
 			}
-
-			if (ImGui::BeginTabItem("Augments"))
+			SortItems(items);
+			DrawItemGrid(items, cell, showBackground);
+		}
+		else if (m_tab == 1)
+		{
+			std::vector<myui::ItemRef> items;
+			for (myui::ItemRef& ref : myui::GetBagContents())
 			{
-				std::vector<myui::ItemRef> items;
-				for (myui::ItemRef& ref : myui::GetBagContents())
+				if (myui::IsClicky(ref) && PassesNameFilter(ref))
 				{
-					if (myui::IsAugment(ref) && PassesNameFilter(ref))
-					{
-						items.push_back(ref);
-					}
+					items.push_back(ref);
 				}
-				SortItems(items);
-				DrawItemGrid(items, cell, showBackground, highlight);
-				ImGui::EndTabItem();
 			}
-
-			if (ImGui::BeginTabItem("Bank"))
+			SortItems(items);
+			DrawItemGrid(items, cell, showBackground);
+		}
+		else if (m_tab == 2)
+		{
+			std::vector<myui::ItemRef> items;
+			for (myui::ItemRef& ref : myui::GetBagContents())
 			{
-				std::vector<myui::ItemRef> items;
-				for (myui::ItemRef& ref : myui::GetBank())
+				if (myui::IsAugment(ref) && PassesNameFilter(ref))
 				{
-					if (PassesNameFilter(ref))
-					{
-						items.push_back(ref);
-					}
+					items.push_back(ref);
 				}
-				SortItems(items);
-				DrawItemGrid(items, cell, showBackground, highlight);
-				ImGui::EndTabItem();
 			}
-
-			if (ImGui::BeginTabItem("Details"))
+			SortItems(items);
+			DrawItemGrid(items, cell, showBackground);
+		}
+		else if (m_tab == 3)
+		{
+			std::vector<myui::ItemRef> items;
+			for (myui::ItemRef& ref : myui::GetBank())
 			{
-				DrawDetails();
-				ImGui::EndTabItem();
+				if (PassesNameFilter(ref))
+				{
+					items.push_back(ref);
+				}
 			}
-
-			ImGui::EndTabBar();
+			SortItems(items);
+			DrawItemGrid(items, cell, showBackground);
+		}
+		else if (m_tab == 4)
+		{
+			DrawDetails();
 		}
 
 		ImGui::PopFont();
@@ -177,34 +165,31 @@ void BigBagModule::DrawControls()
 		m_filter[0] = 0;
 	}
 
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted("Sort:");
+	ImGui::SameLine();
 	bool sortName = ui->Flag(GetName(), "SortName", true);
-	if (ImGui::Checkbox("Name", &sortName))
+	if (myui::StyledCheckbox("Name", &sortName))
 	{
 		ui->SetFlag(GetName(), "SortName", sortName);
 	}
 	ImGui::SameLine();
 	bool sortStack = ui->Flag(GetName(), "SortStack", true);
-	if (ImGui::Checkbox("Stack", &sortStack))
+	if (myui::StyledCheckbox("Stack", &sortStack))
 	{
 		ui->SetFlag(GetName(), "SortStack", sortStack);
 	}
 	ImGui::SameLine();
 	bool sortType = ui->Flag(GetName(), "SortType", true);
-	if (ImGui::Checkbox("Type", &sortType))
+	if (myui::StyledCheckbox("Type", &sortType))
 	{
 		ui->SetFlag(GetName(), "SortType", sortType);
-	}
-	ImGui::SameLine();
-	bool highlight = ui->Flag(GetName(), "DimUnusable", true);
-	if (ImGui::Checkbox("Dim Unusable", &highlight))
-	{
-		ui->SetFlag(GetName(), "DimUnusable", highlight);
 	}
 
 	myui::DrawDropZones();
 }
 
-void BigBagModule::DrawItemGrid(const std::vector<myui::ItemRef>& items, float cellSize, bool showBackground, bool highlight)
+void BigBagModule::DrawItemGrid(const std::vector<myui::ItemRef>& items, float cellSize, bool showBackground)
 {
 	ImGui::BeginChild("##grid");
 	float avail = ImGui::GetContentRegionAvail().x;
@@ -220,7 +205,7 @@ void BigBagModule::DrawItemGrid(const std::vector<myui::ItemRef>& items, float c
 		myui::DrawItemOptions opts;
 		opts.size = cellSize;
 		opts.showBackground = showBackground;
-		opts.highlightUseable = highlight;
+		opts.annotate = true;
 		myui::DrawItemIcon(m_ctx.Icons, items[i], opts);
 		ImGui::PopID();
 	}
@@ -296,7 +281,7 @@ void BigBagModule::DrawDetails()
 				{
 					checked = true;
 				}
-				ImGui::Checkbox("##t", &checked);
+				myui::StyledCheckbox("##t", &checked);
 			}
 			else
 			{
@@ -368,6 +353,15 @@ bool BigBagModule::PassesNameFilter(const myui::ItemRef& ref) const
 	return ci_find_substr(ref.name(), m_filter) != -1;
 }
 
+bool BigBagModule::PassesUseableFilter(const myui::ItemRef& ref) const
+{
+	if (!m_ctx.UI->Flag(GetName(), "UseableOnly", false))
+	{
+		return true;
+	}
+	return myui::IsUseableGearItem(ref);
+}
+
 bool BigBagModule::PassesPreset(const myui::ItemRef& ref) const
 {
 	if (m_preset == 0)
@@ -380,13 +374,22 @@ bool BigBagModule::PassesPreset(const myui::ItemRef& ref) const
 	}
 	switch (m_preset)
 	{
-	case 1: return myui::ItemFitsSlot(ref, 13) || myui::ItemFitsSlot(ref, 14);
-	case 2: return myui::ItemFitsSlot(ref, 11);
-	case 3: return myui::ItemFitsSlot(ref, 0);
-	case 4: return myui::ItemFitsSlot(ref, 1) || myui::ItemFitsSlot(ref, 4);
-	case 5: return myui::ItemFitsSlot(ref, 3);
-	case 6: return myui::ItemFitsSlot(ref, 5);
-	case 7: return myui::ItemFitsSlot(ref, 15) || myui::ItemFitsSlot(ref, 16);
+	case 1:
+		for (int slot : kArmorSlots)
+		{
+			if (myui::ItemFitsSlot(ref, slot))
+			{
+				return true;
+			}
+		}
+		return false;
+	case 2: return myui::ItemFitsSlot(ref, 13) || myui::ItemFitsSlot(ref, 14);
+	case 3: return myui::ItemFitsSlot(ref, 11);
+	case 4: return myui::ItemFitsSlot(ref, 0);
+	case 5: return myui::ItemFitsSlot(ref, 1) || myui::ItemFitsSlot(ref, 4);
+	case 6: return myui::ItemFitsSlot(ref, 3);
+	case 7: return myui::ItemFitsSlot(ref, 5);
+	case 8: return myui::ItemFitsSlot(ref, 15) || myui::ItemFitsSlot(ref, 16);
 	default: return true;
 	}
 }
