@@ -274,7 +274,7 @@ void ThemeZModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove;
 	}
 
-	if (ImGui::Begin("MyUI Themes##MyUIThemes", &w.visible, flags))
+	if (ImGui::Begin("MyUI Theme Editor##MyUIThemes", &w.visible, flags))
 	{
 		themeeditor::DrawTopBar(themes, m_edit, m_selected, m_nameBuf, sizeof(m_nameBuf));
 		ImGui::Separator();

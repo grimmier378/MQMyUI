@@ -421,14 +421,14 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 			{
 				// Reserve only the distance-text footprint, then draw the ring + text on
 				// the window's own draw list (so a window placed on top correctly covers
-				// it, unlike the viewport foreground list) with the clip widened to
-				// full-screen so it escapes the cell. Overflowing the window is fine.
+				// it, unlike the viewport foreground list) with the clip widened to the
+				// owning window's rect so it escapes the cell but stays inside the window.
 				// No reflow when the ring size changes.
 				ImVec2 ts = ImGui::CalcTextSize(distbuf);
 				ImVec2 p = ImGui::GetCursorScreenPos();
 				ImVec2 center(p.x + ts.x * 0.5f, p.y + ImGui::GetTextLineHeight() * 0.5f);
 				ImDrawList* dl = ImGui::GetWindowDrawList();
-				dl->PushClipRectFullScreen();
+				myui::PushWindowClip(dl);
 				myui::DrawDirectionRing(dl, ImGui::GetID("##dirring"),
 					center, myui::RelativeBearingDeg(posIt->second.x, posIt->second.y), row.distance, row.inLOS, distbuf, ring);
 				dl->PopClipRect();

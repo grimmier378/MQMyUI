@@ -121,6 +121,28 @@ void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImV
 	}
 }
 
+float DirectionRingRadius(const char* distText, const RingStyle& style)
+{
+	// Always auto-fit to a fixed 3-digit text width, so the ring is a constant size
+	// regardless of the actual distance (which DrawDirectionRing centers inside) while
+	// still scaling with the font. Size to the text half-WIDTH (not the diagonal) so the
+	// track hugs the number tightly. distText is unused now that the width is fixed.
+	(void)distText;
+	const float w3 = ImGui::CalcTextSize("000").x;
+	return w3 * 0.5f + style.thickness * 0.5f + 2.0f;
+}
+
+void PushWindowClip(ImDrawList* dl)
+{
+	if (!dl)
+	{
+		return;
+	}
+	const ImVec2 wmin = ImGui::GetWindowPos();
+	const ImVec2 wsz = ImGui::GetWindowSize();
+	dl->PushClipRect(wmin, ImVec2(wmin.x + wsz.x, wmin.y + wsz.y), false);
+}
+
 void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
 	float distance, bool los, const char* distText, const RingStyle& style)
 {
@@ -176,14 +198,8 @@ void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBe
 
 	// radius 0 = auto-fit: smallest radius whose inner edge clears the distance
 	// text's bounding circle, plus the track half-thickness and a little padding,
-	// so the text never touches the track.
-	float radius = style.radius;
-	if (radius <= 0.0f)
-	{
-		ImVec2 ts = (distText && distText[0]) ? ImGui::CalcTextSize(distText) : ImVec2(0.0f, 0.0f);
-		float halfDiag = sqrtf(ts.x * ts.x + ts.y * ts.y) * 0.5f;
-		radius = halfDiag + style.thickness * 0.5f + 3.0f;
-	}
+	// so the text never touches the track (DirectionRingRadius owns the formula).
+	const float radius = DirectionRingRadius(distText, style);
 	dl->AddCircle(center, radius, ImGui::GetColorU32(track), 64, style.thickness);
 
 	// Marker on the track: 0 deg = top, clockwise positive (ImGui Y is down).

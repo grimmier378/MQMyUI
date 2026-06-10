@@ -272,7 +272,18 @@ void PlayerModule::DrawTargetInfo(const std::string& targetName)
 	RingStyle& ring = m_ctx.UI->Ring(GetName(), "Direction");
 	bool showRing = m_ctx.UI->Flag(GetName(), "ShowDirectionRing", false) && pTarget != pLocalPlayer;
 	float distW = ImGui::CalcTextSize(distbuf).x;
-	float rightBlockW = distW;
+	float ringAllocW = 0.0f;
+	float ringInset = 0.0f;
+	if (showRing)
+	{
+		// Allocate a fixed 3-digit width and size the ring to it, so the ring stays a
+		// constant size and the centered distance just changes within it.
+		ringAllocW = ImGui::CalcTextSize("000").x;
+		float r = myui::DirectionRingRadius(distbuf, ring);
+		float over = r - ringAllocW * 0.5f;
+		ringInset = (over > 0.0f ? over : 0.0f) + 1.0f;
+	}
+	float rightBlockW = showRing ? (ringAllocW + ringInset) : distW;
 
 	ImGui::SameLine();
 	float startX = ImGui::GetCursorPosX();
@@ -298,18 +309,19 @@ void PlayerModule::DrawTargetInfo(const std::string& targetName)
 	ImGui::SetCursorPosX(rightStartX);
 	if (showRing)
 	{
-		// Reserve only the distance-text footprint; draw the ring + text on the
-		// window's own draw list (covered by windows placed on top) with the clip
-		// widened to full-screen so it escapes the cell. No reflow on ring resize.
+		// Reserve the distance footprint (rightBlockW insets it from the section border
+		// so the ring clears the edge); draw the ring + text on the window's own draw
+		// list (covered by windows placed on top) with the clip widened to the target
+		// section/window rect so it escapes the cell but stays inside the window.
 		ImVec2 p = ImGui::GetCursorScreenPos();
-		ImVec2 center(p.x + distW * 0.5f, p.y + ImGui::GetTextLineHeight() * 0.5f);
+		ImVec2 center(p.x + ringAllocW * 0.5f, p.y + ImGui::GetTextLineHeight() * 0.5f);
 		ImDrawList* dl = ImGui::GetWindowDrawList();
-		dl->PushClipRectFullScreen();
+		myui::PushWindowClip(dl);
 		myui::DrawDirectionRing(dl, ImGui::GetID("##tgtring"),
 			center, myui::RelativeBearingDeg(pTarget->X, pTarget->Y),
 			GetDistance(pLocalPlayer, pTarget), los, distbuf, ring);
 		dl->PopClipRect();
-		ImGui::Dummy(ImVec2(distW, ImGui::GetTextLineHeight()));
+		ImGui::Dummy(ImVec2(ringAllocW, ImGui::GetTextLineHeight()));
 	}
 	else
 	{
@@ -354,13 +366,27 @@ void PlayerModule::DrawTargetOverlayText(const ImVec2& rmin, const ImVec2& rmax,
 	float distW = ImGui::CalcTextSize(distbuf).x;
 	float eyeW = ImGui::CalcTextSize(eye).x;
 	float gap = ImGui::GetStyle().ItemSpacing.x;
-	float distX = rmax.x - padX - distW;
 
 	RingStyle& ring = m_ctx.UI->Ring(GetName(), "Direction");
-	if (m_ctx.UI->Flag(GetName(), "ShowDirectionRing", false) && pTarget != pLocalPlayer)
+	bool showRing = m_ctx.UI->Flag(GetName(), "ShowDirectionRing", false) && pTarget != pLocalPlayer;
+	float ringAllocW = 0.0f;
+	float ringInset = 0.0f;
+	if (showRing)
 	{
-		ImVec2 center(distX + distW * 0.5f, y + ImGui::GetTextLineHeight() * 0.5f);
-		dl->PushClipRectFullScreen();
+		// Fixed 3-digit allocation so the ring is a constant size; distance centered in it.
+		ringAllocW = ImGui::CalcTextSize("000").x;
+		float r = myui::DirectionRingRadius(distbuf, ring);
+		float over = r - ringAllocW * 0.5f;
+		ringInset = (over > 0.0f ? over : 0.0f) + 1.0f;
+	}
+	// Inset the distance from the section's right edge so the ring clears the border.
+	float blockW = showRing ? ringAllocW : distW;
+	float distX = rmax.x - padX - blockW - ringInset;
+
+	if (showRing)
+	{
+		ImVec2 center(distX + ringAllocW * 0.5f, y + ImGui::GetTextLineHeight() * 0.5f);
+		myui::PushWindowClip(dl);
 		myui::DrawDirectionRing(dl, ImGui::GetID("##tgtringovl"), center,
 			myui::RelativeBearingDeg(pTarget->X, pTarget->Y),
 			GetDistance(pLocalPlayer, pTarget), los, distbuf, ring);

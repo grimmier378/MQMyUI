@@ -26,7 +26,6 @@ struct RingStyle
 	MQColor glowColor{ 0, 0, 0, 0 };   // alpha 0 => follow indicator color
 	float   glowAlpha = 0.55f;
 
-	float   radius    = 0.0f;          // 0 = auto-fit the ring to the distance text
 	float   thickness = 3.0f;
 	float   indicSize = 4.0f;
 };
@@ -78,6 +77,17 @@ void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImV
 // ImGuiCol_SliderGrab, so callers can restyle it with PushStyleColor.
 void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
 	float distance, bool los, const char* distText, const RingStyle& style);
+
+// Effective radius DrawDirectionRing will draw at. The ring always auto-fits to a
+// fixed 3-digit text width (constant size, font-scaled), so `distText` is ignored;
+// it stays in the signature so callers can reserve room next to a right-aligned
+// distance and have the whole ring clear the surrounding border.
+float DirectionRingRadius(const char* distText, const RingStyle& style);
+
+// Widen a draw list's clip to the CURRENT ImGui window's full rect, so an overlay
+// (like the direction ring) drawn into a small cell escapes the cell but never the
+// window. Inside a child it clips to that child's rect. Pair with PopClipRect().
+void PushWindowClip(ImDrawList* dl);
 
 // Tone a bright theme accent down by blending it toward the window background
 // (theme-relative, keeps hue + original alpha). Filled accents (buttons, pills,

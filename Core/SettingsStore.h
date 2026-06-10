@@ -86,6 +86,10 @@ public:
 	std::vector<std::string> GetSpellSetNames();
 	void DeleteSpellSet(const std::string& setName);
 
+	// iTrack tracked-item list (global, ordered) in its own itrack_items table.
+	std::vector<std::string> LoadTrackedItems();
+	void SaveTrackedItems(const std::vector<std::string>& items);
+
 private:
 	void ExecSQL(const char* sql);
 	bool PrepareAndStep(const char* sql, sqlite3_stmt*& stmt);

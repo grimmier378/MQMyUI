@@ -49,7 +49,6 @@ struct NumMeta { float step; float min; float max; const char* fmt; };
 bool NumMetaFor(const std::string& key, NumMeta& out)
 {
 	if (key == "NavDist")        { out = { 1.0f, 0.0f, 500.0f, "%.0f" }; return true; }
-	if (key == "MaxRaidColumns") { out = { 1.0f, 1.0f, 20.0f,  "%.0f" }; return true; }
 	if (key == "FlashThreshold") { out = { 0.5f, 0.0f, 300.0f, "%.0f" }; return true; }
 	if (key == "GemHeight")      { out = { 1.0f, 8.0f, 128.0f, "%.0f" }; return true; }
 	if (key == "ItemSize")       { out = { 1.0f, 16.0f, 128.0f, "%.0f" }; return true; }
@@ -72,14 +71,6 @@ bool StrIsSpecial(const std::string& key)
 
 bool ExcludedDisplayFlag(const std::string& win, const std::string& flag)
 {
-	if (win == "Pet" && (flag == "ShowButtons" || flag == "ShowBuffs"))
-	{
-		return true;
-	}
-	if (win == "Buffs" && flag == "ShowTimer")
-	{
-		return true;
-	}
 	if (win == "Inventory" && ci_starts_with(flag, "BagLock"))
 	{
 		return true;
@@ -629,8 +620,8 @@ void SettingsModule::DrawGeneralDetail()
 	ImGui::SameLine();
 	if (myui::StyledButton("Open Themes Editor"))
 	{
-		ui->Window("Themes").visible = true;
-		ui->PersistVisibility("Themes");
+		ui->Window("ThemeEditor").visible = true;
+		ui->PersistVisibility("ThemeEditor");
 	}
 	// The full theme editor (Edit Theme / Name / Colors / Styles) lives in the
 	// Themes editor window; the General tab only picks the active theme.
@@ -1134,8 +1125,6 @@ void SettingsModule::DrawRingEditor(const std::string& window)
 	}
 
 	ImGui::SeparatorText("Size");
-	myui::StyledSliderFloat("Radius", &r.radius, 0.0f, 40.0f, "%.0f");
-	tip("0 = auto-fit the ring to the distance text (accounting for thickness).");
 	myui::StyledSliderFloat("Thickness", &r.thickness, 1.0f, 10.0f, "%.1f");
 	myui::StyledSliderFloat("Indicator Size", &r.indicSize, 2.0f, 14.0f, "%.1f");
 

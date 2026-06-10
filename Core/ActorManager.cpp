@@ -799,14 +799,7 @@ void ActorManager::LoadTrackedList()
 	{
 		return;
 	}
-	std::string raw = m_settings->GetGlobal("iTrack", "TrackedList", "");
-	for (const std::string& token : mq::split(raw, '|'))
-	{
-		if (!token.empty())
-		{
-			m_trackedItems.push_back(token);
-		}
-	}
+	m_trackedItems = m_settings->LoadTrackedItems();
 }
 
 void ActorManager::SaveTrackedList()
@@ -815,7 +808,7 @@ void ActorManager::SaveTrackedList()
 	{
 		return;
 	}
-	m_settings->SetGlobal("iTrack", "TrackedList", mq::join(m_trackedItems, "|"));
+	m_settings->SaveTrackedItems(m_trackedItems);
 }
 
 void ActorManager::AddTrackedItem(const std::string& name)

@@ -162,6 +162,53 @@ void SettingsStore::RunMigrations()
 			"PRIMARY KEY (server, character, set_name, gem_slot))");
 		SetSchemaVersion(4);
 	}
+	if (currentVersion < 5)
+	{
+		// Modules were renamed; relabel their saved rows (all characters at once) so
+		// settings are preserved, mirroring the AAParty->XPBars migration above. OR IGNORE
+		// keeps an existing new-name row on conflict, then the stale old-name row is dropped.
+		const char* renames[][2] = {
+			{ "MyAA", "AA" }, { "MyInventory", "Inventory" },
+			{ "ThemeZ", "ThemeEditor" }, { "Themes", "ThemeEditor" },
+		};
+		for (const auto& r : renames)
+		{
+			ExecSQL(fmt::format("UPDATE OR IGNORE settings SET module='{}' WHERE module='{}'", r[1], r[0]).c_str());
+			ExecSQL(fmt::format("DELETE FROM settings WHERE module='{}'", r[0]).c_str());
+		}
+		SetSchemaVersion(5);
+	}
+	if (currentVersion < 6)
+	{
+		ExecSQL(
+			"CREATE TABLE IF NOT EXISTS itrack_items ("
+			"ordinal INTEGER NOT NULL, item_name TEXT NOT NULL, PRIMARY KEY (item_name))");
+		// Migrate the old pipe-joined global iTrack list into rows, then drop the old setting.
+		std::string raw = GetGlobal("iTrack", "TrackedList", "");
+		if (!raw.empty())
+		{
+			ExecSQL("BEGIN");
+			int ord = 0;
+			for (const std::string& token : mq::split(raw, '|'))
+			{
+				if (token.empty())
+				{
+					continue;
+				}
+				sqlite3_stmt* ins = nullptr;
+				if (PrepareAndStep("INSERT OR IGNORE INTO itrack_items (ordinal, item_name) VALUES (?, ?)", ins))
+				{
+					sqlite3_bind_int(ins, 1, ord++);
+					sqlite3_bind_text(ins, 2, token.c_str(), -1, SQLITE_TRANSIENT);
+					sqlite3_step(ins);
+					sqlite3_finalize(ins);
+				}
+			}
+			ExecSQL("COMMIT");
+			ExecSQL("DELETE FROM settings WHERE module='iTrack' AND name='TrackedList'");
+		}
+		SetSchemaVersion(6);
+	}
 }
 
 void SettingsStore::InitSchema()
@@ -191,6 +238,10 @@ void SettingsStore::InitSchema()
 		"server TEXT NOT NULL, character TEXT NOT NULL, set_name TEXT NOT NULL, "
 		"gem_slot INTEGER NOT NULL, spell_id INTEGER NOT NULL, "
 		"PRIMARY KEY (server, character, set_name, gem_slot))");
+
+	ExecSQL(
+		"CREATE TABLE IF NOT EXISTS itrack_items ("
+		"ordinal INTEGER NOT NULL, item_name TEXT NOT NULL, PRIMARY KEY (item_name))");
 }
 
 void SettingsStore::SetContext(const std::string& server, const std::string& character)
@@ -715,4 +766,56 @@ void SettingsStore::DeleteSpellSet(const std::string& setName)
 	sqlite3_bind_text(stmt, 3, setName.c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
+}
+
+std::vector<std::string> SettingsStore::LoadTrackedItems()
+{
+	std::vector<std::string> items;
+
+	sqlite3_stmt* stmt = nullptr;
+	if (!PrepareAndStep("SELECT item_name FROM itrack_items ORDER BY ordinal", stmt))
+	{
+		return items;
+	}
+
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+	{
+		items.push_back(ColText(stmt, 0));
+	}
+
+	sqlite3_finalize(stmt);
+	return items;
+}
+
+void SettingsStore::SaveTrackedItems(const std::vector<std::string>& items)
+{
+	if (!m_db)
+	{
+		return;
+	}
+
+	ExecSQL("BEGIN");
+	ExecSQL("DELETE FROM itrack_items");
+
+	int ord = 0;
+	for (const std::string& name : items)
+	{
+		if (name.empty())
+		{
+			continue;
+		}
+
+		sqlite3_stmt* stmt = nullptr;
+		if (!PrepareAndStep("INSERT OR IGNORE INTO itrack_items (ordinal, item_name) VALUES (?, ?)", stmt))
+		{
+			continue;
+		}
+
+		sqlite3_bind_int(stmt, 1, ord++);
+		sqlite3_bind_text(stmt, 2, name.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_step(stmt);
+		sqlite3_finalize(stmt);
+	}
+
+	ExecSQL("COMMIT");
 }

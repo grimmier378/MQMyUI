@@ -218,7 +218,7 @@ static void MyUICommand(PlayerClient*, const char* Line)
 
 		if (arg2[0] == 0)
 		{
-			s_ui.ToggleVisible("Themes");
+			s_ui.ToggleVisible("ThemeEditor");
 			return;
 		}
 

@@ -20,7 +20,7 @@ void DrawStylesSection(ThemeManager* themes, Theme& edit);
 class ThemeZModule : public ModuleBase
 {
 public:
-	const char* GetName() const override { return "Themes"; }
+	const char* GetName() const override { return "ThemeEditor"; }
 
 	void OnRenderGUI() override;
 	void OnShutdown() override;

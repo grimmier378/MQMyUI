@@ -98,7 +98,6 @@ void VisitRing(RingStyle& s, V& v)
 	v.bo("glowOn", s.glowOn);
 	v.co("glowColor", s.glowColor);
 	v.fl("glowAlpha", s.glowAlpha);
-	v.fl("radius", s.radius);
 	v.fl("thickness", s.thickness);
 	v.fl("indicSize", s.indicSize);
 }
@@ -333,7 +332,6 @@ void UiConfig::SeedDefaults()
 	Ring("Group", "Direction");
 	SetFlag("Group", "ShowDirectionRing", false);
 	SetNum("Group", "NavDist", 10.0f);
-	SetNum("Group", "MaxRaidColumns", 4.0f);
 	SetColor("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
 
 	Window("Raid");
@@ -435,7 +433,7 @@ void UiConfig::SeedDefaults()
 	SetStr("iTrack", "ToggleMod3", "None");
 	SetStr("iTrack", "ToggleMouse", "None");
 
-	Window("Themes");
+	Window("ThemeEditor");
 	Window("Settings");
 	Window("Copy");
 
@@ -449,6 +447,11 @@ void UiConfig::SeedDefaults()
 	SetFlag("Toggles", "AnimateOnHover", false);
 	SetNum("Toggles", "Width", 0.0f);
 	SetNum("Toggles", "Height", 0.0f);
+
+	// Non-window settings bucket (e.g. the global "AnimatedWidgets" toggle). Seeded so
+	// PruneDefunct recognizes it as live; internal so it isn't a user-toggleable window.
+	Window("Global").internal = true;
+	SetFlag("Global", "AnimatedWidgets", true);
 }
 
 void UiConfig::Init(SettingsStore* store)
@@ -545,6 +548,13 @@ void UiConfig::PruneDefunct()
 		auto it = m_windows.find(row.module);
 		if (it == m_windows.end())
 		{
+			// Row belongs to a renamed/removed window (e.g. old MyAA/MyInventory/ThemeZ).
+			// MQMyUI.db is private to this plugin, so anything under an unknown module is
+			// defunct - delete it, except whitelisted external keys (ActiveTheme).
+			if (externalKeys.count(row.name) == 0)
+			{
+				m_store->DeleteSetting(row.module, row.name);
+			}
 			continue;
 		}
 		if (coreKeys.count(row.name) != 0 || externalKeys.count(row.name) != 0)
