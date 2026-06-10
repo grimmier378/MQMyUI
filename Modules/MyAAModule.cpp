@@ -248,6 +248,8 @@ void MyAAModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 460.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 560.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(460, 560), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("AA##MyUIAA", &w.visible, flags))
 	{

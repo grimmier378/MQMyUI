@@ -353,6 +353,8 @@ void SpellsModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 260.0f, vp->WorkPos.y + 90.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Spells##MyUISpells", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);
@@ -597,6 +599,8 @@ void SpellsModule::DrawSpellSetManager()
 		return;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 470.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 410.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(470.0f, 410.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Spell Sets##MyUISpellSets", &m_managerOpen))
 	{

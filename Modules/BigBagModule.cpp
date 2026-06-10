@@ -55,6 +55,8 @@ void BigBagModule::OnRenderGUI()
 	bool showBackground = ui->Flag(GetName(), "ShowSlotBackground", true);
 	float iconSize = 20.0f * w.iconScale;
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 520.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 560.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(520.0f, 560.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI BigBag##MyUIBigBag", &w.visible, flags))
 	{

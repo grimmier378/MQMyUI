@@ -37,6 +37,8 @@ void ToolbarModule::OnRenderGUI()
 	ImVec2 spacing = ImGui::GetStyle().ItemSpacing;
 	float pad = ImGui::GetStyle().WindowPadding.x * 2.0f;
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x / 3.0f, vp->WorkPos.y), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2((icon + spacing.x) * 5.0f + pad, icon + ImGui::GetStyle().WindowPadding.y * 2.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Toolbar##MyUIToolbar", nullptr, flags))
 	{

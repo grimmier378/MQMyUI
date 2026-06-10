@@ -167,6 +167,8 @@ void SpellPicker::DrawSpellPicker()
 		return;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 300.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 400.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Spell Picker##MyUISpellPicker", &m_pickerOpen, ImGuiWindowFlags_NoDocking))
 	{

@@ -847,7 +847,9 @@ void GroupModule::OnRenderGUI()
 			flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 		}
 
-		ImGui::SetNextWindowSize(ImVec2(216, 0), ImGuiCond_FirstUseEver);
+		const ImGuiViewport* vp = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x - 255.0f, vp->WorkPos.y + 210.0f), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(230, 0), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("MyUI Group##MyUIGroup", &gw.visible, flags))
 		{
 			ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * gw.textScale);
@@ -874,7 +876,9 @@ void GroupModule::OnRenderGUI()
 			rflags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 		}
 
-		ImGui::SetNextWindowSize(ImVec2(500, 0), ImGuiCond_FirstUseEver);
+		const ImGuiViewport* vp = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f - 260.0f, vp->WorkPos.y + 40.0f), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("MyUI Raid##MyUIRaid", &rw.visible, rflags))
 		{
 			ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * rw.textScale);

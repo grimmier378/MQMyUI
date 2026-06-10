@@ -64,6 +64,8 @@ void HudModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f - 15.0f, vp->WorkPos.y), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI HUD##MyUIHud", &w.visible, flags))
 	{
 		if (ImGui::BeginPopupContextWindow("##HudCtx"))

@@ -302,6 +302,8 @@ void SettingsModule::OnRenderGUI()
 		? ("MyUI Settings - Editing " + m_targetChar + "###MyUISettings")
 		: std::string("MyUI Settings###MyUISettings");
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 560.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 600.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560.0f, 600.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(title.c_str(), &w.visible))
 	{

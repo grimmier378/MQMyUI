@@ -92,6 +92,8 @@ void MyInventoryModule::OnRenderGUI()
 	float cell = ui->Num(GetName(), "ItemSize", 40.0f) * w.iconScale;
 	bool showBackground = ui->Flag(GetName(), "ShowSlotBackground", true);
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f - 260.0f, vp->WorkPos.y + vp->WorkSize.y * 0.5f - 280.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Inventory##MyUIInventory", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);

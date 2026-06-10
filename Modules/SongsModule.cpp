@@ -32,7 +32,9 @@ void SongsModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(230, 220), ImGuiCond_FirstUseEver);
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 15.0f, vp->WorkPos.y + 340.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(230, 240), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Songs##MyUISongs", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);

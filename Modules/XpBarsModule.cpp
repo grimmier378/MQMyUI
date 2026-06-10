@@ -255,7 +255,9 @@ void XpBarsModule::OnRenderGUI()
 		m_ctx.UI->RequestSave();
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(185, 480), ImGuiCond_FirstUseEver);
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 15.0f, vp->WorkPos.y + 590.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(185, 460), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("XP Bars##MyUIXPBars", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);

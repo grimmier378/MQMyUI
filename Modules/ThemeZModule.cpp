@@ -266,6 +266,8 @@ void ThemeZModule::OnRenderGUI()
 
 	themes->SetPreview(&m_edit);
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 430.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 500.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(430.0f, 500.0f), ImGuiCond_FirstUseEver);
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;

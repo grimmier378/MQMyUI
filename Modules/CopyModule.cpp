@@ -220,6 +220,8 @@ void CopyModule::OnRenderGUI()
 		m_wasOpen = true;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + (vp->WorkSize.x - 560.0f) * 0.5f, vp->WorkPos.y + (vp->WorkSize.y - 520.0f) * 0.5f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560.0f, 520.0f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Copy Settings##MyUICopy", &w.visible))
 	{

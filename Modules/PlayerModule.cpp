@@ -59,7 +59,9 @@ void PlayerModule::OnRenderGUI()
 	}
 
 	{
-		ImGui::SetNextWindowSize(ImVec2(230, 0), ImGuiCond_FirstUseEver);
+		const ImGuiViewport* vp = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x - 255.0f, vp->WorkPos.y), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(240, 0), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("MyUI Player##MyUIPlayer", &w.visible, flags))
 		{
 			ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);
@@ -84,7 +86,9 @@ void PlayerModule::OnRenderGUI()
 
 	if (showTarget && splitTarget)
 	{
-		ImGui::SetNextWindowSize(ImVec2(230, 0), ImGuiCond_FirstUseEver);
+		const ImGuiViewport* vp = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x - 505.0f, vp->WorkPos.y), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(240, 0), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("MyUI Target##MyUITarget", nullptr, flags))
 		{
 			ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);

@@ -69,6 +69,8 @@ void CastingModule::OnRenderGUI()
 		flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	}
 
+	const ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f - 140.0f, vp->WorkPos.y + vp->WorkSize.y * 0.30f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(280, 0), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Casting##MyUICasting", nullptr, flags))
 	{
