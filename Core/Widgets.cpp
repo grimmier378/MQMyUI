@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <unordered_map>
 
 namespace myui
 {
@@ -117,6 +118,104 @@ void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImV
 		g.w = col.w * intensity * (0.22f / (float)i);
 		dl->AddRectFilled(ImVec2(p0.x - spread, p0.y - spread), ImVec2(p1.x + spread, p1.y + spread),
 			ImGui::GetColorU32(g), rounding + spread);
+	}
+}
+
+namespace
+{
+ImVec4 MQToVec4(const MQColor& c)
+{
+	return ImVec4(c.Red / 255.0f, c.Green / 255.0f, c.Blue / 255.0f, c.Alpha / 255.0f);
+}
+} // namespace
+
+void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
+	float distance, bool los, const char* distText, const RingStyle& style)
+{
+	if (!dl)
+	{
+		return;
+	}
+
+	const float dt = ImGui::GetIO().DeltaTime;
+
+	// Shortest-arc angle smoothing toward the (possibly stale) target bearing. Kept
+	// in our own per-id state so wrapping past +/-180 never sweeps the long way.
+	static std::unordered_map<ImGuiID, float> s_angle;
+	float drawAngle = targetBearingDeg;
+	if (g_animationsEnabled)
+	{
+		auto it = s_angle.find(id);
+		float cur = (it != s_angle.end()) ? it->second : targetBearingDeg;
+		float diff = targetBearingDeg - cur;
+		while (diff > 180.0f)  { diff -= 360.0f; }
+		while (diff < -180.0f) { diff += 360.0f; }
+		const float k = 1.0f - expf(-dt / 0.10f); // ~0.1s smoothing time constant
+		cur += diff * k;
+		s_angle[id] = cur;
+		drawAngle = cur;
+	}
+	else
+	{
+		s_angle[id] = targetBearingDeg;
+	}
+
+	// Resolve the track color from the mode, tweening for Distance/Visibility.
+	ImVec4 track;
+	if (style.trackMode == 1) // Distance: tween near->far across [distMin, distMax]
+	{
+		float span = style.distMax - style.distMin;
+		float t = span > 0.001f ? (distance - style.distMin) / span : 0.0f;
+		t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
+		ImVec4 target = ImLerp(MQToVec4(style.distNear), MQToVec4(style.distFar), t);
+		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
+			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
+	}
+	else if (style.trackMode == 2) // Visibility: tween between los/no-los colors
+	{
+		ImVec4 target = los ? MQToVec4(style.losColor) : MQToVec4(style.noLosColor);
+		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
+			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
+	}
+	else // Default: explicit color, or theme FrameBg when left unset (alpha 0)
+	{
+		track = style.ringColor.Alpha == 0 ? ImGui::GetStyleColorVec4(ImGuiCol_FrameBg) : MQToVec4(style.ringColor);
+	}
+
+	// radius 0 = auto-fit: smallest radius whose inner edge clears the distance
+	// text's bounding circle, plus the track half-thickness and a little padding,
+	// so the text never touches the track.
+	float radius = style.radius;
+	if (radius <= 0.0f)
+	{
+		ImVec2 ts = (distText && distText[0]) ? ImGui::CalcTextSize(distText) : ImVec2(0.0f, 0.0f);
+		float halfDiag = sqrtf(ts.x * ts.x + ts.y * ts.y) * 0.5f;
+		radius = halfDiag + style.thickness * 0.5f + 3.0f;
+	}
+	dl->AddCircle(center, radius, ImGui::GetColorU32(track), 64, style.thickness);
+
+	// Marker on the track: 0 deg = top, clockwise positive (ImGui Y is down).
+	const float rad = drawAngle * (kPi / 180.0f);
+	const ImVec2 mark(center.x + sinf(rad) * radius, center.y - cosf(rad) * radius);
+
+	const ImVec4 indic = style.indicColor.Alpha == 0
+		? ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab) : MQToVec4(style.indicColor);
+
+	if (style.glowOn && style.glowAlpha > 0.001f)
+	{
+		ImVec4 glow = style.glowColor.Alpha == 0 ? indic : MQToVec4(style.glowColor);
+		const float s = style.indicSize;
+		SoftGlowRoundRect(dl, ImVec2(mark.x - s, mark.y - s), ImVec2(mark.x + s, mark.y + s),
+			s, glow, style.glowAlpha);
+	}
+
+	dl->AddCircleFilled(mark, style.indicSize, ImGui::GetColorU32(indic), 16);
+
+	if (distText && distText[0])
+	{
+		const ImVec2 ts = ImGui::CalcTextSize(distText);
+		dl->AddText(ImVec2(center.x - ts.x * 0.5f, center.y - ts.y * 0.5f),
+			ImGui::GetColorU32(ImGuiCol_Text), distText);
 	}
 }
 

@@ -5,6 +5,7 @@
 
 #include <mq/Plugin.h>
 
+#include <map>
 #include <string>
 
 struct GroupRowData;
@@ -16,6 +17,7 @@ public:
 	const char* GetName() const override { return "Group"; }
 
 	void OnRenderGUI() override;
+	void OnPulse() override;
 	void OnZone() override;
 
 private:
@@ -37,4 +39,9 @@ private:
 	std::string m_curWindow = "Group";
 	bool m_groupFollow = false;
 	bool m_raidFollow = false;
+
+	// Throttled spawn positions (x in .x, y in .y) keyed by spawnId, refreshed each
+	// pulse; the per-frame direction-ring bearing is recomputed from these against
+	// the live player heading/position so turning stays responsive.
+	std::map<int, ImVec2> m_memberPos;
 };

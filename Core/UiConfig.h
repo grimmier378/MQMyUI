@@ -2,6 +2,8 @@
 
 #include <mq/Plugin.h>
 
+#include "Widgets.h" // RingStyle (shared, dependency-light widget style)
+
 #include <map>
 #include <string>
 #include <vector>
@@ -62,6 +64,7 @@ struct WindowConfig
 	std::map<std::string, float>       nums;
 	std::map<std::string, std::string> strs;
 	std::map<std::string, BarStyle>    bars;
+	std::map<std::string, RingStyle>   rings;
 };
 
 class UiConfig
@@ -80,6 +83,7 @@ public:
 
 	WindowConfig& Window(const std::string& name);
 	BarStyle&     Bar(const std::string& window, const std::string& role);
+	RingStyle&    Ring(const std::string& window, const std::string& role);
 
 	bool  Flag(const std::string& window, const std::string& name, bool def);
 	void  SetFlag(const std::string& window, const std::string& name, bool value);

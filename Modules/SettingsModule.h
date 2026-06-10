@@ -23,6 +23,7 @@ private:
 	void DrawWindowDetail(const std::string& name);
 	void DrawBarsTab();
 	void DrawBarEditor(const std::string& window, const std::string& role);
+	void DrawRingEditor(const std::string& window);
 	void DrawTargetPicker();
 
 	std::string m_selWindow; // "" = General entry

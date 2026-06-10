@@ -81,6 +81,26 @@ void VisitBar(BarStyle& s, V& v)
 	v.fl("tweenSeconds", s.tweenSeconds);
 }
 
+template <class V>
+void VisitRing(RingStyle& s, V& v)
+{
+	v.in("trackMode", s.trackMode);
+	v.co("ringColor", s.ringColor);
+	v.co("indicColor", s.indicColor);
+	v.fl("distMin", s.distMin);
+	v.fl("distMax", s.distMax);
+	v.co("distNear", s.distNear);
+	v.co("distFar", s.distFar);
+	v.co("losColor", s.losColor);
+	v.co("noLosColor", s.noLosColor);
+	v.bo("glowOn", s.glowOn);
+	v.co("glowColor", s.glowColor);
+	v.fl("glowAlpha", s.glowAlpha);
+	v.fl("radius", s.radius);
+	v.fl("thickness", s.thickness);
+	v.fl("indicSize", s.indicSize);
+}
+
 struct SaveVisitor
 {
 	SettingsStore* store;
@@ -137,6 +157,22 @@ bool IsValidBarKey(const WindowConfig& w, const std::set<std::string>& barFields
 	std::string field = name.substr(secondDot + 1);
 	return w.bars.count(role) != 0 && barFields.count(field) != 0;
 }
+
+bool IsValidRingKey(const WindowConfig& w, const std::set<std::string>& ringFields, const std::string& name)
+{
+	if (name.rfind("Ring.", 0) != 0)
+	{
+		return false;
+	}
+	size_t secondDot = name.find('.', 5);
+	if (secondDot == std::string::npos)
+	{
+		return false;
+	}
+	std::string role = name.substr(5, secondDot - 5);
+	std::string field = name.substr(secondDot + 1);
+	return w.rings.count(role) != 0 && ringFields.count(field) != 0;
+}
 } // namespace
 
 void UiConfig::EnsureWindow(const std::string& name)
@@ -158,6 +194,12 @@ BarStyle& UiConfig::Bar(const std::string& window, const std::string& role)
 {
 	WindowConfig& w = Window(window);
 	return w.bars[role];
+}
+
+RingStyle& UiConfig::Ring(const std::string& window, const std::string& role)
+{
+	WindowConfig& w = Window(window);
+	return w.rings[role];
 }
 
 bool UiConfig::Flag(const std::string& window, const std::string& name, bool def)
@@ -252,6 +294,8 @@ void UiConfig::SeedDefaults()
 	SetFlag("Player", "SplitTarget", false);
 	SetFlag("Player", "CombatPulse", true);
 	SetFlag("Player", "TargetTextOverlay", false);
+	Ring("Player", "Direction");
+	SetFlag("Player", "ShowDirectionRing", false);
 
 	Window("Pet");
 	bar("Pet", "HP", MQColor(190, 75, 75), MQColor(190, 75, 75), 18.0f);
@@ -284,6 +328,8 @@ void UiConfig::SeedDefaults()
 	SetFlag("Group", "ShowDistance", true);
 	SetFlag("Group", "VertPet", true);
 	SetFlag("Group", "ShowEmptySlots", false);
+	Ring("Group", "Direction");
+	SetFlag("Group", "ShowDirectionRing", false);
 	SetNum("Group", "NavDist", 10.0f);
 	SetNum("Group", "MaxRaidColumns", 4.0f);
 	SetColor("Group", "OutOfZoneColor", MQColor(116, 116, 116, 255));
@@ -297,6 +343,8 @@ void UiConfig::SeedDefaults()
 		pb.vertical = true;
 		pb.width = 10.0f;
 	}
+	Ring("Raid", "Direction");
+	SetFlag("Raid", "ShowDirectionRing", false);
 	SetNum("Raid", "TileWidth", 180.0f);
 
 	Window("Buffs");
@@ -450,6 +498,11 @@ void UiConfig::Load()
 				style.vertical = false;
 			}
 		}
+		for (auto& [role, style] : w.rings)
+		{
+			LoadVisitor lv{ m_store, key, "Ring." + role + "." };
+			VisitRing(style, lv);
+		}
 
 		if (IsTransientVisibility(key))
 		{
@@ -474,6 +527,13 @@ void UiConfig::PruneDefunct()
 		VisitBar(dummy, collector);
 		return fields;
 	}();
+	static std::set<std::string> ringFields = [] {
+		std::set<std::string> fields;
+		RingStyle dummy;
+		KeyCollector collector{ &fields };
+		VisitRing(dummy, collector);
+		return fields;
+	}();
 	static const std::set<std::string> coreKeys = { "Visible", "Locked", "TextScale", "IconScale" };
 	static const std::set<std::string> externalKeys = { "ActiveTheme" };
 
@@ -495,6 +555,10 @@ void UiConfig::PruneDefunct()
 			continue;
 		}
 		if (IsValidBarKey(w, barFields, row.name))
+		{
+			continue;
+		}
+		if (IsValidRingKey(w, ringFields, row.name))
 		{
 			continue;
 		}
@@ -534,6 +598,11 @@ void UiConfig::Save()
 		{
 			SaveVisitor sv{ m_store, key, "Bar." + role + "." };
 			VisitBar(style, sv);
+		}
+		for (auto& [role, style] : w.rings)
+		{
+			SaveVisitor sv{ m_store, key, "Ring." + role + "." };
+			VisitRing(style, sv);
 		}
 	}
 	m_store->CommitTransaction();

@@ -54,6 +54,30 @@ struct GroupRowData
 	int petId = 0;
 };
 
+void GroupModule::OnPulse()
+{
+	m_memberPos.clear();
+	if (!pLocalPlayer || !m_ctx.Char)
+	{
+		return;
+	}
+	auto capture = [&](const std::vector<GroupMemberSnap>& members) {
+		for (const GroupMemberSnap& m : members)
+		{
+			if (m.spawnId <= 0 || m.isSelf)
+			{
+				continue;
+			}
+			if (PSPAWNINFO sp = GetSpawnByID(m.spawnId))
+			{
+				m_memberPos[m.spawnId] = ImVec2(sp->X, sp->Y);
+			}
+		}
+	};
+	capture(m_ctx.Char->Group());
+	capture(m_ctx.Char->Raid());
+}
+
 GroupRowData GroupModule::BuildRow(const GroupMemberSnap& snap) const
 {
 	GroupRowData row;
@@ -225,16 +249,43 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 	bool showMove = showMoveStatus && inZone;
 	bool showDist = showDistance && inZone && row.distance > 0.0f;
 
+	RingStyle& ring = m_ctx.UI->Ring(win, "Direction");
+	auto posIt = m_memberPos.find(row.spawnId);
+	bool showRing = showDist && m_ctx.UI->Flag(win, "ShowDirectionRing", false) && posIt != m_memberPos.end();
+
 	ImGui::PushID(row.name.c_str());
 
-	if (ImGui::BeginTable("##gmhdr", showLevel ? 3 : 2,
+	int colCount = (showLevel ? 1 : 0) + 2 + (showDist ? 1 : 0);
+	if (ImGui::BeginTable("##gmhdr", colCount,
 		ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody))
 	{
-		ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("icons", ImGuiTableColumnFlags_WidthFixed, barH * 5.0f + 12.0f);
 		if (showLevel)
 		{
 			ImGui::TableSetupColumn("lvl", ImGuiTableColumnFlags_WidthFixed, 0.0f);
+		}
+		ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("icons", ImGuiTableColumnFlags_WidthFixed, barH * 5.0f + 12.0f);
+		if (showDist)
+		{
+			ImGui::TableSetupColumn("dist", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("9999").x);
+		}
+
+		if (showLevel)
+		{
+			ImGui::TableNextColumn();
+			if (sitting)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.6f, 0.2f, 1.0f));
+			}
+			ImGui::Text("%d", row.level);
+			if (sitting)
+			{
+				ImGui::PopStyleColor();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				DrawMemberTooltip(row);
+			}
 		}
 
 		ImGui::TableNextColumn();
@@ -256,12 +307,6 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 		if (!showLevel && ImGui::IsItemHovered())
 		{
 			DrawMemberTooltip(row);
-		}
-		if (showDist)
-		{
-			ImGui::SameLine();
-			ImVec4 distColor = row.distance > 200.0f ? ImVec4(0.9f, 0.4f, 0.4f, 1.0f) : ImVec4(0.4f, 0.9f, 0.4f, 1.0f);
-			ImGui::TextColored(distColor, "%d", static_cast<int>(row.distance));
 		}
 
 		ImGui::TableNextColumn();
@@ -367,21 +412,32 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 			}
 		}
 
-		if (showLevel)
+		if (showDist)
 		{
 			ImGui::TableNextColumn();
-			if (sitting)
+			char distbuf[16];
+			sprintf_s(distbuf, "%d", static_cast<int>(row.distance));
+			if (showRing)
 			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.6f, 0.2f, 1.0f));
+				// Reserve only the distance-text footprint, then draw the ring + text on
+				// the window's own draw list (so a window placed on top correctly covers
+				// it, unlike the viewport foreground list) with the clip widened to
+				// full-screen so it escapes the cell. Overflowing the window is fine.
+				// No reflow when the ring size changes.
+				ImVec2 ts = ImGui::CalcTextSize(distbuf);
+				ImVec2 p = ImGui::GetCursorScreenPos();
+				ImVec2 center(p.x + ts.x * 0.5f, p.y + ImGui::GetTextLineHeight() * 0.5f);
+				ImDrawList* dl = ImGui::GetWindowDrawList();
+				dl->PushClipRectFullScreen();
+				myui::DrawDirectionRing(dl, ImGui::GetID("##dirring"),
+					center, myui::RelativeBearingDeg(posIt->second.x, posIt->second.y), row.distance, row.inLOS, distbuf, ring);
+				dl->PopClipRect();
+				ImGui::Dummy(ts);
 			}
-			ImGui::Text("%d", row.level);
-			if (sitting)
+			else
 			{
-				ImGui::PopStyleColor();
-			}
-			if (ImGui::IsItemHovered())
-			{
-				DrawMemberTooltip(row);
+				ImVec4 distColor = row.distance > 200.0f ? ImVec4(0.9f, 0.4f, 0.4f, 1.0f) : ImVec4(0.4f, 0.9f, 0.4f, 1.0f);
+				ImGui::TextColored(distColor, "%s", distbuf);
 			}
 		}
 

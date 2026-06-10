@@ -7,6 +7,7 @@
 #include "../Core/IconHelper.h"
 #include "../Core/UiHelpers.h"
 #include "../Core/PeerData.h"
+#include "../Core/Widgets.h"
 
 #include "imgui/fonts/IconsFontAwesome.h"
 
@@ -294,27 +295,57 @@ void PlayerModule::DrawTargetInfo(const std::string& targetName)
 {
 	bool los = pLocalPlayer->CanSee(*pTarget);
 	char distbuf[24];
-	sprintf_s(distbuf, "%.0fm", GetDistance(pLocalPlayer, pTarget));
+	sprintf_s(distbuf, "%.0f", GetDistance(pLocalPlayer, pTarget));
 	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
 
 	ImGui::Text("%s", targetName.c_str());
 
-	float spacing = ImGui::GetStyle().ItemSpacing.x;
-	float rightW = ImGui::CalcTextSize(eye).x + spacing + ImGui::CalcTextSize(distbuf).x;
+	RingStyle& ring = m_ctx.UI->Ring(GetName(), "Direction");
+	bool showRing = m_ctx.UI->Flag(GetName(), "ShowDirectionRing", false) && pTarget != pLocalPlayer;
+	float distW = ImGui::CalcTextSize(distbuf).x;
+	float rightBlockW = distW;
+
 	ImGui::SameLine();
+	float startX = ImGui::GetCursorPosX();
 	float avail = ImGui::GetContentRegionAvail().x;
-	if (avail > rightW)
+	float rightStartX = startX + avail - rightBlockW;
+
+	// Visibility indicator centered between the name and the right-aligned distance.
+	float eyeW = ImGui::CalcTextSize(eye).x;
+	float eyeX = startX + ((rightStartX - startX) - eyeW) * 0.5f;
+	if (eyeX < startX)
 	{
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (avail - rightW));
+		eyeX = startX;
 	}
+	ImGui::SetCursorPosX(eyeX);
 	ImGui::TextColored(los ? ImVec4(0.3f, 0.9f, 0.3f, 1.0f) : ImVec4(0.9f, 0.3f, 0.3f, 1.0f),
 		"%s", eye);
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetItemTooltip("%s", los ? "In Line of Sight" : "No Line of Sight");
 	}
+
 	ImGui::SameLine();
-	ImGui::Text("%s", distbuf);
+	ImGui::SetCursorPosX(rightStartX);
+	if (showRing)
+	{
+		// Reserve only the distance-text footprint; draw the ring + text on the
+		// window's own draw list (covered by windows placed on top) with the clip
+		// widened to full-screen so it escapes the cell. No reflow on ring resize.
+		ImVec2 p = ImGui::GetCursorScreenPos();
+		ImVec2 center(p.x + distW * 0.5f, p.y + ImGui::GetTextLineHeight() * 0.5f);
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		dl->PushClipRectFullScreen();
+		myui::DrawDirectionRing(dl, ImGui::GetID("##tgtring"),
+			center, myui::RelativeBearingDeg(pTarget->X, pTarget->Y),
+			GetDistance(pLocalPlayer, pTarget), los, distbuf, ring);
+		dl->PopClipRect();
+		ImGui::Dummy(ImVec2(distW, ImGui::GetTextLineHeight()));
+	}
+	else
+	{
+		ImGui::Text("%s", distbuf);
+	}
 
 	const char* tcls = pTarget->GetClassThreeLetterCode();
 	const char* tbody = GetBodyTypeDesc(GetBodyType(pTarget));
@@ -349,13 +380,27 @@ void PlayerModule::DrawTargetOverlayText(const ImVec2& rmin, const ImVec2& rmax,
 	bool los = pLocalPlayer->CanSee(*pTarget);
 	const char* eye = los ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
 	char distbuf[24];
-	sprintf_s(distbuf, "%.0fm", GetDistance(pLocalPlayer, pTarget));
+	sprintf_s(distbuf, "%.0f", GetDistance(pLocalPlayer, pTarget));
 
 	float distW = ImGui::CalcTextSize(distbuf).x;
 	float eyeW = ImGui::CalcTextSize(eye).x;
 	float gap = ImGui::GetStyle().ItemSpacing.x;
 	float distX = rmax.x - padX - distW;
-	drawText(distX, y, IM_COL32(255, 255, 255, 255), distbuf);
+
+	RingStyle& ring = m_ctx.UI->Ring(GetName(), "Direction");
+	if (m_ctx.UI->Flag(GetName(), "ShowDirectionRing", false) && pTarget != pLocalPlayer)
+	{
+		ImVec2 center(distX + distW * 0.5f, y + ImGui::GetTextLineHeight() * 0.5f);
+		dl->PushClipRectFullScreen();
+		myui::DrawDirectionRing(dl, ImGui::GetID("##tgtringovl"), center,
+			myui::RelativeBearingDeg(pTarget->X, pTarget->Y),
+			GetDistance(pLocalPlayer, pTarget), los, distbuf, ring);
+		dl->PopClipRect();
+	}
+	else
+	{
+		drawText(distX, y, IM_COL32(255, 255, 255, 255), distbuf);
+	}
 	drawText(distX - gap - eyeW, y, los ? IM_COL32(80, 230, 80, 255) : IM_COL32(230, 80, 80, 255), eye);
 
 	const char* tcls = pTarget->GetClassThreeLetterCode();

@@ -231,6 +231,7 @@ const char* FlagDescription(const std::string& window, const std::string& flag)
 		{ "ShowLevel",           "Show each member's level." },
 		{ "ShowMoveStatus",      "Show a moving / sitting status indicator for each member." },
 		{ "ShowDistance",        "Show each member's distance from you." },
+		{ "ShowDirectionRing",   "Wrap the distance in a direction ring: a glowing marker orbits the ring to point at the spawn relative to your facing (up = ahead). Style it in the Direction Ring section below." },
 		{ "VertPet",             "Draw the group pet bars vertically instead of horizontally." },
 		{ "ShowEmptySlots",      "Draw an empty placeholder tile for each unfilled group slot." },
 		{ "IconView",            "Show as an icon grid instead of a list with names and timers." },
@@ -766,6 +767,11 @@ void SettingsModule::DrawWindowDetail(const std::string& name)
 		}
 	}
 
+	if (ci_equals(name, "Player") || ci_equals(name, "Group") || ci_equals(name, "Raid"))
+	{
+		DrawRingEditor(name);
+	}
+
 	// Generic numeric / string options not handled above.
 	bool hasOptions = false;
 	for (const auto& [key, val] : w.nums)
@@ -1078,6 +1084,63 @@ void SettingsModule::DrawBarEditor(const std::string& window, const std::string&
 	ImGui::PopID();
 }
 
+void SettingsModule::DrawRingEditor(const std::string& window)
+{
+	UiConfig* ui = m_active ? m_active : m_ctx.UI;
+	RingStyle& r = ui->Ring(window, "Direction");
 
+	if (!myui::BeginAnimatedHeader("Direction Ring", false))
+	{
+		return;
+	}
 
+	ImGui::PushID(window.c_str());
+	ImGui::PushID("ring");
+
+	auto tip = [](const char* t) { ImGui::SameLine(); mq::imgui::HelpMarker(t); };
+
+	static const char* const kModes[] = { "Default", "Distance", "Visibility" };
+	r.trackMode = myui::PillTabBar("##ringmode", kModes, 3, r.trackMode);
+	tip("Ring track color. Default = theme frame background; Distance = tween near->far color over a range; Visibility = color by line of sight.");
+
+	if (r.trackMode == 1)
+	{
+		ColorEditMQ("Near Color", r.distNear);
+		ColorEditMQ("Far Color", r.distFar);
+		myui::StyledSliderFloat("Near Distance", &r.distMin, 0.0f, 500.0f, "%.0f");
+		myui::StyledSliderFloat("Far Distance", &r.distMax, 0.0f, 500.0f, "%.0f");
+		tip("Track tweens from Near to Far color as the spawn's distance crosses this range.");
+	}
+	else if (r.trackMode == 2)
+	{
+		ColorEditMQ("In-Sight Color", r.losColor);
+		ColorEditMQ("Blocked Color", r.noLosColor);
+	}
+	else
+	{
+		ColorEditMQ("Ring Color", r.ringColor);
+		tip("Track color. Set alpha to 0 to follow the theme frame background.");
+	}
+
+	ImGui::SeparatorText("Indicator");
+	ColorEditMQ("Indicator Color", r.indicColor);
+	tip("Marker color. Set alpha to 0 to follow the theme slider-grab color.");
+	myui::StyledCheckbox("Glow", &r.glowOn);
+	if (r.glowOn)
+	{
+		ColorEditMQ("Glow Color", r.glowColor);
+		tip("Set alpha to 0 to glow with the indicator color.");
+		myui::StyledSliderFloat("Glow Strength", &r.glowAlpha, 0.0f, 1.0f, "%.2f");
+	}
+
+	ImGui::SeparatorText("Size");
+	myui::StyledSliderFloat("Radius", &r.radius, 0.0f, 40.0f, "%.0f");
+	tip("0 = auto-fit the ring to the distance text (accounting for thickness).");
+	myui::StyledSliderFloat("Thickness", &r.thickness, 1.0f, 10.0f, "%.1f");
+	myui::StyledSliderFloat("Indicator Size", &r.indicSize, 2.0f, 14.0f, "%.1f");
+
+	ImGui::PopID();
+	ImGui::PopID();
+	myui::EndAnimatedHeader();
+}
 

@@ -1,9 +1,47 @@
 #pragma once
 
+#include <mq/Plugin.h>
+
+#include <cmath>
 #include <string>
 
 namespace myui
 {
+// Bearing from the player to a world position (spawnX/spawnY), relative to the
+// player's facing: 0 = directly ahead, clockwise positive, range [-180, 180].
+// Feeds DrawDirectionRing. The atan2 bearing-to and the raw facing (Heading *
+// 360/512) share EQ's native heading frame (the same pairing MQ's IsMobFleeing
+// uses, MQ2Inlines.h). The subtraction is facing - bearingTo (not the reverse):
+// in EQ's frame that orientation makes the marker swing opposite your turn and
+// puts a spawn on your left on the left of the ring. Reversing it negates the
+// result - the marker spins with you and left/right swap.
+inline float RelativeBearingDeg(float spawnX, float spawnY)
+{
+	if (!pLocalPlayer)
+	{
+		return 0.0f;
+	}
+	float headingTo = atan2f(pLocalPlayer->Y - spawnY, spawnX - pLocalPlayer->X) * 180.0f / 3.14159265358979323846f + 90.0f;
+	if (headingTo < 0.0f)
+	{
+		headingTo += 360.0f;
+	}
+	else if (headingTo >= 360.0f)
+	{
+		headingTo -= 360.0f;
+	}
+	float rel = pLocalPlayer->Heading * 0.703125f - headingTo;
+	while (rel < -180.0f)
+	{
+		rel += 360.0f;
+	}
+	while (rel > 180.0f)
+	{
+		rel -= 360.0f;
+	}
+	return rel;
+}
+
 // Short race code for a race id. Used to build anonymized names — these codes are
 // intentionally not valid character names (see MaskedCode). Unknown -> "UNK".
 inline const char* RaceShort(int raceId)
