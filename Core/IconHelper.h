@@ -23,14 +23,7 @@ public:
 	bool DrawStatusIcon(const char* animName, int sizePx, const char* tooltip = nullptr);
 
 private:
-	CTextureAnimation* Get(CTextureAnimation*& slot, const char* animName);
 	CTextureAnimation* Named(const char* animName);
 
 	std::unordered_map<std::string, CTextureAnimation*> m_named;
-
-	CTextureAnimation* m_spellIcons    = nullptr;
-	CTextureAnimation* m_gemBackground = nullptr;
-	CTextureAnimation* m_gemHolder     = nullptr;
-	CTextureAnimation* m_spellBook     = nullptr;
-	CTextureAnimation* m_itemIcon      = nullptr;
 };

@@ -7,43 +7,11 @@
 #include "../Core/ActorManager.h"
 #include "../Core/PeerData.h"
 #include "../Core/ColorUtil.h"
+#include "../Core/UiHelpers.h"
+#include "../Core/Widgets.h"
 
 #include <cmath>
 #include <cstdio>
-
-namespace
-{
-const MQColor kBorderBeneficial(80, 120, 255, 255);
-const MQColor kBorderDetrimental(250, 0, 0, 255);
-const MQColor kBorderSelfCast(230, 230, 0, 255);
-
-void FormatDuration(char* out, size_t size, int ms)
-{
-	if (ms < 0)
-	{
-		strcpy_s(out, size, "perm");
-		return;
-	}
-
-	int totalSec = ms / 1000;
-	int hours = totalSec / 3600;
-	int minutes = (totalSec % 3600) / 60;
-	int seconds = totalSec % 60;
-
-	if (hours > 0)
-	{
-		sprintf_s(out, size, "%dh %dm", hours, minutes);
-	}
-	else if (minutes > 0)
-	{
-		sprintf_s(out, size, "%dm %ds", minutes, seconds);
-	}
-	else
-	{
-		sprintf_s(out, size, "%ds", seconds);
-	}
-}
-}
 
 void BuffsModule::OnPulse()
 {
@@ -164,11 +132,12 @@ void BuffsModule::DrawTableView(float pulse)
 		}
 	}
 	ImGui::SetNextItemWidth(-1.0f);
-	if (ImGui::BeginCombo("##BuffChar", current.c_str()))
+	if (myui::StyledBeginCombo("##BuffChar", current.c_str()))
 	{
-		if (ImGui::Selectable(selfName, m_selectedChar.empty()))
+		if (myui::PillSelectable(selfName, m_selectedChar.empty()))
 		{
 			m_selectedChar.clear();
+			ImGui::CloseCurrentPopup();
 		}
 		if (groupOnly && m_ctx.Char)
 		{
@@ -179,9 +148,10 @@ void BuffsModule::DrawTableView(float pulse)
 					continue;
 				}
 				std::string disp = (mq::IsAnonymized() ? gm.maskedName : gm.name) + "##" + gm.name;
-				if (ImGui::Selectable(disp.c_str(), ci_equals(m_selectedChar, gm.name)))
+				if (myui::PillSelectable(disp.c_str(), ci_equals(m_selectedChar, gm.name)))
 				{
 					m_selectedChar = gm.name;
+					ImGui::CloseCurrentPopup();
 				}
 			}
 		}
@@ -194,13 +164,14 @@ void BuffsModule::DrawTableView(float pulse)
 					continue;
 				}
 				std::string disp = (mq::IsAnonymized() ? peer.maskedName : peer.character) + "##" + peer.character;
-				if (ImGui::Selectable(disp.c_str(), ci_equals(m_selectedChar, peer.character)))
+				if (myui::PillSelectable(disp.c_str(), ci_equals(m_selectedChar, peer.character)))
 				{
 					m_selectedChar = peer.character;
+					ImGui::CloseCurrentPopup();
 				}
 			}
 		}
-		ImGui::EndCombo();
+		myui::StyledEndCombo();
 	}
 
 	static const std::vector<BuffInfo> kNoBuffs;
@@ -243,11 +214,7 @@ void BuffsModule::DrawTableView(float pulse)
 			continue;
 		}
 
-		MQColor border = buff.beneficial ? kBorderBeneficial : kBorderDetrimental;
-		if (!buff.beneficial && pLocalPC && ci_equals(buff.caster, pLocalPC->Name))
-		{
-			border = kBorderSelfCast;
-		}
+		MQColor border = myui::BuffBorderColor(buff.beneficial, buff.caster.c_str());
 
 		int secondsLeft = buff.durationMs / 1000;
 		MQColor tint = myui::FlashTint(secondsLeft, flashThreshold, pulse);
@@ -261,7 +228,7 @@ void BuffsModule::DrawTableView(float pulse)
 		if (ImGui::TableSetColumnIndex(1) && buff.durationMs != 0)
 		{
 			char timeLabel[32];
-			FormatDuration(timeLabel, sizeof(timeLabel), buff.durationMs);
+			myui::FormatDuration(timeLabel, sizeof(timeLabel), buff.durationMs, true);
 			ImGui::TextColored(MQColor(255, 165, 0, 255).ToImColor(), "%s", timeLabel);
 		}
 
@@ -353,11 +320,7 @@ void BuffsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 		}
 		else
 		{
-			MQColor border = buff.beneficial ? kBorderBeneficial : kBorderDetrimental;
-			if (!buff.beneficial && pLocalPC && ci_equals(buff.caster, pLocalPC->Name))
-			{
-				border = kBorderSelfCast;
-			}
+			MQColor border = myui::BuffBorderColor(buff.beneficial, buff.caster.c_str());
 
 			int secondsLeft = buff.durationMs / 1000;
 			MQColor tint = myui::FlashTint(secondsLeft, flashThreshold, pulse);
@@ -367,7 +330,7 @@ void BuffsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 			if (ImGui::IsItemHovered())
 			{
 				char timeLabel[32];
-				FormatDuration(timeLabel, sizeof(timeLabel), buff.durationMs);
+				myui::FormatDuration(timeLabel, sizeof(timeLabel), buff.durationMs, true);
 				ImGui::BeginTooltip();
 				ImGui::Text("%s", buff.name.c_str());
 				if (buff.durationMs != 0)

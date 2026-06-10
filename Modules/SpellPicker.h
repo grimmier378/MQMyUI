@@ -47,6 +47,7 @@ public:
 
 private:
 	void PopulateSpellData();
+	void RebuildCategorized(bool applyFilter);
 
 	std::unordered_map<const char*, std::unordered_map<const char*, std::vector<SpellData>>> m_categorized;
 };

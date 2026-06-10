@@ -11,7 +11,8 @@ namespace
 {
 std::string ColorToStr(const MQColor& c)
 {
-	return fmt::format("{{{},{},{},{}}}", (int)c.Red, (int)c.Green, (int)c.Blue, (int)c.Alpha);
+	return fmt::format("{{{},{},{},{}}}", static_cast<int>(c.Red), static_cast<int>(c.Green),
+		static_cast<int>(c.Blue), static_cast<int>(c.Alpha));
 }
 
 MQColor StrToColor(const std::string& s, const MQColor& def)
@@ -31,7 +32,7 @@ MQColor StrToColor(const std::string& s, const MQColor& def)
 				++p;
 				continue;
 			}
-			v[n++] = (int)val;
+			v[n++] = static_cast<int>(val);
 			p = next;
 		}
 		else
@@ -43,7 +44,8 @@ MQColor StrToColor(const std::string& s, const MQColor& def)
 	{
 		return def;
 	}
-	return MQColor((uint8_t)v[0], (uint8_t)v[1], (uint8_t)v[2], (uint8_t)v[3]);
+	return MQColor(static_cast<uint8_t>(v[0]), static_cast<uint8_t>(v[1]),
+		static_cast<uint8_t>(v[2]), static_cast<uint8_t>(v[3]));
 }
 
 template <class V>
@@ -109,7 +111,7 @@ struct SaveVisitor
 
 	void fl(const char* n, float& v)       { store->SetNumber(window, prefix + n, v); }
 	void bo(const char* n, bool& v)        { store->SetBool(window, prefix + n, v); }
-	void in(const char* n, int& v)         { store->SetNumber(window, prefix + n, (float)v); }
+	void in(const char* n, int& v)         { store->SetNumber(window, prefix + n, static_cast<float>(v)); }
 	void co(const char* n, MQColor& v)     { store->SetString(window, prefix + n, ColorToStr(v)); }
 	void st(const char* n, std::string& v) { store->SetString(window, prefix + n, v); }
 };
@@ -122,7 +124,7 @@ struct LoadVisitor
 
 	void fl(const char* n, float& v)       { v = store->GetNumber(window, prefix + n, v); }
 	void bo(const char* n, bool& v)        { v = store->GetBool(window, prefix + n, v); }
-	void in(const char* n, int& v)         { v = (int)store->GetNumber(window, prefix + n, (float)v); }
+	void in(const char* n, int& v)         { v = static_cast<int>(store->GetNumber(window, prefix + n, static_cast<float>(v))); }
 	void co(const char* n, MQColor& v)     { v = StrToColor(store->GetString(window, prefix + n, ColorToStr(v)), v); }
 	void st(const char* n, std::string& v) { v = store->GetString(window, prefix + n, v); }
 };

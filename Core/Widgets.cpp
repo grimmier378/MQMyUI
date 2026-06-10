@@ -121,14 +121,6 @@ void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImV
 	}
 }
 
-namespace
-{
-ImVec4 MQToVec4(const MQColor& c)
-{
-	return ImVec4(c.Red / 255.0f, c.Green / 255.0f, c.Blue / 255.0f, c.Alpha / 255.0f);
-}
-} // namespace
-
 void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
 	float distance, bool los, const char* distText, const RingStyle& style)
 {
@@ -167,19 +159,19 @@ void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBe
 		float span = style.distMax - style.distMin;
 		float t = span > 0.001f ? (distance - style.distMin) / span : 0.0f;
 		t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
-		ImVec4 target = ImLerp(MQToVec4(style.distNear), MQToVec4(style.distFar), t);
+		ImVec4 target = ImLerp(ImVec4(style.distNear.ToImColor()), ImVec4(style.distFar.ToImColor()), t);
 		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
 			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
 	}
 	else if (style.trackMode == 2) // Visibility: tween between los/no-los colors
 	{
-		ImVec4 target = los ? MQToVec4(style.losColor) : MQToVec4(style.noLosColor);
+		ImVec4 target = los ? ImVec4(style.losColor.ToImColor()) : ImVec4(style.noLosColor.ToImColor());
 		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
 			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
 	}
 	else // Default: explicit color, or theme FrameBg when left unset (alpha 0)
 	{
-		track = style.ringColor.Alpha == 0 ? ImGui::GetStyleColorVec4(ImGuiCol_FrameBg) : MQToVec4(style.ringColor);
+		track = style.ringColor.Alpha == 0 ? ImGui::GetStyleColorVec4(ImGuiCol_FrameBg) : ImVec4(style.ringColor.ToImColor());
 	}
 
 	// radius 0 = auto-fit: smallest radius whose inner edge clears the distance
@@ -199,11 +191,11 @@ void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBe
 	const ImVec2 mark(center.x + sinf(rad) * radius, center.y - cosf(rad) * radius);
 
 	const ImVec4 indic = style.indicColor.Alpha == 0
-		? ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab) : MQToVec4(style.indicColor);
+		? ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab) : ImVec4(style.indicColor.ToImColor());
 
 	if (style.glowOn && style.glowAlpha > 0.001f)
 	{
-		ImVec4 glow = style.glowColor.Alpha == 0 ? indic : MQToVec4(style.glowColor);
+		ImVec4 glow = style.glowColor.Alpha == 0 ? indic : ImVec4(style.glowColor.ToImColor());
 		const float s = style.indicSize;
 		SoftGlowRoundRect(dl, ImVec2(mark.x - s, mark.y - s), ImVec2(mark.x + s, mark.y + s),
 			s, glow, style.glowAlpha);
@@ -235,23 +227,15 @@ bool DrawToggle(const char* id, bool* value, int flags, ImVec2 size)
 		size = g_globalToggleSize;
 	}
 
-	char label[128] = { 0 };
-	const char* sep = strstr(id, "##");
-	size_t labelLen = sep ? (size_t)(sep - id) : strlen(id);
-	if (labelLen >= sizeof(label))
-	{
-		labelLen = sizeof(label) - 1;
-	}
-	memcpy(label, id, labelLen);
-	label[labelLen] = 0;
+	const char* labelEnd = ImGui::FindRenderedTextEnd(id);
 
 	const bool rightLabel = (flags & ToggleFlags_RightLabel) != 0;
-	const bool hasLabel   = label[0] != 0;
+	const bool hasLabel   = labelEnd != id;
 
 	// Scale the switch to the label's text height (falls back to the line height
 	// for unlabeled toggles) so it stays proportional to surrounding text rather
 	// than to the padded frame height.
-	const float textH = hasLabel ? ImGui::CalcTextSize(label).y : ImGui::GetTextLineHeight();
+	const float textH = hasLabel ? ImGui::CalcTextSize(id, labelEnd).y : ImGui::GetTextLineHeight();
 	float height = size.y > 0.0f ? size.y : ImMax(textH, 1.0f);
 	float width  = size.x > 0.0f ? size.x : height * 1.9f;
 	float radius = height * 0.5f;
@@ -262,7 +246,7 @@ bool DrawToggle(const char* id, bool* value, int flags, ImVec2 size)
 	if (hasLabel && !rightLabel)
 	{
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(label);
+		ImGui::TextUnformatted(id, labelEnd);
 		ImGui::SameLine();
 	}
 
@@ -368,7 +352,7 @@ bool DrawToggle(const char* id, bool* value, int flags, ImVec2 size)
 	{
 		ImGui::SameLine();
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(label);
+		ImGui::TextUnformatted(id, labelEnd);
 	}
 
 	ImGui::PopID();
@@ -793,41 +777,79 @@ void SliderLabel(const char* label)
 		ImGui::TextUnformatted(label, end);
 	}
 }
+
+// Common scaffold for the styled float/int sliders: lays out the invisible
+// button, derives the per-slider edit-popup id, and handles the Ctrl+click open
+// + edit-popup parse. The two type-specific bits — the value text, the active-
+// drag value mapping, and the trackT — stay in the wrappers so the float path
+// keeps doing exact float arithmetic and the int path keeps integer rounding
+// (mixing them through one double core would shift rounding/precision and was
+// not behavior-preserving). `pos`/`w`/`h`/`r`/`id`/`hovered`/`active`/`popupId`
+// are returned for the wrapper to finish with. `seedText` is what Ctrl+click
+// preloads into the edit popup; `parsedOut` receives the popup result.
+struct SliderFrame
+{
+	ImVec2  pos;
+	float   w;
+	float   h;
+	float   r;
+	ImGuiID id;
+	bool    hovered;
+	bool    active;
+	char    popupId[20];
+};
+
+SliderFrame SliderBegin(const char* label)
+{
+	SliderFrame f{};
+	f.pos = ImGui::GetCursorScreenPos();
+	f.w = ImGui::CalcItemWidth();
+	f.h = ImGui::GetFrameHeight();
+	f.r = f.h * 0.36f;
+
+	ImGui::InvisibleButton(label, ImVec2(f.w, f.h));
+	f.id = ImGui::GetID(label);
+	f.hovered = ImGui::IsItemHovered();
+	f.active = ImGui::IsItemActive();
+	ImFormatString(f.popupId, sizeof(f.popupId), "##se%08X", f.id);
+	return f;
+}
+
+// Handles the Ctrl+click-to-open (seeding the popup with `seedText`) and the
+// edit-popup run. Returns true when the popup was accepted, with the parsed
+// value in *parsedOut.
+bool SliderEdit(const SliderFrame& f, bool asInt, const char* seedText, double* parsedOut)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (f.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl)
+	{
+		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), "%s", seedText);
+		g_editPopupPos = io.MousePos;
+		ImGui::OpenPopup(f.popupId);
+	}
+	return SliderEditPopup(f.popupId, asInt, parsedOut);
+}
 } // namespace
 
 bool StyledSliderFloat(const char* label, float* v, float vmin, float vmax, const char* fmt, ImGuiSliderFlags flags)
 {
 	(void)flags;
-	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float w = ImGui::CalcItemWidth();
-	const float h = ImGui::GetFrameHeight();
-	const float r = h * 0.36f;
-
-	ImGui::InvisibleButton(label, ImVec2(w, h));
-	const ImGuiID id = ImGui::GetID(label);
-	const bool hovered = ImGui::IsItemHovered();
-	const bool active = ImGui::IsItemActive();
+	const SliderFrame f = SliderBegin(label);
 	ImGuiIO& io = ImGui::GetIO();
-
-	char popupId[20];
-	ImFormatString(popupId, sizeof(popupId), "##se%08X", id);
 	bool changed = false;
 
-	if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl)
+	char seed[32];
+	ImFormatString(seed, sizeof(seed), fmt, *v);
+
+	if (f.active && !io.KeyCtrl)
 	{
-		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), fmt, *v);
-		g_editPopupPos = io.MousePos;
-		ImGui::OpenPopup(popupId);
-	}
-	else if (active && !io.KeyCtrl)
-	{
-		const float tnorm = ImClamp((io.MousePos.x - (pos.x + r)) / ImMax(w - 2.0f * r, 1.0f), 0.0f, 1.0f);
+		const float tnorm = ImClamp((io.MousePos.x - (f.pos.x + f.r)) / ImMax(f.w - 2.0f * f.r, 1.0f), 0.0f, 1.0f);
 		const float nv = vmin + tnorm * (vmax - vmin);
 		if (nv != *v) { *v = nv; changed = true; }
 	}
 
 	double parsed = 0.0;
-	if (SliderEditPopup(popupId, false, &parsed))
+	if (SliderEdit(f, false, seed, &parsed))
 	{
 		*v = ImClamp((float)parsed, vmin, vmax);
 		changed = true;
@@ -837,7 +859,7 @@ bool StyledSliderFloat(const char* label, float* v, float vmin, float vmax, cons
 	const float trackT = denom != 0.0f ? (*v - vmin) / denom : 0.0f;
 	char value[32];
 	ImFormatString(value, sizeof(value), fmt, *v);
-	DrawAnimatedSlider(id, pos, w, h, trackT, hovered || active, value);
+	DrawAnimatedSlider(f.id, f.pos, f.w, f.h, trackT, f.hovered || f.active, value);
 	SliderLabel(label);
 	return changed;
 }
@@ -845,36 +867,22 @@ bool StyledSliderFloat(const char* label, float* v, float vmin, float vmax, cons
 bool StyledSliderInt(const char* label, int* v, int vmin, int vmax, const char* fmt, ImGuiSliderFlags flags)
 {
 	(void)flags;
-	const ImVec2 pos = ImGui::GetCursorScreenPos();
-	const float w = ImGui::CalcItemWidth();
-	const float h = ImGui::GetFrameHeight();
-	const float r = h * 0.36f;
-
-	ImGui::InvisibleButton(label, ImVec2(w, h));
-	const ImGuiID id = ImGui::GetID(label);
-	const bool hovered = ImGui::IsItemHovered();
-	const bool active = ImGui::IsItemActive();
+	const SliderFrame f = SliderBegin(label);
 	ImGuiIO& io = ImGui::GetIO();
-
-	char popupId[20];
-	ImFormatString(popupId, sizeof(popupId), "##se%08X", id);
 	bool changed = false;
 
-	if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && io.KeyCtrl)
+	char seed[32];
+	ImFormatString(seed, sizeof(seed), fmt, *v);
+
+	if (f.active && !io.KeyCtrl)
 	{
-		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), fmt, *v);
-		g_editPopupPos = io.MousePos;
-		ImGui::OpenPopup(popupId);
-	}
-	else if (active && !io.KeyCtrl)
-	{
-		const float tnorm = ImClamp((io.MousePos.x - (pos.x + r)) / ImMax(w - 2.0f * r, 1.0f), 0.0f, 1.0f);
+		const float tnorm = ImClamp((io.MousePos.x - (f.pos.x + f.r)) / ImMax(f.w - 2.0f * f.r, 1.0f), 0.0f, 1.0f);
 		const int nv = vmin + (int)(tnorm * (float)(vmax - vmin) + 0.5f);
 		if (nv != *v) { *v = nv; changed = true; }
 	}
 
 	double parsed = 0.0;
-	if (SliderEditPopup(popupId, true, &parsed))
+	if (SliderEdit(f, true, seed, &parsed))
 	{
 		const int nv = (int)(parsed >= 0.0 ? parsed + 0.5 : parsed - 0.5);
 		*v = ImClamp(nv, vmin, vmax);
@@ -885,7 +893,7 @@ bool StyledSliderInt(const char* label, int* v, int vmin, int vmax, const char* 
 	const float trackT = denom != 0.0f ? (float)(*v - vmin) / denom : 0.0f;
 	char value[32];
 	ImFormatString(value, sizeof(value), fmt, *v);
-	DrawAnimatedSlider(id, pos, w, h, trackT, hovered || active, value);
+	DrawAnimatedSlider(f.id, f.pos, f.w, f.h, trackT, f.hovered || f.active, value);
 	SliderLabel(label);
 	return changed;
 }

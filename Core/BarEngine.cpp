@@ -13,17 +13,6 @@ namespace myui
 {
 namespace
 {
-ImVec4 ToV4(const MQColor& c)
-{
-	return ImVec4(c.Red / 255.0f, c.Green / 255.0f, c.Blue / 255.0f, c.Alpha / 255.0f);
-}
-
-ImVec4 LerpV4(const ImVec4& a, const ImVec4& b, float t)
-{
-	t = std::max(0.0f, std::min(1.0f, t));
-	return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
-}
-
 float Tween(ImGuiID id, float target, float seconds)
 {
 	static std::unordered_map<ImGuiID, float> s_state;
@@ -120,7 +109,7 @@ void DrawGradientFill(ImDrawList* dl, ImVec2 f0, ImVec2 f1, const ImVec4& lo, co
 {
 	ImU32 cLo = ImGui::GetColorU32(lo);
 	ImU32 cHi = ImGui::GetColorU32(hi);
-	ImU32 cMid = ImGui::GetColorU32(LerpV4(lo, hi, 0.5f));
+	ImU32 cMid = ImGui::GetColorU32(LerpColor(lo, hi, 0.5f));
 
 	ImU32 ul, ur, br, bl;
 	switch (dir)
@@ -171,7 +160,7 @@ void DrawStyledBarRect(const char* id, float pct, const BarStyle& style, const I
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 
-	dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ToV4(style.bgColor)), rounding);
+	dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ImVec4(style.bgColor.ToImColor())), rounding);
 
 	ImVec2 f0, f1;
 	if (style.vertical)
@@ -187,11 +176,11 @@ void DrawStyledBarRect(const char* id, float pct, const BarStyle& style, const I
 
 	if (p > 0.0001f)
 	{
-		ImVec4 lo = ToV4(style.fillLow);
-		ImVec4 hi = ToV4(style.fillHigh);
+		ImVec4 lo = style.fillLow.ToImColor();
+		ImVec4 hi = style.fillHigh.ToImColor();
 		if (style.gradientOn)
 		{
-			ImVec4 endHi = (style.gradientMode == 1) ? LerpV4(lo, hi, p) : hi;
+			ImVec4 endHi = (style.gradientMode == 1) ? LerpColor(lo, hi, p) : hi;
 			DrawGradientFill(dl, f0, f1, lo, endHi, style.gradientDir, rounding);
 		}
 		else
@@ -281,7 +270,7 @@ void DrawStyledBarRect(const char* id, float pct, const BarStyle& style, const I
 
 	if (style.border)
 	{
-		dl->AddRect(p0, p1, ImGui::GetColorU32(ToV4(style.borderColor)), rounding, 0, style.borderThickness);
+		dl->AddRect(p0, p1, ImGui::GetColorU32(ImVec4(style.borderColor.ToImColor())), rounding, 0, style.borderThickness);
 	}
 
 	if (style.textMode != 0)
@@ -364,7 +353,7 @@ void DrawScrollingGradientText(ImDrawList* dl, const ImVec2& pos, const char* te
 		float u = (y - p0.y) / period - phase;
 		u -= std::floor(u);                                  // wrap to [0,1)
 		float t = (u < 0.5f) ? (u * 2.0f) : (2.0f - u * 2.0f); // triangle 0..1..0
-		return ImGui::GetColorU32(LerpV4(colorA, colorB, t));
+		return ImGui::GetColorU32(LerpColor(colorA, colorB, t));
 	};
 
 	// Use the glyph coverage as a per-pixel alpha mask, then fill it with the gradient.

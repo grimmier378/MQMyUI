@@ -198,11 +198,11 @@ const AAEntry* AAData::Find(int groupId) const
 	return nullptr;
 }
 
-std::string AAData::Description(int groupId) const
+CAltAbilityData* AAData::ResolveAbility(int groupId) const
 {
 	if (!pAltAdvManager || !pLocalPC)
 	{
-		return "";
+		return nullptr;
 	}
 
 	CAltAbilityData* ab = pAltAdvManager->GetOwnedAbilityFromGroupID(pLocalPC, groupId);
@@ -214,6 +214,12 @@ std::string AAData::Description(int groupId) const
 			ab = pAltAdvManager->GetAAById(e->index);
 		}
 	}
+	return ab;
+}
+
+std::string AAData::Description(int groupId) const
+{
+	CAltAbilityData* ab = ResolveAbility(groupId);
 	if (!ab)
 	{
 		return "";
@@ -239,20 +245,7 @@ std::string AAData::Description(int groupId) const
 
 bool AAData::Ready(int groupId) const
 {
-	if (!pAltAdvManager || !pLocalPC)
-	{
-		return false;
-	}
-
-	CAltAbilityData* ab = pAltAdvManager->GetOwnedAbilityFromGroupID(pLocalPC, groupId);
-	if (!ab)
-	{
-		const AAEntry* e = Find(groupId);
-		if (e)
-		{
-			ab = pAltAdvManager->GetAAById(e->index);
-		}
-	}
+	CAltAbilityData* ab = ResolveAbility(groupId);
 	if (!ab)
 	{
 		return false;

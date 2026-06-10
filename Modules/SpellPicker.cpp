@@ -127,29 +127,16 @@ void SpellPicker::PopulateSpellData()
 			return a.Level > b.Level;
 		});
 
-	m_categorized.clear();
-	for (const auto& spell : m_mySpells)
-	{
-		m_categorized[spell.Category][spell.SubCategory].push_back(spell);
-	}
+	RebuildCategorized(false);
 }
 
-void SpellPicker::FilterSpells()
+void SpellPicker::RebuildCategorized(bool applyFilter)
 {
-	if (!m_needFilter)
-	{
-		m_categorized.clear();
-		for (const auto& spell : m_mySpells)
-		{
-			m_categorized[spell.Category][spell.SubCategory].push_back(spell);
-		}
-		return;
-	}
-
 	m_categorized.clear();
 	for (const auto& spell : m_mySpells)
 	{
-		if (!m_filterString.empty()
+		if (applyFilter
+			&& !m_filterString.empty()
 			&& mq::ci_find_substr(spell.Name, m_filterString) == -1
 			&& mq::ci_find_substr(spell.Category, m_filterString) == -1
 			&& mq::ci_find_substr(spell.SubCategory, m_filterString) == -1)
@@ -159,6 +146,17 @@ void SpellPicker::FilterSpells()
 
 		m_categorized[spell.Category][spell.SubCategory].push_back(spell);
 	}
+}
+
+void SpellPicker::FilterSpells()
+{
+	if (!m_needFilter)
+	{
+		RebuildCategorized(false);
+		return;
+	}
+
+	RebuildCategorized(true);
 	m_needFilter = false;
 }
 
@@ -172,19 +170,15 @@ void SpellPicker::DrawSpellPicker()
 	ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("MyUI Spell Picker##MyUISpellPicker", &m_pickerOpen, ImGuiWindowFlags_NoDocking))
 	{
-		char buffer[256] = {};
-		strncpy_s(buffer, m_filterString.c_str(), sizeof(buffer));
-		if (ImGui::InputText("Search##SpellPicker", buffer, sizeof(buffer)))
+		// Live search field — left as a plain InputText (per-keystroke filtering), not
+		// the commit-on-accept StyledEditField.
+		char searchBuf[128];
+		strncpy_s(searchBuf, sizeof(searchBuf), m_filterString.c_str(), _TRUNCATE);
+		ImGui::SetNextItemWidth(200.0f);
+		if (ImGui::InputTextWithHint("##SpellSearch", "search", searchBuf, sizeof(searchBuf)))
 		{
-			if (!ci_equals(buffer, m_filterString))
-			{
-				m_filterString = buffer;
-				m_needFilter = true;
-			}
-		}
-		else if (buffer[0] == '\0')
-		{
-			m_filterString = buffer;
+			m_filterString = searchBuf;
+			m_needFilter = true;
 		}
 
 		ImGui::SameLine();

@@ -22,6 +22,7 @@ private:
 	enum class PickerTarget { None, LiveGem, SetSlot };
 
 	int GemCount() const;
+	int ComputeGemCount() const;
 	void DrawOptionsButton();
 	void DrawQuickSetMenu();
 	void DrawSpellSetManager();
@@ -59,4 +60,6 @@ private:
 	};
 	std::vector<DbOp> m_dbQueue;
 	bool              m_refreshNames = false;
+
+	int               m_gemCount = 8; // cached per-pulse gem count (AA rank can change)
 };

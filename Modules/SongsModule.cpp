@@ -5,35 +5,10 @@
 #include "../Core/CharData.h"
 #include "../Core/IconHelper.h"
 #include "../Core/ColorUtil.h"
+#include "../Core/UiHelpers.h"
 
 #include <cmath>
 #include <cstdio>
-
-namespace
-{
-const MQColor kBorder(80, 120, 255, 255);
-const MQColor kBorderDet(250, 0, 0, 255);
-
-void FormatDuration(char* out, size_t size, int ms)
-{
-	if (ms < 0)
-	{
-		strcpy_s(out, size, "perm");
-		return;
-	}
-	int totalSec = ms / 1000;
-	int minutes = totalSec / 60;
-	int seconds = totalSec % 60;
-	if (minutes > 0)
-	{
-		sprintf_s(out, size, "%dm %ds", minutes, seconds);
-	}
-	else
-	{
-		sprintf_s(out, size, "%ds", seconds);
-	}
-}
-}
 
 void SongsModule::OnPulse()
 {
@@ -124,7 +99,7 @@ void SongsModule::DrawTableView(float pulse)
 		ImGui::TableSetColumnIndex(0);
 		ImGui::PushID(song.slot);
 
-		MQColor border = song.beneficial ? kBorder : kBorderDet;
+		MQColor border = myui::BuffBorderColor(song.beneficial, nullptr);
 		int secondsLeft = song.durationMs / 1000;
 		MQColor tint = myui::FlashTint(secondsLeft, flashThreshold, pulse);
 
@@ -135,7 +110,7 @@ void SongsModule::DrawTableView(float pulse)
 		if (showTimer && song.durationMs != 0)
 		{
 			char timeLabel[32];
-			FormatDuration(timeLabel, sizeof(timeLabel), song.durationMs);
+			myui::FormatDuration(timeLabel, sizeof(timeLabel), song.durationMs);
 			ImGui::TextColored(MQColor(255, 165, 0, 255).ToImColor(), "%s", timeLabel);
 		}
 
@@ -204,7 +179,7 @@ void SongsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 		}
 		else
 		{
-			MQColor border = song.beneficial ? kBorder : kBorderDet;
+			MQColor border = myui::BuffBorderColor(song.beneficial, nullptr);
 			int secondsLeft = song.durationMs / 1000;
 			MQColor tint = myui::FlashTint(secondsLeft, flashThreshold, pulse);
 
@@ -213,7 +188,7 @@ void SongsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffI
 			if (ImGui::IsItemHovered())
 			{
 				char timeLabel[32];
-				FormatDuration(timeLabel, sizeof(timeLabel), song.durationMs);
+				myui::FormatDuration(timeLabel, sizeof(timeLabel), song.durationMs);
 				ImGui::BeginTooltip();
 				ImGui::Text("%s", song.name.c_str());
 				if (song.durationMs != 0)

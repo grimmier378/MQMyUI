@@ -9,6 +9,7 @@
 #include "../Core/Widgets.h"
 
 #include <algorithm>
+#include <functional>
 
 namespace
 {
@@ -16,7 +17,11 @@ const char* kPresetNames[] = { "All", "Armor", "Weapons", "Ranged", "Charm", "Ea
 
 // Worn slots counted as armor for the Armor category (head, shoulders, arms, back,
 // wrists, hands, chest, legs, feet, waist).
-const int kArmorSlots[] = { 2, 6, 7, 8, 9, 10, 12, 17, 18, 19, 20 };
+const int kArmorSlots[] = {
+	myui::kSlotHead, myui::kSlotShoulder, myui::kSlotArms, myui::kSlotBack,
+	myui::kSlotWrist1, myui::kSlotWrist2, myui::kSlotHands, myui::kSlotChest,
+	myui::kSlotLegs, myui::kSlotFeet, myui::kSlotWaist,
+};
 } // namespace
 
 void BigBagModule::OnRenderGUI()
@@ -62,6 +67,21 @@ void BigBagModule::OnRenderGUI()
 		static const char* const kTabs[] = { "Items", "Clickies", "Augments", "Bank", "Details" };
 		m_tab = myui::PillTabBar("##BigBagTabs", kTabs, IM_ARRAYSIZE(kTabs), m_tab);
 
+		// Filter a source list by a per-tab predicate, sort, and render the grid.
+		auto collectAndSortDraw = [&](const std::vector<myui::ItemRef>& source,
+			const std::function<bool(const myui::ItemRef&)>& predicate) {
+			std::vector<myui::ItemRef> items;
+			for (const myui::ItemRef& ref : source)
+			{
+				if (predicate(ref))
+				{
+					items.push_back(ref);
+				}
+			}
+			SortItems(items);
+			DrawItemGrid(items, cell, showBackground);
+		};
+
 		if (m_tab == 0)
 		{
 			ImGui::SetNextItemWidth(140.0f);
@@ -73,55 +93,27 @@ void BigBagModule::OnRenderGUI()
 				ui->SetFlag(GetName(), "UseableOnly", useableOnly);
 			}
 
-			std::vector<myui::ItemRef> items;
-			for (myui::ItemRef& ref : myui::GetBagContents())
-			{
-				if (PassesNameFilter(ref) && PassesPreset(ref) && PassesUseableFilter(ref))
-				{
-					items.push_back(ref);
-				}
-			}
-			SortItems(items);
-			DrawItemGrid(items, cell, showBackground);
+			collectAndSortDraw(myui::GetBagContents(), [&](const myui::ItemRef& ref) {
+				return PassesNameFilter(ref) && PassesPreset(ref) && PassesUseableFilter(ref);
+			});
 		}
 		else if (m_tab == 1)
 		{
-			std::vector<myui::ItemRef> items;
-			for (myui::ItemRef& ref : myui::GetBagContents())
-			{
-				if (myui::IsClicky(ref) && PassesNameFilter(ref))
-				{
-					items.push_back(ref);
-				}
-			}
-			SortItems(items);
-			DrawItemGrid(items, cell, showBackground);
+			collectAndSortDraw(myui::GetBagContents(), [&](const myui::ItemRef& ref) {
+				return myui::IsClicky(ref) && PassesNameFilter(ref);
+			});
 		}
 		else if (m_tab == 2)
 		{
-			std::vector<myui::ItemRef> items;
-			for (myui::ItemRef& ref : myui::GetBagContents())
-			{
-				if (myui::IsAugment(ref) && PassesNameFilter(ref))
-				{
-					items.push_back(ref);
-				}
-			}
-			SortItems(items);
-			DrawItemGrid(items, cell, showBackground);
+			collectAndSortDraw(myui::GetBagContents(), [&](const myui::ItemRef& ref) {
+				return myui::IsAugment(ref) && PassesNameFilter(ref);
+			});
 		}
 		else if (m_tab == 3)
 		{
-			std::vector<myui::ItemRef> items;
-			for (myui::ItemRef& ref : myui::GetBank())
-			{
-				if (PassesNameFilter(ref))
-				{
-					items.push_back(ref);
-				}
-			}
-			SortItems(items);
-			DrawItemGrid(items, cell, showBackground);
+			collectAndSortDraw(myui::GetBank(), [&](const myui::ItemRef& ref) {
+				return PassesNameFilter(ref);
+			});
 		}
 		else if (m_tab == 4)
 		{
@@ -383,13 +375,13 @@ bool BigBagModule::PassesPreset(const myui::ItemRef& ref) const
 			}
 		}
 		return false;
-	case 2: return myui::ItemFitsSlot(ref, 13) || myui::ItemFitsSlot(ref, 14);
-	case 3: return myui::ItemFitsSlot(ref, 11);
-	case 4: return myui::ItemFitsSlot(ref, 0);
-	case 5: return myui::ItemFitsSlot(ref, 1) || myui::ItemFitsSlot(ref, 4);
-	case 6: return myui::ItemFitsSlot(ref, 3);
-	case 7: return myui::ItemFitsSlot(ref, 5);
-	case 8: return myui::ItemFitsSlot(ref, 15) || myui::ItemFitsSlot(ref, 16);
+	case 2: return myui::ItemFitsSlot(ref, myui::kSlotPrimary) || myui::ItemFitsSlot(ref, myui::kSlotSecondary);
+	case 3: return myui::ItemFitsSlot(ref, myui::kSlotRange);
+	case 4: return myui::ItemFitsSlot(ref, myui::kSlotCharm);
+	case 5: return myui::ItemFitsSlot(ref, myui::kSlotEar1) || myui::ItemFitsSlot(ref, myui::kSlotEar2);
+	case 6: return myui::ItemFitsSlot(ref, myui::kSlotFace);
+	case 7: return myui::ItemFitsSlot(ref, myui::kSlotNeck);
+	case 8: return myui::ItemFitsSlot(ref, myui::kSlotRing1) || myui::ItemFitsSlot(ref, myui::kSlotRing2);
 	default: return true;
 	}
 }
@@ -400,18 +392,45 @@ void BigBagModule::SortItems(std::vector<myui::ItemRef>& items) const
 	bool byName = m_ctx.UI->Flag(GetName(), "SortName", true);
 	bool byStack = m_ctx.UI->Flag(GetName(), "SortStack", true);
 
-	std::sort(items.begin(), items.end(), [&](const myui::ItemRef& a, const myui::ItemRef& b) {
-		ItemDefinition* da = a.item->GetItemDefinition();
-		ItemDefinition* db = b.item->GetItemDefinition();
-		if (!da || !db)
+	// Decorate: precompute each item's sort keys once (def-dependent lookups are
+	// virtual calls), then sort the decorated entries and write the items back. A
+	// null definition is flagged so the comparator preserves the original behavior
+	// of returning false whenever either side lacks a definition.
+	struct SortKey
+	{
+		myui::ItemRef ref;
+		std::string   typeName;
+		std::string   name;
+		int           stack = 0;
+		bool          hasDef = false;
+	};
+
+	std::vector<SortKey> keys;
+	keys.reserve(items.size());
+	for (const myui::ItemRef& ref : items)
+	{
+		SortKey key;
+		key.ref = ref;
+		ItemDefinition* def = ref.item->GetItemDefinition();
+		if (def)
+		{
+			key.hasDef = true;
+			const char* type = myui::ItemTypeName(def);
+			key.typeName = type ? type : "";
+			key.name = def->Name ? def->Name : "";
+			key.stack = ref.stack();
+		}
+		keys.push_back(std::move(key));
+	}
+
+	std::sort(keys.begin(), keys.end(), [&](const SortKey& a, const SortKey& b) {
+		if (!a.hasDef || !b.hasDef)
 		{
 			return false;
 		}
 		if (byType)
 		{
-			const char* ta = myui::ItemTypeName(da);
-			const char* tb = myui::ItemTypeName(db);
-			int c = ci_string_compare(ta ? ta : "", tb ? tb : "");
+			int c = ci_string_compare(a.typeName, b.typeName);
 			if (c != 0)
 			{
 				return c < 0;
@@ -419,7 +438,7 @@ void BigBagModule::SortItems(std::vector<myui::ItemRef>& items) const
 		}
 		if (byName)
 		{
-			int c = ci_string_compare(da->Name, db->Name);
+			int c = ci_string_compare(a.name, b.name);
 			if (c != 0)
 			{
 				return c < 0;
@@ -427,8 +446,13 @@ void BigBagModule::SortItems(std::vector<myui::ItemRef>& items) const
 		}
 		if (byStack)
 		{
-			return a.stack() > b.stack();
+			return a.stack > b.stack;
 		}
 		return false;
 	});
+
+	for (size_t i = 0; i < keys.size(); ++i)
+	{
+		items[i] = keys[i].ref;
+	}
 }

@@ -45,11 +45,8 @@ bool InGroup(CharData* ch, const std::string& name)
 }
 }
 
-void XpBarsModule::DrawRow(const AARow& row)
+void XpBarsModule::DrawRow(const AARow& row, float scale, bool showTooltip)
 {
-	float scale = m_ctx.UI->Window(GetName()).textScale;
-	bool showTooltip = m_ctx.UI->Flag(GetName(), "ShowTooltip", true);
-
 	bool& expand = m_expand[row.name];
 	bool& compact = m_compact[row.name];
 
@@ -263,6 +260,8 @@ void XpBarsModule::OnRenderGUI()
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);
 
+		bool showTooltip = m_ctx.UI->Flag(GetName(), "ShowTooltip", true);
+
 		float avail = ImGui::GetContentRegionAvail().x;
 		float tileW = 165.0f * w.textScale;
 		float spacing = ImGui::GetStyle().ItemSpacing.x;
@@ -294,7 +293,7 @@ void XpBarsModule::OnRenderGUI()
 				}
 			}
 
-			DrawRow(row);
+			DrawRow(row, w.textScale, showTooltip);
 			rowUsed += tileW;
 		}
 

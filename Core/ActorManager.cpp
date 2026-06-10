@@ -231,10 +231,12 @@ void ActorManager::PublishInventory(const std::string& removeItem)
 	}
 
 	auto& selfCounts = m_itemCounts;
+	std::vector<myui::ItemRef> invSnap = myui::GetInventorySnapshot();
+	std::vector<myui::ItemRef> bankSnap = myui::GetBank();
 	for (const std::string& itemName : m_trackedItems)
 	{
-		int inventory = myui::CountInventory(itemName);
-		int bank = myui::CountBank(itemName);
+		int inventory = myui::CountIn(invSnap, itemName);
+		int bank = myui::CountIn(bankSnap, itemName);
 		selfCounts[itemName][c.name] = myui::ItemCount{ inventory, bank };
 
 		auto* entry = snap->add_items();

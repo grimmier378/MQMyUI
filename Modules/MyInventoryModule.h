@@ -13,16 +13,16 @@ public:
 	void OnRenderGUI() override;
 
 private:
-	void DrawHeader();
 	void DrawStatsTab();
 	void DrawInventoryStats();
 	void DrawInventoryResists();
 	void DrawInventoryFooter(bool& visible);
-	void DrawPaperdoll(float cellSize, bool showBackground, bool highlight);
-	void DrawBags(float cellSize, bool showBackground, bool highlight);
+	void DrawPaperdoll(float cellSize, bool showBackground);
+	void DrawBags(float cellSize, bool showBackground);
 	void DrawSwapMenu(int wornSlot);
-	void DrawContainerWindows(float cellSize, bool showBackground, bool highlight);
+	void DrawContainerWindows(float cellSize, bool showBackground);
 
 	std::set<int> m_openContainers;
 	myui::CoinPicker m_coin;
+	int m_tab = 0;
 };

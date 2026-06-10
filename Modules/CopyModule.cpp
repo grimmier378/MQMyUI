@@ -234,13 +234,13 @@ void CopyModule::OnRenderGUI()
 		};
 
 		// Render a character entry colored by online state, with an offline tooltip.
-		auto charSelectable = [&](int idx, bool selected, ImGuiSelectableFlags flags) -> bool {
+		auto charSelectable = [&](int idx, bool selected) -> bool {
 			bool online = false, sameStore = false;
 			onlineState(idx, online, sameStore);
 			std::string label = charLabel(idx) + (online ? " (online)" : " (offline)");
 			ImVec4 color = online ? ImVec4(0.45f, 0.9f, 0.45f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 			ImGui::PushStyleColor(ImGuiCol_Text, color);
-			bool clicked = ImGui::Selectable((label + "##c" + std::to_string(idx)).c_str(), selected, flags);
+			bool clicked = myui::PillSelectable((label + "##c" + std::to_string(idx)).c_str(), selected);
 			ImGui::PopStyleColor();
 			if (!online && ImGui::IsItemHovered())
 			{
@@ -256,22 +256,23 @@ void CopyModule::OnRenderGUI()
 			"Characters on another box receive a settings message; offline characters are written to your local mirror only.");
 
 		ImGui::SetNextItemWidth(220.0f);
-		if (ImGui::BeginCombo("Source", charLabel(m_srcIdx).c_str()))
+		if (myui::StyledBeginCombo("Source", charLabel(m_srcIdx).c_str()))
 		{
 			for (int i = 0; i < (int)m_chars.size(); ++i)
 			{
-				if (charSelectable(i, i == m_srcIdx, ImGuiSelectableFlags_None))
+				if (charSelectable(i, i == m_srcIdx))
 				{
 					m_srcIdx = i;
 					RefreshRows();
+					ImGui::CloseCurrentPopup();
 				}
 			}
-			ImGui::EndCombo();
+			myui::StyledEndCombo();
 		}
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(220.0f);
 		std::string dstLabel = m_dstSel.empty() ? "<none>" : (std::to_string(m_dstSel.size()) + " selected");
-		if (ImGui::BeginCombo("Dest", dstLabel.c_str()))
+		if (myui::StyledBeginCombo("Dest", dstLabel.c_str()))
 		{
 			for (int i = 0; i < (int)m_chars.size(); ++i)
 			{
@@ -280,7 +281,7 @@ void CopyModule::OnRenderGUI()
 					continue;
 				}
 				bool sel = m_dstSel.count(i) != 0;
-				if (charSelectable(i, sel, ImGuiSelectableFlags_NoAutoClosePopups))
+				if (charSelectable(i, sel))
 				{
 					if (sel)
 					{
@@ -293,7 +294,7 @@ void CopyModule::OnRenderGUI()
 					RefreshRows();
 				}
 			}
-			ImGui::EndCombo();
+			myui::StyledEndCombo();
 		}
 		ImGui::SameLine();
 		mq::imgui::HelpMarker("Pick one or more destinations. Applying copies to all selected; the diff below compares against the first selected character.");

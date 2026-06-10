@@ -20,16 +20,17 @@
 
 namespace
 {
+using namespace myui;
 const int kPaperdollLayout[][5] = {
-	{  1, -1,  2, -1,  4 },
-	{  3, -1,  5, -1,  6 },
-	{  7, -1, 17, -1,  8 },
-	{ -1, 20, -1, 18, -1 },
-	{  9, 15, 12, 16, 10 },
-	{ 21, -1, 19, -1,  0 },
+	{ kSlotEar1,        -1, kSlotHead,  -1,        kSlotEar2 },
+	{ kSlotFace,        -1, kSlotNeck,  -1,        kSlotShoulder },
+	{ kSlotArms,        -1, kSlotChest, -1,        kSlotBack },
+	{ -1,        kSlotWaist, -1,        kSlotLegs, -1 },
+	{ kSlotWrist1, kSlotRing1, kSlotHands, kSlotRing2, kSlotWrist2 },
+	{ kSlotPowerSource, -1, kSlotFeet,  -1,        kSlotCharm },
 };
 
-const int kWeaponRow[5] = { 13, 14, -1, 11, 22 };
+const int kWeaponRow[5] = { kSlotPrimary, kSlotSecondary, -1, kSlotRange, kSlotAmmo };
 
 const ImVec4 kStLabel(0.45f, 0.70f, 0.85f, 1.0f);
 const ImVec4 kStValue(0.40f, 0.85f, 0.45f, 1.0f);
@@ -90,53 +91,48 @@ void MyInventoryModule::OnRenderGUI()
 
 	float cell = ui->Num(GetName(), "ItemSize", 40.0f) * w.iconScale;
 	bool showBackground = ui->Flag(GetName(), "ShowSlotBackground", true);
-	bool highlight = false;
 
 	if (ImGui::Begin("MyUI Inventory##MyUIInventory", &w.visible, flags))
 	{
 		ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * w.textScale);
 
-		if (ImGui::BeginTabBar("##MyInvTabs"))
+		static const char* const kInvTabs[] = { "Inventory", "Stats" };
+		m_tab = myui::PillTabBar("##MyInvTabs", kInvTabs, IM_ARRAYSIZE(kInvTabs), m_tab);
+
+		if (m_tab == 0)
 		{
-			if (ImGui::BeginTabItem("Inventory"))
+			if (ImGui::BeginTable("##InvLayout", 3, ImGuiTableFlags_SizingFixedFit))
 			{
-				if (ImGui::BeginTable("##InvLayout", 3, ImGuiTableFlags_SizingFixedFit))
+				float pad = ImGui::GetStyle().CellPadding.x;
+				ImGui::TableSetupColumn("##stats", ImGuiTableColumnFlags_WidthFixed, 185.0f);
+				ImGui::TableSetupColumn("##pd", ImGuiTableColumnFlags_WidthFixed, cell * 5.0f + pad * 12.0f);
+				ImGui::TableSetupColumn("##bags", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableNextRow();
+				if (ImGui::TableNextColumn())
 				{
-					float pad = ImGui::GetStyle().CellPadding.x;
-					ImGui::TableSetupColumn("##stats", ImGuiTableColumnFlags_WidthFixed, 185.0f);
-					ImGui::TableSetupColumn("##pd", ImGuiTableColumnFlags_WidthFixed, cell * 5.0f + pad * 12.0f);
-					ImGui::TableSetupColumn("##bags", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableNextRow();
-					if (ImGui::TableNextColumn())
-					{
-						DrawInventoryStats();
-					}
-					if (ImGui::TableNextColumn())
-					{
-						DrawPaperdoll(cell, showBackground, highlight);
-					}
-					if (ImGui::TableNextColumn())
-					{
-						DrawBags(cell, showBackground, highlight);
-						ImGui::Spacing();
-						myui::DrawCurrencyRow(m_ctx.Icons, 20.0f * w.iconScale, m_coin, true);
-					}
-					ImGui::EndTable();
+					DrawInventoryStats();
 				}
-
-				ImGui::Separator();
-				DrawInventoryResists();
-				ImGui::Separator();
-				myui::DrawDropZones();
-				ImGui::EndTabItem();
+				if (ImGui::TableNextColumn())
+				{
+					DrawPaperdoll(cell, showBackground);
+				}
+				if (ImGui::TableNextColumn())
+				{
+					DrawBags(cell, showBackground);
+					ImGui::Spacing();
+					myui::DrawCurrencyRow(m_ctx.Icons, 20.0f * w.iconScale, m_coin, true);
+				}
+				ImGui::EndTable();
 			}
 
-			if (ImGui::BeginTabItem("Stats"))
-			{
-				DrawStatsTab();
-				ImGui::EndTabItem();
-			}
-			ImGui::EndTabBar();
+			ImGui::Separator();
+			DrawInventoryResists();
+			ImGui::Separator();
+			myui::DrawDropZones();
+		}
+		else if (m_tab == 1)
+		{
+			DrawStatsTab();
 		}
 
 		ImGui::Separator();
@@ -146,26 +142,12 @@ void MyInventoryModule::OnRenderGUI()
 	}
 	ImGui::End();
 
-	DrawContainerWindows(cell, showBackground, highlight);
+	DrawContainerWindows(cell, showBackground);
 	myui::DrawCoinQuantityWindow(m_coin);
 
 	if (!w.visible)
 	{
 		ui->PersistVisibility(GetName());
-	}
-}
-
-void MyInventoryModule::DrawHeader()
-{
-	int free = myui::GetFreeSlots();
-	ImColor freeColor = free > 3 ? ImColor(120, 220, 120) : ImColor(230, 160, 60);
-	ImGui::TextColored(freeColor, "Free Slots: %d", free);
-
-	myui::ItemRef cursor = myui::CursorItem();
-	if (cursor.valid())
-	{
-		ImGui::SameLine();
-		ImGui::TextColored(ImColor(120, 200, 230), "Cursor: %s", cursor.name());
 	}
 }
 
@@ -183,26 +165,22 @@ void MyInventoryModule::DrawStatsTab()
 		return;
 	}
 
-	const ImVec4 colLabel(0.45f, 0.70f, 0.85f, 1.0f);
-	const ImVec4 colValue(0.40f, 0.85f, 0.45f, 1.0f);
-	const ImVec4 colWhite(1.0f, 1.0f, 1.0f, 1.0f);
-	const ImVec4 colOrange(0.95f, 0.55f, 0.16f, 1.0f);
 	const ImVec4 colHeroic(0.80f, 0.80f, 0.45f, 1.0f);
 	const float valX = 160.0f;
 
 	auto plain = [&](const char* label, const std::string& value) {
-		ImGui::TextColored(colLabel, "%s", label);
+		ImGui::TextColored(kStLabel, "%s", label);
 		ImGui::SameLine(valX);
-		ImGui::TextColored(colValue, "%s", value.c_str());
+		ImGui::TextColored(kStValue, "%s", value.c_str());
 	};
 	auto cap = [&](const char* label, const StatVal& sv) {
-		ImGui::TextColored(colLabel, "%s", label);
+		ImGui::TextColored(kStLabel, "%s", label);
 		ImGui::SameLine(valX);
-		ImGui::TextColored(colValue, "%d", sv.value);
+		ImGui::TextColored(kStValue, "%d", sv.value);
 		if (sv.cap >= 0)
 		{
 			ImGui::SameLine(0.0f, 0.0f);
-			ImGui::TextColored(colWhite, " / %d", sv.cap);
+			ImGui::TextColored(kStWhite, " / %d", sv.cap);
 		}
 	};
 	auto attr = [&](const char* label, const StatVal& sv) {
@@ -211,13 +189,13 @@ void MyInventoryModule::DrawStatsTab()
 		ImGui::TextColored(colHeroic, "+%d", sv.heroic);
 	};
 	auto curMax = [&](const char* label, int cur, int maxv) {
-		ImGui::TextColored(colLabel, "%s", label);
+		ImGui::TextColored(kStLabel, "%s", label);
 		ImGui::SameLine(valX);
-		ImGui::TextColored(cur >= maxv ? colWhite : colOrange, "%d", cur);
+		ImGui::TextColored(cur >= maxv ? kStWhite : kStOrange, "%d", cur);
 		ImGui::SameLine(0.0f, 0.0f);
-		ImGui::TextColored(colWhite, " / ");
+		ImGui::TextColored(kStWhite, " / ");
 		ImGui::SameLine(0.0f, 0.0f);
-		ImGui::TextColored(colValue, "%d", maxv);
+		ImGui::TextColored(kStValue, "%d", maxv);
 	};
 
 	if (ImGui::BeginTable("##StatsCols", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit))
@@ -463,7 +441,7 @@ void MyInventoryModule::DrawInventoryFooter(bool& visible)
 	}
 }
 
-void MyInventoryModule::DrawPaperdoll(float cellSize, bool showBackground, bool highlight)
+void MyInventoryModule::DrawPaperdoll(float cellSize, bool showBackground)
 {
 	auto drawCell = [&](int slot) {
 		if (slot < 0)
@@ -478,7 +456,6 @@ void MyInventoryModule::DrawPaperdoll(float cellSize, bool showBackground, bool 
 		myui::DrawItemOptions opts;
 		opts.size = cellSize;
 		opts.showBackground = showBackground;
-		opts.highlightUseable = highlight;
 		opts.handleUse = false;
 		opts.handlePopInfo = true;
 		opts.backgroundAnim = myui::WornSlotBackgroundName(slot);
@@ -591,7 +568,7 @@ void MyInventoryModule::DrawSwapMenu(int wornSlot)
 	}
 }
 
-void MyInventoryModule::DrawBags(float cellSize, bool showBackground, bool highlight)
+void MyInventoryModule::DrawBags(float cellSize, bool showBackground)
 {
 	int count = myui::BagSlotCount();
 	int perRow = 2;
@@ -609,7 +586,6 @@ void MyInventoryModule::DrawBags(float cellSize, bool showBackground, bool highl
 		myui::DrawItemOptions opts;
 		opts.size = cellSize;
 		opts.showBackground = showBackground;
-		opts.highlightUseable = false;
 		opts.handleUse = false;
 		opts.handlePopInfo = true;
 		myui::DrawItemIcon(m_ctx.Icons, bag, opts);
@@ -636,7 +612,7 @@ void MyInventoryModule::DrawBags(float cellSize, bool showBackground, bool highl
 	}
 }
 
-void MyInventoryModule::DrawContainerWindows(float cellSize, bool showBackground, bool highlight)
+void MyInventoryModule::DrawContainerWindows(float cellSize, bool showBackground)
 {
 	UiConfig* ui = m_ctx.UI;
 	std::vector<int> open(m_openContainers.begin(), m_openContainers.end());
@@ -691,7 +667,6 @@ void MyInventoryModule::DrawContainerWindows(float cellSize, bool showBackground
 				myui::DrawItemOptions opts;
 				opts.size = cellSize;
 				opts.showBackground = showBackground;
-				opts.highlightUseable = highlight;
 				myui::DrawItemIcon(m_ctx.Icons, contents[i], opts);
 				ImGui::PopID();
 			}

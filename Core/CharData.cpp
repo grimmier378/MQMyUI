@@ -77,6 +77,47 @@ int SelfRoleMask(CGroupMember* self)
 	}
 	return mask;
 }
+
+void FillFromSpawn(GroupMemberSnap& m, PlayerClient* sp)
+{
+	m.spawnId    = sp->SpawnID;
+	m.standState = sp->StandState;
+	m.velocity   = sp->SpeedRun;
+	m.petId      = sp->PetID;
+	m.inLOS      = m.isSelf || (pLocalPlayer && pLocalPlayer->CanSee(*sp));
+	if (!m.isSelf && pLocalPlayer)
+	{
+		m.distance = Distance3DToSpawn(pLocalPlayer, sp);
+	}
+}
+
+void EnsureMaskedName(GroupMemberSnap& m)
+{
+	if (m.maskedName.empty())
+	{
+		m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(0, m.classShort, m.level);
+	}
+}
+
+void FillBuff(BuffInfo& out, const eqlib::BuffWindowPlayerBuffInfoWrapper& buffInfo)
+{
+	EQ_Spell* spell = buffInfo.GetSpell();
+	if (!spell)
+	{
+		out.isEmpty = true;
+		return;
+	}
+
+	out.spellId    = spell->ID;
+	out.iconId     = spell->SpellIcon;
+	out.durationMs = buffInfo.GetBuffTimer();
+	out.name       = spell->Name;
+	if (const char* caster = buffInfo.GetCaster())
+	{
+		out.caster = caster;
+	}
+	out.beneficial = spell->IsBeneficialSpell();
+}
 } // namespace
 
 void CharData::Refresh()
@@ -145,12 +186,12 @@ void CharData::Refresh()
 		m_snap.aaSpent     = pProfile->AAPointsSpent;
 		m_snap.aaTotal     = pProfile->AAPointsSpent + pProfile->AAPoints;
 	}
-	m_snap.pctAAExp = (float)pLocalPC->AAExp / EXP_TO_PCT_RATIO;
-	m_snap.pctExp   = (float)pLocalPC->Exp / EXP_TO_PCT_RATIO;
+	m_snap.pctAAExp = static_cast<float>(pLocalPC->AAExp) / EXP_TO_PCT_RATIO;
+	m_snap.pctExp   = static_cast<float>(pLocalPC->Exp) / EXP_TO_PCT_RATIO;
 
 	if (int maxAir = pLocalPC->GetMaxAirSupply())
 	{
-		m_snap.pctAir = (float)(pLocalPC->GetAirSupply() * 100) / maxAir;
+		m_snap.pctAir = static_cast<float>(pLocalPC->GetAirSupply() * 100) / maxAir;
 	}
 
 	if (pAAWnd)
@@ -259,11 +300,12 @@ void CharData::RefreshStats()
 	mod(s.strikeThrough, pLocalPC->StrikeThroughBonus,           HEROIC_MOD_STRIKETHROUGH);
 	s.spellDamage = pLocalPC->SpellDamageBonus;
 
-	static const char* kSkillBase[9] = {
+	constexpr int kSkillModCount = 9;
+	static const char* kSkillBase[kSkillModCount] = {
 		"Bash", "Backstab", "DragonPunch", "EagleStrike", "FlyingKick",
 		"Kick", "RoundKick", "TigerClaw", "Frenzy",
 	};
-	for (int i = 0; i < 9; ++i)
+	for (int i = 0; i < kSkillModCount; ++i)
 	{
 		int value = ScrapeInvStat(fmt::format("IWS_Current{}", kSkillBase[i]).c_str());
 		if (value < 0)
@@ -321,32 +363,13 @@ void CharData::RefreshGroupRaid()
 			m.offline = pMember->IsOffline();
 			m.isSelf  = (i == 0);
 			m.isLeader = leaderName && ci_equals(m.name, leaderName);
-			if (pMember->IsMainTank())
-			{
-				m.roleMask |= myui::kRoleMainTank;
-			}
-			if (pMember->IsMainAssist())
-			{
-				m.roleMask |= myui::kRoleMainAssist;
-			}
-			if (pMember->IsPuller())
-			{
-				m.roleMask |= myui::kRolePuller;
-			}
+			m.roleMask = SelfRoleMask(pMember);
 
 			if (PlayerClient* sp = pMember->GetPlayer())
 			{
 				m.present    = true;
-				m.spawnId    = sp->SpawnID;
 				m.classId    = sp->GetClass();
-				m.standState = sp->StandState;
-				m.velocity   = sp->SpeedRun;
-				m.petId      = sp->PetID;
-				m.inLOS      = m.isSelf || (pLocalPlayer && pLocalPlayer->CanSee(*sp));
-				if (!m.isSelf && pLocalPlayer)
-				{
-					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
-				}
+				FillFromSpawn(m, sp);
 				m.pctHP      = m.isSelf ? m_snap.PctHP()   : static_cast<int>(sp->HPCurrent);
 				m.pctMana    = m.isSelf ? m_snap.PctMana() : sp->ManaCurrent;
 				m.pctEnd     = m.isSelf ? m_snap.PctEnd()  : sp->EnduranceCurrent;
@@ -367,10 +390,7 @@ void CharData::RefreshGroupRaid()
 				m.classShort = m_snap.classShort;
 			}
 
-			if (m.maskedName.empty())
-			{
-				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(0, m.classShort, m.level);
-			}
+			EnsureMaskedName(m);
 			m_group.push_back(std::move(m));
 		}
 	}
@@ -412,15 +432,7 @@ void CharData::RefreshGroupRaid()
 			}
 			if (PlayerClient* sp = GetSpawnByName(rm.Name))
 			{
-				m.spawnId    = sp->SpawnID;
-				m.standState = sp->StandState;
-				m.velocity   = sp->SpeedRun;
-				m.petId      = sp->PetID;
-				m.inLOS      = m.isSelf || (pLocalPlayer && pLocalPlayer->CanSee(*sp));
-				if (!m.isSelf && pLocalPlayer)
-				{
-					m.distance = Distance3DToSpawn(pLocalPlayer, sp);
-				}
+				FillFromSpawn(m, sp);
 				m.pctHP      = m.isSelf ? m_snap.PctHP() : static_cast<int>(sp->HPCurrent);
 				if (!m.isSelf)
 				{
@@ -428,10 +440,7 @@ void CharData::RefreshGroupRaid()
 				}
 			}
 
-			if (m.maskedName.empty())
-			{
-				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(0, m.classShort, m.level);
-			}
+			EnsureMaskedName(m);
 			m_raid.push_back(std::move(m));
 		}
 	}
@@ -456,24 +465,7 @@ void CharData::RefreshBuffs()
 		BuffInfo b;
 		b.slot = i;
 
-		auto buffInfo = pBuffWnd->GetBuffInfo(i);
-		EQ_Spell* spell = buffInfo.GetSpell();
-		if (!spell)
-		{
-			b.isEmpty = true;
-			m_buffs.push_back(std::move(b));
-			continue;
-		}
-
-		b.spellId    = spell->ID;
-		b.iconId     = spell->SpellIcon;
-		b.durationMs = buffInfo.GetBuffTimer();
-		b.name       = spell->Name;
-		if (const char* caster = buffInfo.GetCaster())
-		{
-			b.caster = caster;
-		}
-		b.beneficial = spell->IsBeneficialSpell();
+		FillBuff(b, pBuffWnd->GetBuffInfo(i));
 		m_buffs.push_back(std::move(b));
 	}
 }
@@ -492,23 +484,7 @@ void CharData::RefreshSongs()
 		BuffInfo b;
 		b.slot = slot++;
 
-		EQ_Spell* spell = buffInfo.GetSpell();
-		if (!spell)
-		{
-			b.isEmpty = true;
-			m_songs.push_back(std::move(b));
-			continue;
-		}
-
-		b.spellId    = spell->ID;
-		b.iconId     = spell->SpellIcon;
-		b.durationMs = buffInfo.GetBuffTimer();
-		b.name       = spell->Name;
-		if (const char* caster = buffInfo.GetCaster())
-		{
-			b.caster = caster;
-		}
-		b.beneficial = spell->IsBeneficialSpell();
+		FillBuff(b, buffInfo);
 		m_songs.push_back(std::move(b));
 	}
 }

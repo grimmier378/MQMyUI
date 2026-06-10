@@ -3,10 +3,76 @@
 #include <mq/Plugin.h>
 
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 #include <string>
 
 namespace myui
 {
+// Shared border colors for buff/song icons. Beneficial and detrimental match
+// across every module; the self-cast tint historically differed (Buffs used a
+// brighter yellow than Player), so BuffBorderColor takes the self-cast color as
+// a parameter to preserve each call site's exact prior value.
+const MQColor kBuffBeneficial(80, 120, 255, 255);
+const MQColor kBuffDetrimental(250, 0, 0, 255);
+const MQColor kBuffSelfCast(230, 230, 0, 255);
+
+// Border color for a buff/song icon. Detrimental buffs the local player cast on
+// itself get the self-cast tint instead of the detrimental red.
+inline MQColor BuffBorderColor(bool beneficial, const char* caster,
+	const MQColor& selfCast = kBuffSelfCast)
+{
+	if (!beneficial && pLocalPC && caster && ci_equals(caster, pLocalPC->Name))
+	{
+		return selfCast;
+	}
+	return beneficial ? kBuffBeneficial : kBuffDetrimental;
+}
+
+// Formats a buff/song duration (milliseconds) into a short timer label. A
+// negative duration means a permanent buff -> "perm". With withHours, durations
+// over an hour render as "%dh %dm"; otherwise "%dm %ds" / "%ds".
+inline void FormatDuration(char* buf, size_t sz, int durationMs, bool withHours = false)
+{
+	if (durationMs < 0)
+	{
+		strcpy_s(buf, sz, "perm");
+		return;
+	}
+
+	int totalSec = durationMs / 1000;
+
+	if (withHours)
+	{
+		int hours = totalSec / 3600;
+		int minutes = (totalSec % 3600) / 60;
+		int seconds = totalSec % 60;
+		if (hours > 0)
+		{
+			sprintf_s(buf, sz, "%dh %dm", hours, minutes);
+			return;
+		}
+		if (minutes > 0)
+		{
+			sprintf_s(buf, sz, "%dm %ds", minutes, seconds);
+			return;
+		}
+		sprintf_s(buf, sz, "%ds", seconds);
+		return;
+	}
+
+	int minutes = totalSec / 60;
+	int seconds = totalSec % 60;
+	if (minutes > 0)
+	{
+		sprintf_s(buf, sz, "%dm %ds", minutes, seconds);
+	}
+	else
+	{
+		sprintf_s(buf, sz, "%ds", seconds);
+	}
+}
+
 // Bearing from the player to a world position (spawnX/spawnY), relative to the
 // player's facing: 0 = directly ahead, clockwise positive, range [-180, 180].
 // Feeds DrawDirectionRing. The atan2 bearing-to and the raw facing (Heading *
@@ -98,5 +164,17 @@ inline int ColumnsForWidth(float avail, float cellSize)
 {
 	int cols = static_cast<int>(avail / (cellSize + 6.0f));
 	return cols < 1 ? 1 : cols;
+}
+
+// Display name for a spawn, honoring anonymization: anonymized players render as
+// their masked RACE_CLASS_LEVEL code, everything else uses the trimmed name.
+inline std::string DisplayedSpawnName(PSPAWNINFO sp)
+{
+	if (mq::IsAnonymized() && sp->Type == SPAWN_PLAYER)
+	{
+		const char* code = sp->GetClassThreeLetterCode();
+		return MaskedCode(sp->GetRace(), code ? code : "", sp->GetLevel());
+	}
+	return TrimName(sp->DisplayedName);
 }
 } // namespace myui

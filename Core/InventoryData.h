@@ -33,8 +33,30 @@ struct ItemRef
 	bool isContainer() const;
 };
 
-constexpr int kSlotPrimary = 13;
-constexpr int kSlotSecondary = 14;
+// Worn-slot ids (index into the inventory worn-slot tables). Match the EQ slot order.
+constexpr int kSlotCharm       = 0;
+constexpr int kSlotEar1        = 1;
+constexpr int kSlotHead        = 2;
+constexpr int kSlotFace        = 3;
+constexpr int kSlotEar2        = 4;
+constexpr int kSlotNeck        = 5;
+constexpr int kSlotShoulder    = 6;
+constexpr int kSlotArms        = 7;
+constexpr int kSlotBack        = 8;
+constexpr int kSlotWrist1      = 9;
+constexpr int kSlotWrist2      = 10;
+constexpr int kSlotRange       = 11;
+constexpr int kSlotHands       = 12;
+constexpr int kSlotPrimary     = 13;
+constexpr int kSlotSecondary   = 14;
+constexpr int kSlotRing1       = 15;
+constexpr int kSlotRing2       = 16;
+constexpr int kSlotChest       = 17;
+constexpr int kSlotLegs        = 18;
+constexpr int kSlotFeet        = 19;
+constexpr int kSlotWaist       = 20;
+constexpr int kSlotPowerSource = 21;
+constexpr int kSlotAmmo        = 22;
 
 const ImVec4 kItemNameColor = ImVec4(242.0f / 255.0f, 140.0f / 255.0f, 40.0f / 255.0f, 1.0f);
 
@@ -78,6 +100,10 @@ bool IsUseableGearItem(const ItemRef& ref);
 
 int CountInventory(const std::string& name);
 int CountBank(const std::string& name);
+// Worn + bag snapshot for batch counting; CountIn tallies stacked matches in a
+// prebuilt list (lets callers walk the inventory once for many tracked names).
+std::vector<ItemRef> GetInventorySnapshot();
+int CountIn(const std::vector<ItemRef>& items, const std::string& name);
 
 std::string PickupCommand(const ItemRef& ref);
 void PickupOrDrop(const ItemRef& ref);

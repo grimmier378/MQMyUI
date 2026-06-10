@@ -16,8 +16,6 @@
 
 namespace
 {
-const MQColor kBuffBeneficial(80, 120, 255, 255);
-const MQColor kBuffDetrimental(250, 0, 0, 255);
 const MQColor kBuffSelfCast(190, 190, 20, 255);
 const MQColor kBuffTint(255, 255, 255, 255);
 
@@ -40,26 +38,6 @@ const char* StateAnimFor(const std::string& s)
 		return "A_PWCSDebuff";
 	}
 	return "A_PWCSStanding";
-}
-
-void FormatDuration(char* out, size_t size, int ms)
-{
-	if (ms < 0)
-	{
-		strcpy_s(out, size, "perm");
-		return;
-	}
-	int totalSec = ms / 1000;
-	int minutes = totalSec / 60;
-	int seconds = totalSec % 60;
-	if (minutes > 0)
-	{
-		sprintf_s(out, size, "%dm %ds", minutes, seconds);
-	}
-	else
-	{
-		sprintf_s(out, size, "%ds", seconds);
-	}
 }
 } // namespace
 
@@ -242,16 +220,7 @@ void PlayerModule::DrawTarget()
 	ImGui::BeginChild("##tgtblk", ImVec2(0.0f, 0.0f),
 		ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoScrollbar);
 
-	std::string targetName;
-	if (mq::IsAnonymized() && pTarget->Type == SPAWN_PLAYER)
-	{
-		const char* tcls = pTarget->GetClassThreeLetterCode();
-		targetName = myui::MaskedCode(pTarget->GetRace(), tcls ? tcls : "", pTarget->GetLevel());
-	}
-	else
-	{
-		targetName = myui::TrimName(pTarget->DisplayedName);
-	}
+	std::string targetName = myui::DisplayedSpawnName(pTarget);
 
 	int pct = static_cast<int>(pTarget->HPCurrent);
 	bool overlayText = m_ctx.UI->Flag(GetName(), "TargetTextOverlay", false);
@@ -441,11 +410,7 @@ void PlayerModule::DrawTargetBuffs()
 		ImGui::PushID(spell->ID);
 
 		const char* caster = buffInfo.GetCaster();
-		MQColor border = spell->IsBeneficialSpell() ? kBuffBeneficial : kBuffDetrimental;
-		if (!spell->IsBeneficialSpell() && pLocalPC && caster && ci_equals(caster, pLocalPC->Name))
-		{
-			border = kBuffSelfCast;
-		}
+		MQColor border = myui::BuffBorderColor(spell->IsBeneficialSpell(), caster, kBuffSelfCast);
 		m_ctx.Icons->DrawSpellIcon(spell->SpellIcon, CXSize(iconSize, iconSize), kBuffTint, border);
 
 		if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && pSpellDisplayManager)
@@ -456,7 +421,7 @@ void PlayerModule::DrawTargetBuffs()
 		if (ImGui::IsItemHovered())
 		{
 			char timeLabel[32];
-			FormatDuration(timeLabel, sizeof(timeLabel), buffInfo.GetBuffTimer());
+			myui::FormatDuration(timeLabel, sizeof(timeLabel), buffInfo.GetBuffTimer());
 			ImGui::BeginTooltip();
 			ImGui::Text("%s", spell->Name);
 			ImGui::Text("Time: %s", timeLabel);

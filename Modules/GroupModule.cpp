@@ -293,7 +293,7 @@ void GroupModule::DrawMemberRow(const GroupRowData& row)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 1.0f, 1.0f));
 		}
-		bool clicked = ImGui::Selectable((mq::IsAnonymized() ? row.maskedName : row.name).c_str(), false);
+		bool clicked = myui::PillSelectable((mq::IsAnonymized() ? row.maskedName : row.name).c_str(), false, ImGui::GetContentRegionAvail().x);
 		if (row.isLeader)
 		{
 			ImGui::PopStyleColor();

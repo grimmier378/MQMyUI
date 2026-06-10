@@ -16,6 +16,12 @@ inline MQColor FlashTint(int secondsLeft, int flashThreshold, float pulse)
 	return MQColor(255, 255, 255, 255);
 }
 
+inline ImVec4 LerpColor(const ImVec4& a, const ImVec4& b, float t)
+{
+	t = std::max(0.0f, std::min(1.0f, t));
+	return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
+}
+
 inline ImVec4 CalculateColor(const MQColor& minColor, const MQColor& maxColor, int value)
 {
 	value = std::max(0, std::min(100, value));

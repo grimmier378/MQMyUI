@@ -36,21 +36,22 @@ void DrawTopBar(ThemeManager* themes, Theme& edit, std::string& selected, char* 
 	ImGui::TextDisabled("Active: %s", themes->ActiveName().c_str());
 
 	ImGui::SetNextItemWidth(200.0f);
-	if (ImGui::BeginCombo("Edit Theme", selected.c_str()))
+	if (myui::StyledBeginCombo("Edit Theme", selected.c_str()))
 	{
 		for (const std::string& n : themes->GetThemeNames())
 		{
 			bool isSelected = (n == selected);
-			if (ImGui::Selectable(n.c_str(), isSelected))
+			if (myui::PillSelectable(n.c_str(), isSelected))
 			{
 				LoadSelected(themes, n, edit, selected, nameBuf, nameBufSize);
+				ImGui::CloseCurrentPopup();
 			}
 			if (isSelected)
 			{
 				ImGui::SetItemDefaultFocus();
 			}
 		}
-		ImGui::EndCombo();
+		myui::StyledEndCombo();
 	}
 
 	ImGui::SetNextItemWidth(200.0f);
@@ -186,7 +187,7 @@ void DrawStylesSection(ThemeManager* themes, Theme& edit)
 
 	auto boolEdit = [](const char* label, float& field) {
 		bool b = field > 0.5f;
-		if (ImGui::Checkbox(label, &b))
+		if (myui::StyledCheckbox(label, &b))
 		{
 			field = b ? 1.0f : 0.0f;
 		}
@@ -214,18 +215,18 @@ void DrawStylesSection(ThemeManager* themes, Theme& edit)
 	v2Edit("CellPadding", edit.cellPadding);
 	v2Edit("ItemSpacing", edit.itemSpacing);
 	v2Edit("ItemInnerSpacing", edit.itemInnerSpacing);
-	ImGui::SliderFloat("IndentSpacing", &edit.indentSpacing, 0.0f, 30.0f, "%.0f");
-	ImGui::SliderFloat("ScrollbarSize", &edit.scrollbarSize, 0.0f, 20.0f, "%.0f");
-	ImGui::SliderFloat("GrabMinSize", &edit.grabMinSize, 0.0f, 20.0f, "%.0f");
+	myui::StyledSliderFloat("IndentSpacing", &edit.indentSpacing, 0.0f, 30.0f, "%.0f");
+	myui::StyledSliderFloat("ScrollbarSize", &edit.scrollbarSize, 0.0f, 20.0f, "%.0f");
+	myui::StyledSliderFloat("GrabMinSize", &edit.grabMinSize, 0.0f, 20.0f, "%.0f");
 
 	ImGui::SeparatorText("Rounding");
-	ImGui::SliderFloat("WindowRounding", &edit.windowRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("FrameRounding", &edit.frameRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("ChildRounding", &edit.childRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("PopupRounding", &edit.popupRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("ScrollbarRounding", &edit.scrollbarRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("GrabRounding", &edit.grabRounding, 0.0f, 12.0f, "%.0f");
-	ImGui::SliderFloat("TabRounding", &edit.tabRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("WindowRounding", &edit.windowRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("FrameRounding", &edit.frameRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("ChildRounding", &edit.childRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("PopupRounding", &edit.popupRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("ScrollbarRounding", &edit.scrollbarRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("GrabRounding", &edit.grabRounding, 0.0f, 12.0f, "%.0f");
+	myui::StyledSliderFloat("TabRounding", &edit.tabRounding, 0.0f, 12.0f, "%.0f");
 }
 } // namespace themeeditor
 

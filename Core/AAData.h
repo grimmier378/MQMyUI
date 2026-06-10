@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+namespace eqlib { class CAltAbilityData; }
+using eqlib::CAltAbilityData;
+
 struct AAEntry
 {
 	int groupId = 0;
@@ -43,6 +46,11 @@ public:
 	const std::vector<AAEntry>& All() const { return m_entries; }
 
 private:
+	// Resolve a group to its live CAltAbilityData: the owned rank if trained,
+	// else the base ability for the group via the cached entry index. Returns
+	// nullptr when neither resolves (or the AA managers aren't ready).
+	CAltAbilityData* ResolveAbility(int groupId) const;
+
 	std::vector<AAEntry> m_entries;
 	int m_available = 0;
 	int m_spent = 0;

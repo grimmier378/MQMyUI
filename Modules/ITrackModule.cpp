@@ -105,7 +105,7 @@ void ITrackModule::DrawItemList()
 		}
 
 		ImGui::PushStyleColor(ImGuiCol_Text, hasAny ? ImVec4(0.4f, 0.9f, 0.4f, 1.0f) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-		if (ImGui::Selectable(item.c_str(), item == m_selected))
+		if (myui::PillSelectable(item.c_str(), item == m_selected))
 		{
 			m_selected = item;
 		}

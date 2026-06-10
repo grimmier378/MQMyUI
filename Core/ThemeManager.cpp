@@ -1,8 +1,11 @@
 #include "ThemeManager.h"
 #include "SettingsStore.h"
+#include "ColorUtil.h"
 
 #include <cctype>
 #include <cstdlib>
+#include <string>
+#include <unordered_map>
 
 namespace
 {
@@ -35,12 +38,21 @@ std::vector<float> ParseFloats(const std::string& s)
 
 int ColorIndexByName(const std::string& name)
 {
-	for (int i = 0; i < ImGuiCol_COUNT; ++i)
+	static const std::unordered_map<std::string, int> lookup = []
 	{
-		if (name == ImGui::GetStyleColorName(i))
+		std::unordered_map<std::string, int> m;
+		m.reserve(ImGuiCol_COUNT);
+		for (int i = 0; i < ImGuiCol_COUNT; ++i)
 		{
-			return i;
+			m.emplace(ImGui::GetStyleColorName(i), i);
 		}
+		return m;
+	}();
+
+	auto it = lookup.find(name);
+	if (it != lookup.end())
+	{
+		return it->second;
 	}
 	return -1;
 }
@@ -234,9 +246,24 @@ void ApplySharedStyle(Theme& t)
 	t.itemInnerSpacing = ImVec2(4.0f, 4.0f);
 }
 
-ImVec4 Lerp(const ImVec4& a, const ImVec4& b, float u)
+// Byte-identical derived/default tail shared by every builtin theme. Call after
+// the per-accent literals so the Lerp inputs (Header/HeaderActive/TitleBg*) are set.
+void FinishBuiltin(ImVec4* c)
 {
-	return ImVec4(a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u, a.z + (b.z - a.z) * u, a.w + (b.w - a.w) * u);
+	c[ImGuiCol_Tab] = myui::LerpColor(c[ImGuiCol_Header], c[ImGuiCol_TitleBgActive], 0.80f);
+	c[ImGuiCol_TabHovered] = c[ImGuiCol_HeaderHovered];
+	c[ImGuiCol_TabSelected] = myui::LerpColor(c[ImGuiCol_HeaderActive], c[ImGuiCol_TitleBgActive], 0.60f);
+	c[ImGuiCol_TabDimmed] = myui::LerpColor(c[ImGuiCol_Tab], c[ImGuiCol_TitleBg], 0.80f);
+	c[ImGuiCol_TabDimmedSelected] = myui::LerpColor(c[ImGuiCol_TabSelected], c[ImGuiCol_TitleBg], 0.40f);
+	{
+		const ImVec4& ha = c[ImGuiCol_HeaderActive];
+		c[ImGuiCol_DockingPreview] = ImVec4(ha.x, ha.y, ha.z, ha.w * 0.70f);
+	}
+	c[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+	c[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+	c[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	c[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	c[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
 }
 } // namespace
 
@@ -517,20 +544,7 @@ Theme ThemeManager::MakeGrape() const
 	c[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
 	c[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
 	c[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-	c[ImGuiCol_Tab] = Lerp(c[ImGuiCol_Header], c[ImGuiCol_TitleBgActive], 0.80f);
-	c[ImGuiCol_TabHovered] = c[ImGuiCol_HeaderHovered];
-	c[ImGuiCol_TabSelected] = Lerp(c[ImGuiCol_HeaderActive], c[ImGuiCol_TitleBgActive], 0.60f);
-	c[ImGuiCol_TabDimmed] = Lerp(c[ImGuiCol_Tab], c[ImGuiCol_TitleBg], 0.80f);
-	c[ImGuiCol_TabDimmedSelected] = Lerp(c[ImGuiCol_TabSelected], c[ImGuiCol_TitleBg], 0.40f);
-	{
-		const ImVec4& ha = c[ImGuiCol_HeaderActive];
-		c[ImGuiCol_DockingPreview] = ImVec4(ha.x, ha.y, ha.z, ha.w * 0.70f);
-	}
-	c[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-	c[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-	c[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-	c[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-	c[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	FinishBuiltin(c);
 	c[ImGuiCol_TableHeaderBg] = ImVec4(0.2259f, 0.1795f, 0.2559f, 1.00f);
 	c[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
 	c[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
@@ -588,20 +602,7 @@ Theme ThemeManager::MakeBurnt() const
 	c[ImGuiCol_ResizeGrip] = ImVec4(0.95f, 0.55f, 0.09f, 0.20f);
 	c[ImGuiCol_ResizeGripHovered] = ImVec4(0.98f, 0.55f, 0.26f, 0.67f);
 	c[ImGuiCol_ResizeGripActive] = ImVec4(0.98f, 0.61f, 0.26f, 0.95f);
-	c[ImGuiCol_Tab] = Lerp(c[ImGuiCol_Header], c[ImGuiCol_TitleBgActive], 0.80f);
-	c[ImGuiCol_TabHovered] = c[ImGuiCol_HeaderHovered];
-	c[ImGuiCol_TabSelected] = Lerp(c[ImGuiCol_HeaderActive], c[ImGuiCol_TitleBgActive], 0.60f);
-	c[ImGuiCol_TabDimmed] = Lerp(c[ImGuiCol_Tab], c[ImGuiCol_TitleBg], 0.80f);
-	c[ImGuiCol_TabDimmedSelected] = Lerp(c[ImGuiCol_TabSelected], c[ImGuiCol_TitleBg], 0.40f);
-	{
-		const ImVec4& ha = c[ImGuiCol_HeaderActive];
-		c[ImGuiCol_DockingPreview] = ImVec4(ha.x, ha.y, ha.z, ha.w * 0.70f);
-	}
-	c[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-	c[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-	c[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-	c[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-	c[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	FinishBuiltin(c);
 	c[ImGuiCol_TableHeaderBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
 	c[ImGuiCol_TableBorderStrong] = ImVec4(1.00f, 0.46f, 0.00f, 1.00f);
 	c[ImGuiCol_TableBorderLight] = ImVec4(1.00f, 0.46f, 0.00f, 1.00f);

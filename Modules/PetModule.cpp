@@ -47,7 +47,6 @@ bool PetToggleActive(const PetCommand& cmd)
 	return ci_equals(buf, cmd.activeWhen);
 }
 
-const MQColor kBorderBeneficial(80, 120, 255, 255);
 const MQColor kTint(255, 255, 255, 255);
 } // namespace
 
@@ -87,16 +86,7 @@ void PetModule::OnRenderGUI()
 
 			if (PlayerClient* pPetTarget = pPet->WhoFollowing)
 			{
-				std::string targetName;
-				if (mq::IsAnonymized() && pPetTarget->Type == SPAWN_PLAYER)
-				{
-					const char* pcls = pPetTarget->GetClassThreeLetterCode();
-					targetName = myui::MaskedCode(pPetTarget->GetRace(), pcls ? pcls : "", pPetTarget->GetLevel());
-				}
-				else
-				{
-					targetName = myui::TrimName(pPetTarget->DisplayedName);
-				}
+				std::string targetName = myui::DisplayedSpawnName(pPetTarget);
 				ImGui::Text("Target: %s", targetName.c_str());
 				myui::DrawStyledBar("##pettht", static_cast<float>(pPetTarget->HPCurrent), m_ctx.UI->Bar(GetName(), "PetTarget"));
 			}
@@ -213,7 +203,7 @@ void PetModule::DrawPetBuffs()
 		}
 
 		ImGui::PushID(spell->ID);
-		m_ctx.Icons->DrawSpellIcon(spell->SpellIcon, CXSize(iconSize, iconSize), kTint, kBorderBeneficial);
+		m_ctx.Icons->DrawSpellIcon(spell->SpellIcon, CXSize(iconSize, iconSize), kTint, myui::kBuffBeneficial);
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetItemTooltip("%s", spell->Name);

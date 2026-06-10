@@ -4,24 +4,11 @@
 
 #include <cstdio>
 
-CTextureAnimation* IconHelper::Get(CTextureAnimation*& slot, const char* animName)
-{
-	if (!slot && pSidlMgr)
-	{
-		if (CTextureAnimation* temp = pSidlMgr->FindAnimation(animName))
-		{
-			slot = new CTextureAnimation();
-			*slot = *temp;
-		}
-	}
-	return slot;
-}
-
-CTextureAnimation* IconHelper::SpellIcons()    { return Get(m_spellIcons, "A_SpellGems"); }
-CTextureAnimation* IconHelper::GemBackground() { return Get(m_gemBackground, "A_SpellGemBackground"); }
-CTextureAnimation* IconHelper::GemHolder()     { return Get(m_gemHolder, "A_SpellGemHolder"); }
-CTextureAnimation* IconHelper::SpellBook()     { return Get(m_spellBook, "A_SpellBook"); }
-CTextureAnimation* IconHelper::ItemIcon()      { return Get(m_itemIcon, "A_DragItem"); }
+CTextureAnimation* IconHelper::SpellIcons()    { return Named("A_SpellGems"); }
+CTextureAnimation* IconHelper::GemBackground() { return Named("A_SpellGemBackground"); }
+CTextureAnimation* IconHelper::GemHolder()     { return Named("A_SpellGemHolder"); }
+CTextureAnimation* IconHelper::SpellBook()     { return Named("A_SpellBook"); }
+CTextureAnimation* IconHelper::ItemIcon()      { return Named("A_DragItem"); }
 
 void IconHelper::DrawSpellIcon(int iconId, const CXSize& size, const MQColor& tint, const MQColor& border)
 {
@@ -44,6 +31,8 @@ CTextureAnimation* IconHelper::Named(const char* animName)
 		return it->second;
 	}
 
+	// Only cache a successful load so a not-yet-ready pSidlMgr/FindAnimation is
+	// retried on the next call (matching the original per-slot lazy loaders).
 	CTextureAnimation* anim = nullptr;
 	if (pSidlMgr)
 	{
@@ -51,9 +40,9 @@ CTextureAnimation* IconHelper::Named(const char* animName)
 		{
 			anim = new CTextureAnimation();
 			*anim = *temp;
+			m_named[animName] = anim;
 		}
 	}
-	m_named[animName] = anim;
 	return anim;
 }
 
@@ -85,12 +74,6 @@ void IconHelper::DrawEmptySlot(const CXSize& size)
 
 void IconHelper::Shutdown()
 {
-	delete m_spellIcons;    m_spellIcons = nullptr;
-	delete m_gemBackground; m_gemBackground = nullptr;
-	delete m_gemHolder;     m_gemHolder = nullptr;
-	delete m_spellBook;     m_spellBook = nullptr;
-	delete m_itemIcon;      m_itemIcon = nullptr;
-
 	for (auto& [name, anim] : m_named)
 	{
 		delete anim;

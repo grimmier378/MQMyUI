@@ -280,12 +280,12 @@ void MyAAModule::OnRenderGUI()
 		bool trainableOnly = m_ctx.UI->Flag(GetName(), "TrainableOnly", false);
 		bool affordableOnly = m_ctx.UI->Flag(GetName(), "AffordableOnly", false);
 		ImGui::SameLine();
-		if (ImGui::Checkbox("Trainable", &trainableOnly))
+		if (myui::StyledCheckbox("Trainable", &trainableOnly))
 		{
 			m_ctx.UI->SetFlag(GetName(), "TrainableOnly", trainableOnly);
 		}
 		ImGui::SameLine();
-		if (ImGui::Checkbox("Affordable", &affordableOnly))
+		if (myui::StyledCheckbox("Affordable", &affordableOnly))
 		{
 			m_ctx.UI->SetFlag(GetName(), "AffordableOnly", affordableOnly);
 		}
@@ -299,23 +299,19 @@ void MyAAModule::OnRenderGUI()
 			tableH = 80.0f;
 		}
 
-		if (ImGui::BeginTabBar("##MyAATabs"))
+		std::string tabLabels[5];
+		const char* tabPtrs[5];
+		for (int t = 1; t <= 5; ++t)
 		{
-			for (int t = 1; t <= 5; ++t)
-			{
-				int c = 0;
-				int m = 0;
-				m_aaData.CategoryRanks(t, c, m);
-				std::string label = fmt::format("{} ({}/{})###tab{}", kTypeNames[t], c, m, t);
-				if (ImGui::BeginTabItem(label.c_str()))
-				{
-					m_activeType = t;
-					DrawTable(t, tableH);
-					ImGui::EndTabItem();
-				}
-			}
-			ImGui::EndTabBar();
+			int c = 0;
+			int m = 0;
+			m_aaData.CategoryRanks(t, c, m);
+			tabLabels[t - 1] = fmt::format("{} ({}/{})###tab{}", kTypeNames[t], c, m, t);
+			tabPtrs[t - 1] = tabLabels[t - 1].c_str();
 		}
+		int tabSel = myui::PillTabBar("##MyAATabs", tabPtrs, 5, m_activeType - 1);
+		m_activeType = tabSel + 1;
+		DrawTable(m_activeType, tableH);
 
 		SyncNativeTab(m_activeType);
 

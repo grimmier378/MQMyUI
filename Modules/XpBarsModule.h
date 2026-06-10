@@ -17,7 +17,7 @@ public:
 	void OnRenderGUI() override;
 
 private:
-	void DrawRow(const AARow& row);
+	void DrawRow(const AARow& row, float scale, bool showTooltip);
 
 	std::unordered_map<std::string, bool> m_expand;
 	std::unordered_map<std::string, bool> m_compact;

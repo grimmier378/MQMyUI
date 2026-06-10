@@ -38,13 +38,13 @@ int CursorSpellId()
 	}
 }
 
-bool GemReady(int i)
+bool GemReady(int i, int spellId)
 {
 	if (!pLocalPlayer || !pLocalPC || !pDisplay)
 	{
 		return false;
 	}
-	if (!GetSpellByID(pLocalPC->GetMemorizedSpell(i)))
+	if (!GetSpellByID(spellId))
 	{
 		return false;
 	}
@@ -106,6 +106,11 @@ void DrawRadialCooldown(ImDrawList* drawList, const ImVec2& rectMin, const ImVec
 
 int SpellsModule::GemCount() const
 {
+	return m_gemCount;
+}
+
+int SpellsModule::ComputeGemCount() const
+{
 	int count = 8;
 	int aaIndex = GetAAIndexByName("Mnemonic Retention");
 	if (CAltAbilityData* pAbility = GetAAById(aaIndex))
@@ -125,6 +130,8 @@ void SpellsModule::OnInit()
 
 void SpellsModule::OnPulse()
 {
+	m_gemCount = ComputeGemCount();
+
 	ProcessDbQueue();
 
 	if (m_picker.m_selectedSpell)
@@ -329,6 +336,8 @@ void SpellsModule::ProcessDbQueue()
 
 void SpellsModule::OnRenderGUI()
 {
+	m_gemCount = ComputeGemCount();
+
 	WindowConfig& w = m_ctx.UI->Window(GetName());
 	if (!w.visible || !m_ctx.Char || !m_ctx.Char->IsIngame() || !m_ctx.Icons || !pLocalPC)
 	{
@@ -361,6 +370,7 @@ void SpellsModule::OnRenderGUI()
 
 			EQ_Spell* spell = (spellId > 0) ? GetSpellByID(spellId) : nullptr;
 			CSpellGemWnd* gem = pCastSpellWnd ? pCastSpellWnd->SpellSlots[i] : nullptr;
+			const int cursorSpellId = CursorSpellId();
 
 			if (!spell)
 			{
@@ -380,7 +390,7 @@ void SpellsModule::OnRenderGUI()
 			}
 			else
 			{
-				bool ready = GemReady(i);
+				bool ready = GemReady(i, spellId);
 				MQColor tintCol = ready ? kTintReady : kTintNotReady;
 				MQColor gemTint(255, 255, 255, 255);
 				if (gem)
@@ -437,14 +447,14 @@ void SpellsModule::OnRenderGUI()
 					ImGui::TextColored(ImVec4(1.0f, 0.82f, 0.3f, 1.0f), "%s", spell->Name);
 					myui::RenderSpellEffects(spellId);
 					ImGui::EndTooltip();
-					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !CursorSpellId())
+					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !cursorSpellId)
 					{
 						DoCommandf("/cast %d", i + 1);
 					}
 				}
 			}
 
-			if (!spell && CursorSpellId() && ImGui::IsItemHovered()
+			if (!spell && cursorSpellId && ImGui::IsItemHovered()
 				&& ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 			{
 				if (pCastSpellWnd && pCastSpellWnd->SpellSlots[i])
@@ -501,11 +511,14 @@ void SpellsModule::OnRenderGUI()
 
 void SpellsModule::DrawOptionsButton()
 {
-	float gemHeight = m_ctx.UI->Num(GetName(), "GemHeight", 32.0f) * m_ctx.UI->Window(GetName()).iconScale;
+	WindowConfig& w = m_ctx.UI->Window(GetName());
+	float scaledGem = m_ctx.UI->Num(GetName(), "GemHeight", 32.0f) * w.iconScale;
 
 	ImGui::PushID("OptionsButton");
 
-	if (myui::StyledButton(ICON_FA_COG, ImVec2(gemHeight, gemHeight)))
+	// Sized to the spell-gem footprint (1.25x wide) so the full-pill styled button
+	// lines up flush with the gem row/column.
+	if (myui::StyledButton(ICON_FA_PENCIL, ImVec2(scaledGem * 1.25f, scaledGem)))
 	{
 		m_managerOpen = !m_managerOpen;
 		if (m_managerOpen)
@@ -521,10 +534,7 @@ void SpellsModule::DrawOptionsButton()
 	{
 		RefreshSetNames();
 	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetItemTooltip("Left-click: spell sets | Right-click: quick save / load");
-	}
+	ImGui::SetItemTooltip("Left-click: spell sets | Right-click: quick save / load");
 
 	DrawQuickSetMenu();
 
@@ -562,7 +572,7 @@ void SpellsModule::DrawQuickSetMenu()
 	}
 	for (const std::string& name : m_setNames)
 	{
-		if (ImGui::Selectable(name.c_str()))
+		if (myui::PillSelectable(name.c_str(), false))
 		{
 			ApplyNamedSetToGame(name);
 			ImGui::CloseCurrentPopup();
@@ -661,7 +671,7 @@ void SpellsModule::DrawSpellSetManager()
 		ImGui::Separator();
 		for (const std::string& name : m_setNames)
 		{
-			if (ImGui::Selectable(name.c_str(), name == m_selectedSet))
+			if (myui::PillSelectable(name.c_str(), name == m_selectedSet))
 			{
 				LoadSetIntoEditor(name);
 				m_confirmDelete = false;
@@ -710,7 +720,7 @@ void SpellsModule::DrawSpellSetManager()
 
 				ImGui::TableNextColumn();
 				const char* label = spell ? spell->Name : "(empty)";
-				if (ImGui::Selectable(label))
+				if (myui::PillSelectable(label, false))
 				{
 					OpenPickerForSetSlot(i);
 				}
