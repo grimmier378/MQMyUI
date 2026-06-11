@@ -7,24 +7,34 @@
 // Style/persistence POD for the direction-ring widget (DrawDirectionRing). Lives
 // here (not UiConfig) so Core/Widgets stays dependency-light and verbatim-shareable
 // across the sibling MQMy* plugins; UiConfig includes this header to persist it.
-struct RingStyle
+struct ColorSource
 {
-	int     trackMode = 0;             // 0=Default(FrameBg), 1=Distance, 2=Visibility
+	int     mode = 0;                  // 0=Default(theme), 1=Distance, 2=Visibility
 
-	MQColor ringColor{ 0, 0, 0, 0 };   // explicit track color; alpha 0 => ImGuiCol_FrameBg
-	MQColor indicColor{ 0, 0, 0, 0 };  // marker color; alpha 0 => ImGuiCol_SliderGrab
-
-	float   distMin = 0.0f;            // at/below this distance (game units) => distNear
-	float   distMax = 200.0f;          // at/above this distance => distFar; tween between
+	MQColor custom{ 0, 0, 0, 0 };      // Default mode; alpha 0 => theme fallback color
 	MQColor distNear{ 60, 200, 75, 255 };
 	MQColor distFar{ 230, 130, 30, 255 };
-
 	MQColor losColor{ 60, 200, 75, 255 };
 	MQColor noLosColor{ 200, 60, 60, 255 };
+};
+
+struct RingStyle
+{
+	ColorSource track;                 // ring track color source
+
+	bool        bgOn = false;          // fill behind the text, inside the track
+	ColorSource bg;                    // background color source (own modes/colors)
+
+	float   distMin = 0.0f;            // shared distance range for both sources
+	float   distMax = 200.0f;
+
+	MQColor indicColor{ 0, 0, 0, 0 };  // marker color; alpha 0 => ImGuiCol_SliderGrab
 
 	bool    glowOn    = true;
 	MQColor glowColor{ 0, 0, 0, 0 };   // alpha 0 => follow indicator color
 	float   glowAlpha = 0.55f;
+
+	bool    textShadow = true;         // drop shadow behind the distance text
 
 	float   thickness = 3.0f;
 	float   indicSize = 4.0f;
@@ -75,6 +85,12 @@ void SoftGlowRoundRect(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float rounding, ImV
 // ImGui::GetID on the spawn). `distance`/`los` feed the track-color modes. Colors
 // fall back to the theme when left unset: track -> ImGuiCol_FrameBg, marker ->
 // ImGuiCol_SliderGrab, so callers can restyle it with PushStyleColor.
+// Resolve a ColorSource to this frame's color. mode 0 = custom (or themeFallback when
+// custom alpha is 0); 1 = tween near->far over [distMin,distMax]; 2 = toggle by los.
+// animSeed disambiguates the per-id animation state (pass distinct values for track vs bg).
+ImVec4 ResolveColorSource(ImGuiID id, ImU32 animSeed, const ColorSource& cs,
+	float distance, float distMin, float distMax, bool los, ImGuiCol themeFallback, float dt);
+
 void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
 	float distance, bool los, const char* distText, const RingStyle& style);
 

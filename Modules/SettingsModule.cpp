@@ -8,6 +8,7 @@
 #include "../Core/PeerData.h"
 
 #include "mq/imgui/ImGuiUtils.h"
+#include "imgui/fonts/IconsFontAwesome.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -186,6 +187,75 @@ bool ColorEditMQ(const char* label, MQColor& c)
 		return true;
 	}
 	return false;
+}
+
+// Color edit + an effective-color swatch (shows the color actually pushed, even from the
+// theme) + a per-color reset icon. themeFallback is the ImGuiCol_ to preview when the color
+// is in alpha-0 theme mode (-1 = none); explicitFallback overrides it (e.g. glow -> indicator).
+bool ColorEditMQEx(const char* label, MQColor& c, const MQColor& def,
+	int themeFallback = -1, const ImVec4* explicitFallback = nullptr)
+{
+	ImGui::PushID(label);
+	bool changed = ColorEditMQ(label, c);
+
+	ImVec4 eff;
+	bool fromTheme = false;
+	if (c.Alpha == 0 && explicitFallback)        { eff = *explicitFallback; fromTheme = true; }
+	else if (c.Alpha == 0 && themeFallback >= 0) { eff = ImGui::GetStyleColorVec4(themeFallback); fromTheme = true; }
+	else                                         { eff = ImVec4(c.ToImColor()); }
+
+	ImGui::SameLine();
+	ImGui::ColorButton("##eff", eff, ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_NoTooltip, ImVec2(16, 16));
+	if (ImGui::IsItemHovered())
+	{
+		if (fromTheme && themeFallback >= 0)
+		{
+			ImGui::SetTooltip("Theme: %s\n%.0f, %.0f, %.0f, %.0f", ImGui::GetStyleColorName(themeFallback),
+				eff.x * 255, eff.y * 255, eff.z * 255, eff.w * 255);
+		}
+		else if (fromTheme)
+		{
+			ImGui::SetTooltip("Follows indicator\n%.0f, %.0f, %.0f, %.0f",
+				eff.x * 255, eff.y * 255, eff.z * 255, eff.w * 255);
+		}
+		else
+		{
+			ImGui::SetTooltip("Custom\n%d, %d, %d, %d", c.Red, c.Green, c.Blue, c.Alpha);
+		}
+	}
+
+	ImGui::SameLine();
+	if (myui::StyledSmallButton((std::string(ICON_FA_UNDO "##rst") + label).c_str()))
+	{
+		c = def;
+		changed = true;
+	}
+	ImGui::PopID();
+	return changed;
+}
+
+// The 3-mode pill plus the colors for one ColorSource (shared by the ring track and the
+// background). themeFallback labels/previews the Default-mode swatch.
+void DrawColorSourceEditor(const char* idLabel, ColorSource& cs, const ColorSource& def, int themeFallback)
+{
+	ImGui::PushID(idLabel);
+	static const char* const kModes[] = { "Default", "Distance", "Visibility" };
+	cs.mode = myui::PillTabBar("##mode", kModes, 3, cs.mode);
+	if (cs.mode == 1)
+	{
+		ColorEditMQEx("Near Color", cs.distNear, def.distNear);
+		ColorEditMQEx("Far Color", cs.distFar, def.distFar);
+	}
+	else if (cs.mode == 2)
+	{
+		ColorEditMQEx("In-Sight Color", cs.losColor, def.losColor);
+		ColorEditMQEx("Blocked Color", cs.noLosColor, def.noLosColor);
+	}
+	else
+	{
+		ColorEditMQEx("Color", cs.custom, def.custom, themeFallback);
+	}
+	ImGui::PopID();
 }
 
 const char* WindowDescription(const std::string& name)
@@ -1091,44 +1161,54 @@ void SettingsModule::DrawRingEditor(const std::string& window)
 	ImGui::PushID("ring");
 
 	auto tip = [](const char* t) { ImGui::SameLine(); mq::imgui::HelpMarker(t); };
+	static const RingStyle kDef{};
 
-	static const char* const kModes[] = { "Default", "Distance", "Visibility" };
-	r.trackMode = myui::PillTabBar("##ringmode", kModes, 3, r.trackMode);
+	ImGui::SeparatorText("Ring Track");
+	DrawColorSourceEditor("track", r.track, kDef.track, ImGuiCol_FrameBg);
 	tip("Ring track color. Default = theme frame background; Distance = tween near->far color over a range; Visibility = color by line of sight.");
 
-	if (r.trackMode == 1)
+	ImGui::SeparatorText("Background");
+	myui::StyledCheckbox("Show Background", &r.bgOn);
+	tip("Fill the disc behind the distance text, clipped to the inside of the track.");
+	if (r.bgOn)
 	{
-		ColorEditMQ("Near Color", r.distNear);
-		ColorEditMQ("Far Color", r.distFar);
+		DrawColorSourceEditor("bg", r.bg, kDef.bg, ImGuiCol_ChildBg);
+	}
+
+	if (r.track.mode == 1 || (r.bgOn && r.bg.mode == 1))
+	{
+		ImGui::SeparatorText("Distance Range");
 		myui::StyledSliderFloat("Near Distance", &r.distMin, 0.0f, 500.0f, "%.0f");
 		myui::StyledSliderFloat("Far Distance", &r.distMax, 0.0f, 500.0f, "%.0f");
-		tip("Track tweens from Near to Far color as the spawn's distance crosses this range.");
-	}
-	else if (r.trackMode == 2)
-	{
-		ColorEditMQ("In-Sight Color", r.losColor);
-		ColorEditMQ("Blocked Color", r.noLosColor);
-	}
-	else
-	{
-		ColorEditMQ("Ring Color", r.ringColor);
-		tip("Track color. Set alpha to 0 to follow the theme frame background.");
+		tip("Distance sources tween from Near to Far color as the spawn's distance crosses this range.");
 	}
 
 	ImGui::SeparatorText("Indicator");
-	ColorEditMQ("Indicator Color", r.indicColor);
+	ColorEditMQEx("Indicator Color", r.indicColor, kDef.indicColor, ImGuiCol_SliderGrab);
 	tip("Marker color. Set alpha to 0 to follow the theme slider-grab color.");
 	myui::StyledCheckbox("Glow", &r.glowOn);
 	if (r.glowOn)
 	{
-		ColorEditMQ("Glow Color", r.glowColor);
+		const ImVec4 indicEff = r.indicColor.Alpha == 0
+			? ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab) : ImVec4(r.indicColor.ToImColor());
+		ColorEditMQEx("Glow Color", r.glowColor, kDef.glowColor, -1, &indicEff);
 		tip("Set alpha to 0 to glow with the indicator color.");
 		myui::StyledSliderFloat("Glow Strength", &r.glowAlpha, 0.0f, 1.0f, "%.2f");
 	}
 
+	ImGui::SeparatorText("Text");
+	myui::StyledCheckbox("Drop Shadow", &r.textShadow);
+	tip("Draw a soft black shadow behind the distance number.");
+
 	ImGui::SeparatorText("Size");
 	myui::StyledSliderFloat("Thickness", &r.thickness, 1.0f, 10.0f, "%.1f");
 	myui::StyledSliderFloat("Indicator Size", &r.indicSize, 2.0f, 14.0f, "%.1f");
+
+	ImGui::Separator();
+	if (myui::StyledButton("Reset to Defaults"))
+	{
+		r = kDef;
+	}
 
 	ImGui::PopID();
 	ImGui::PopID();

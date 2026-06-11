@@ -84,20 +84,31 @@ void VisitBar(BarStyle& s, V& v)
 }
 
 template <class V>
+void VisitColorSource(ColorSource& s, V& v, const char* kMode, const char* kCustom,
+	const char* kDistNear, const char* kDistFar, const char* kLos, const char* kNoLos)
+{
+	v.in(kMode, s.mode);
+	v.co(kCustom, s.custom);
+	v.co(kDistNear, s.distNear);
+	v.co(kDistFar, s.distFar);
+	v.co(kLos, s.losColor);
+	v.co(kNoLos, s.noLosColor);
+}
+
+template <class V>
 void VisitRing(RingStyle& s, V& v)
 {
-	v.in("trackMode", s.trackMode);
-	v.co("ringColor", s.ringColor);
-	v.co("indicColor", s.indicColor);
+	// Track keeps the legacy flat key names so existing saved rings load unchanged.
+	VisitColorSource(s.track, v, "trackMode", "ringColor", "distNear", "distFar", "losColor", "noLosColor");
 	v.fl("distMin", s.distMin);
 	v.fl("distMax", s.distMax);
-	v.co("distNear", s.distNear);
-	v.co("distFar", s.distFar);
-	v.co("losColor", s.losColor);
-	v.co("noLosColor", s.noLosColor);
+	v.bo("bgOn", s.bgOn);
+	VisitColorSource(s.bg, v, "bgMode", "bgColor", "bgDistNear", "bgDistFar", "bgLosColor", "bgNoLosColor");
+	v.co("indicColor", s.indicColor);
 	v.bo("glowOn", s.glowOn);
 	v.co("glowColor", s.glowColor);
 	v.fl("glowAlpha", s.glowAlpha);
+	v.bo("textShadow", s.textShadow);
 	v.fl("thickness", s.thickness);
 	v.fl("indicSize", s.indicSize);
 }

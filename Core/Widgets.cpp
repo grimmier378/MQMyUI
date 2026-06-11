@@ -143,6 +143,27 @@ void PushWindowClip(ImDrawList* dl)
 	dl->PushClipRect(wmin, ImVec2(wmin.x + wsz.x, wmin.y + wsz.y), false);
 }
 
+ImVec4 ResolveColorSource(ImGuiID id, ImU32 animSeed, const ColorSource& cs,
+	float distance, float distMin, float distMax, bool los, ImGuiCol themeFallback, float dt)
+{
+	if (cs.mode == 1) // Distance: tween near->far across [distMin, distMax]
+	{
+		float span = distMax - distMin;
+		float t = span > 0.001f ? (distance - distMin) / span : 0.0f;
+		t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
+		ImVec4 target = ImLerp(ImVec4(cs.distNear.ToImColor()), ImVec4(cs.distFar.ToImColor()), t);
+		return AnimColor(id, animSeed, target, 0.25f,
+			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
+	}
+	if (cs.mode == 2) // Visibility: tween between los/no-los colors
+	{
+		ImVec4 target = los ? ImVec4(cs.losColor.ToImColor()) : ImVec4(cs.noLosColor.ToImColor());
+		return AnimColor(id, animSeed, target, 0.25f,
+			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
+	}
+	return cs.custom.Alpha == 0 ? ImGui::GetStyleColorVec4(themeFallback) : ImVec4(cs.custom.ToImColor());
+}
+
 void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBearingDeg,
 	float distance, bool los, const char* distText, const RingStyle& style)
 {
@@ -174,32 +195,21 @@ void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBe
 		s_angle[id] = targetBearingDeg;
 	}
 
-	// Resolve the track color from the mode, tweening for Distance/Visibility.
-	ImVec4 track;
-	if (style.trackMode == 1) // Distance: tween near->far across [distMin, distMax]
-	{
-		float span = style.distMax - style.distMin;
-		float t = span > 0.001f ? (distance - style.distMin) / span : 0.0f;
-		t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
-		ImVec4 target = ImLerp(ImVec4(style.distNear.ToImColor()), ImVec4(style.distFar.ToImColor()), t);
-		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
-			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
-	}
-	else if (style.trackMode == 2) // Visibility: tween between los/no-los colors
-	{
-		ImVec4 target = los ? ImVec4(style.losColor.ToImColor()) : ImVec4(style.noLosColor.ToImColor());
-		track = AnimColor(id, ImHashStr("ring_track"), target, 0.25f,
-			iam_ease_preset(iam_ease_out_cubic), iam_policy_crossfade, iam_col_oklab, dt, target);
-	}
-	else // Default: explicit color, or theme FrameBg when left unset (alpha 0)
-	{
-		track = style.ringColor.Alpha == 0 ? ImGui::GetStyleColorVec4(ImGuiCol_FrameBg) : ImVec4(style.ringColor.ToImColor());
-	}
-
 	// radius 0 = auto-fit: smallest radius whose inner edge clears the distance
 	// text's bounding circle, plus the track half-thickness and a little padding,
 	// so the text never touches the track (DirectionRingRadius owns the formula).
 	const float radius = DirectionRingRadius(distText, style);
+
+	// Background fill clipped to the inner edge of the track, behind the text.
+	if (style.bgOn)
+	{
+		const ImVec4 bg = ResolveColorSource(id, ImHashStr("ring_bg"), style.bg,
+			distance, style.distMin, style.distMax, los, ImGuiCol_ChildBg, dt);
+		dl->AddCircleFilled(center, radius - style.thickness * 0.5f, ImGui::GetColorU32(bg), 64);
+	}
+
+	const ImVec4 track = ResolveColorSource(id, ImHashStr("ring_track"), style.track,
+		distance, style.distMin, style.distMax, los, ImGuiCol_FrameBg, dt);
 	dl->AddCircle(center, radius, ImGui::GetColorU32(track), 64, style.thickness);
 
 	// Marker on the track: 0 deg = top, clockwise positive (ImGui Y is down).
@@ -222,8 +232,12 @@ void DrawDirectionRing(ImDrawList* dl, ImGuiID id, ImVec2 center, float targetBe
 	if (distText && distText[0])
 	{
 		const ImVec2 ts = ImGui::CalcTextSize(distText);
-		dl->AddText(ImVec2(center.x - ts.x * 0.5f, center.y - ts.y * 0.5f),
-			ImGui::GetColorU32(ImGuiCol_Text), distText);
+		const ImVec2 tp(center.x - ts.x * 0.5f, center.y - ts.y * 0.5f);
+		if (style.textShadow)
+		{
+			dl->AddText(ImVec2(tp.x + 1.0f, tp.y + 1.0f), IM_COL32(0, 0, 0, 160), distText);
+		}
+		dl->AddText(tp, ImGui::GetColorU32(ImGuiCol_Text), distText);
 	}
 }
 
