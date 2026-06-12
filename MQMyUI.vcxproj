@@ -75,6 +75,7 @@
     <ClCompile Include="Core\CharData.cpp" />
     <ClCompile Include="Core\ChatBridge.cpp" />
     <ClCompile Include="Core\IconHelper.cpp" />
+    <ClCompile Include="Core\BuffRow.cpp" />
     <ClCompile Include="Core\ActorManager.cpp" />
     <ClCompile Include="Core\StorageId.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -124,6 +125,7 @@
     <ClInclude Include="Core\CharData.h" />
     <ClInclude Include="Core\ChatBridge.h" />
     <ClInclude Include="Core\IconHelper.h" />
+    <ClInclude Include="Core\BuffRow.h" />
     <ClInclude Include="Core\UiHelpers.h" />
     <ClInclude Include="Core\PeerData.h" />
     <ClInclude Include="Core\ActorManager.h" />

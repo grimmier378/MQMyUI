@@ -175,7 +175,7 @@ void MyAAModule::DrawTable(int type, float height)
 				m_selected = e->groupId;
 			}
 			if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)
-				&& !e->passive && pSpellDisplayManager)
+				&& !e->passive && e->spellId > 0 && pSpellDisplayManager)
 			{
 				pSpellDisplayManager->ShowSpell(e->spellId, true, true, SpellDisplayType_SpellBookWnd);
 			}

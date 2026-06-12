@@ -6,6 +6,7 @@
 #include "../Core/IconHelper.h"
 #include "../Core/ColorUtil.h"
 #include "../Core/UiHelpers.h"
+#include "../Core/BuffRow.h"
 
 #include <cmath>
 #include <cstdio>
@@ -144,77 +145,18 @@ void SongsModule::DrawIconView(float pulse)
 
 void SongsModule::DrawIconLineupRow(const char* rowName, const std::vector<BuffInfo>& songs, float pulse)
 {
-	int iconSize = static_cast<int>(22.0f * m_ctx.UI->Window(GetName()).iconScale);
-	int flashThreshold = static_cast<int>(m_ctx.UI->Num(GetName(), "FlashThreshold", 18.0f));
-
-	int last = -1;
-	for (int k = 0; k < static_cast<int>(songs.size()); ++k)
-	{
-		if (!songs[k].isEmpty)
-		{
-			last = k;
-		}
-	}
-
 	ImGui::TableNextRow();
 	ImGui::TableSetColumnIndex(0);
 	ImGui::TextUnformatted(rowName);
-
 	ImGui::TableSetColumnIndex(1);
-	ImGui::PushID(rowName);
 
-	float avail = ImGui::GetContentRegionAvail().x;
-	float lineWidth = 0.0f;
+	myui::BuffIconLineupOpts opts;
+	opts.pulse = pulse;
+	opts.iconSize = static_cast<int>(22.0f * m_ctx.UI->Window(GetName()).iconScale);
+	opts.flashThreshold = static_cast<int>(m_ctx.UI->Num(GetName(), "FlashThreshold", 18.0f));
+	opts.trimTrailingEmpty = true;
+	opts.showCaster = false;
+	opts.contextMenu = [](const BuffInfo& song) { SongContextMenu(song); };
 
-	for (int k = 0; k <= last; ++k)
-	{
-		const BuffInfo& song = songs[k];
-		ImGui::PushID(song.slot);
-
-		if (song.isEmpty)
-		{
-			m_ctx.Icons->DrawEmptySlot(CXSize(iconSize, iconSize));
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetItemTooltip("Slot %d (Empty)", song.slot + 1);
-			}
-		}
-		else
-		{
-			MQColor border = myui::BuffBorderColor(song.beneficial, nullptr);
-			int secondsLeft = song.durationMs / 1000;
-			MQColor tint = myui::FlashTint(secondsLeft, flashThreshold, pulse);
-
-			m_ctx.Icons->DrawSpellIcon(song.iconId, CXSize(iconSize, iconSize), tint, border);
-
-			if (ImGui::IsItemHovered())
-			{
-				char timeLabel[32];
-				myui::FormatDuration(timeLabel, sizeof(timeLabel), song.durationMs);
-				ImGui::BeginTooltip();
-				ImGui::Text("%s", song.name.c_str());
-				if (song.durationMs != 0)
-				{
-					ImGui::Text("Time: %s", timeLabel);
-				}
-				ImGui::EndTooltip();
-			}
-
-			SongContextMenu(song);
-		}
-
-		ImGui::PopID();
-
-		lineWidth += iconSize + 2.0f;
-		if (lineWidth < avail - iconSize)
-		{
-			ImGui::SameLine(0.0f, 2.0f);
-		}
-		else
-		{
-			lineWidth = 0.0f;
-		}
-	}
-
-	ImGui::PopID();
+	myui::DrawBuffIconLineup(rowName, songs, opts, m_ctx.Icons);
 }

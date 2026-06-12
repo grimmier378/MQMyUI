@@ -60,6 +60,7 @@ public:
 
 private:
 	void OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg);
+	void EnsurePeerSync(const std::string& server, const std::string& character, const std::string& peerKey, const myui::PeerRecord& peer);
 	void SendSettingsReply(const std::string& toServer, const std::string& toChar, const std::vector<SettingRow>& rows, bool full);
 	void PublishVitals();
 	void PublishAA();

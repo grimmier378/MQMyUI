@@ -163,7 +163,7 @@ void CharData::Refresh()
 	if (PlayerClient* pPet = GetSpawnByID(pLocalPlayer->PetID))
 	{
 		m_snap.petName  = pPet->DisplayedName;
-		m_snap.petPctHP = static_cast<int>(pPet->HPCurrent);
+		m_snap.petPctHP = myui::SpawnPctHP(pPet);
 	}
 
 	if (pZoneInfo)
@@ -370,7 +370,7 @@ void CharData::RefreshGroupRaid()
 				m.present    = true;
 				m.classId    = sp->GetClass();
 				FillFromSpawn(m, sp);
-				m.pctHP      = m.isSelf ? m_snap.PctHP()   : static_cast<int>(sp->HPCurrent);
+				m.pctHP      = m.isSelf ? m_snap.PctHP()   : myui::SpawnPctHP(sp);
 				m.pctMana    = m.isSelf ? m_snap.PctMana() : sp->ManaCurrent;
 				m.pctEnd     = m.isSelf ? m_snap.PctEnd()  : sp->EnduranceCurrent;
 				if (const char* cls = sp->GetClassThreeLetterCode())
@@ -380,7 +380,7 @@ void CharData::RefreshGroupRaid()
 				m.maskedName = m.isSelf ? std::string("Me") : myui::MaskedCode(sp->GetRace(), m.classShort, m.level);
 				if (PlayerClient* pPet = GetSpawnByID(sp->PetID))
 				{
-					m.petPctHP = static_cast<int>(pPet->HPCurrent);
+					m.petPctHP = myui::SpawnPctHP(pPet);
 				}
 			}
 			else if (m.isSelf)
@@ -433,7 +433,7 @@ void CharData::RefreshGroupRaid()
 			if (PlayerClient* sp = GetSpawnByName(rm.Name))
 			{
 				FillFromSpawn(m, sp);
-				m.pctHP      = m.isSelf ? m_snap.PctHP() : static_cast<int>(sp->HPCurrent);
+				m.pctHP      = m.isSelf ? m_snap.PctHP() : myui::SpawnPctHP(sp);
 				if (!m.isSelf)
 				{
 					m.maskedName = myui::MaskedCode(sp->GetRace(), m.classShort, m.level);

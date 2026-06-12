@@ -166,6 +166,17 @@ inline int ColumnsForWidth(float avail, float cellSize)
 	return cols < 1 ? 1 : cols;
 }
 
+inline int SpawnPctHP(const PlayerClient* sp)
+{
+	if (!sp)
+	{
+		return 0;
+	}
+	return sp->HPMax > 0
+		? static_cast<int>(static_cast<int64_t>(sp->HPCurrent) * 100 / sp->HPMax)
+		: static_cast<int>(sp->HPCurrent);
+}
+
 // Display name for a spawn, honoring anonymization: anonymized players render as
 // their masked RACE_CLASS_LEVEL code, everything else uses the trimmed name.
 inline std::string DisplayedSpawnName(PSPAWNINFO sp)

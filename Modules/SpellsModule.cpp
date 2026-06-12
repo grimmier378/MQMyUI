@@ -137,7 +137,7 @@ void SpellsModule::OnPulse()
 	if (m_picker.m_selectedSpell)
 	{
 		int id = m_picker.m_selectedSpell->ID;
-		const char* name = m_picker.m_selectedSpell->Name;
+		const char* name = m_picker.m_selectedSpell->Name.c_str();
 		if (m_pickerTarget == PickerTarget::LiveGem)
 		{
 			DoCommandf("/memspell %d \"%s\"", m_pickerSlot + 1, name);

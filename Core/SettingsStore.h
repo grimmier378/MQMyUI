@@ -64,6 +64,7 @@ public:
 
 	void BeginTransaction();
 	void CommitTransaction();
+	void RollbackTransaction();
 
 	void CopyCharacterSettings(const std::string& fromServer, const std::string& fromChar,
 		const std::string& toServer, const std::string& toChar);

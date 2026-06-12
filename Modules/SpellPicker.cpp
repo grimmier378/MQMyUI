@@ -14,11 +14,11 @@ void SpellPicker::DrawSpellTree()
 	{
 		for (const auto& [categoryName, subCategories] : m_categorized)
 		{
-			if (ImGui::TreeNode(categoryName))
+			if (ImGui::TreeNode(categoryName.c_str()))
 			{
 				for (const auto& [subCategoryName, spells] : subCategories)
 				{
-					if (ImGui::TreeNode(subCategoryName))
+					if (ImGui::TreeNode(subCategoryName.c_str()))
 					{
 						for (const auto& spell : spells)
 						{
@@ -32,7 +32,7 @@ void SpellPicker::DrawSpellTree()
 								ImGui::SameLine();
 							}
 
-							if (ImGui::Selectable(spell.Name))
+							if (ImGui::Selectable(spell.Name.c_str()))
 							{
 								m_selectedSpell = std::make_shared<SpellData>(spell);
 							}
@@ -46,7 +46,7 @@ void SpellPicker::DrawSpellTree()
 							if (ImGui::IsItemHovered())
 							{
 								ImGui::BeginTooltip();
-								ImGui::Text("Name: %s", spell.Name);
+								ImGui::Text("Name: %s", spell.Name.c_str());
 								ImGui::Text("Level: %d", spell.Level);
 								ImGui::Text("Rank: %d", spell.RankNum);
 								myui::RenderSpellEffects(spell.ID);

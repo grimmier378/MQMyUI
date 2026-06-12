@@ -8,6 +8,7 @@
 #include "../Core/UiHelpers.h"
 #include "../Core/PeerData.h"
 #include "../Core/Widgets.h"
+#include "../Core/BuffRow.h"
 
 #include "imgui/fonts/IconsFontAwesome.h"
 
@@ -425,10 +426,9 @@ void PlayerModule::DrawTargetBuffs()
 	}
 
 	WindowConfig& w = m_ctx.UI->Window(GetName());
-	int iconSize = static_cast<int>(20.0f * w.iconScale);
-	float avail = ImGui::GetContentRegionAvail().x;
-	float lineWidth = 0.0f;
+	float pulse = 0.55f + 0.45f * std::sin(static_cast<float>(ImGui::GetTime()) * 4.0f);
 
+	std::vector<BuffInfo> buffs;
 	for (const auto& buffInfo : pTargetWnd->GetBuffRange())
 	{
 		EQ_Spell* spell = buffInfo.GetSpell();
@@ -437,37 +437,29 @@ void PlayerModule::DrawTargetBuffs()
 			continue;
 		}
 
-		ImGui::PushID(spell->ID);
-
 		const char* caster = buffInfo.GetCaster();
-		MQColor border = myui::BuffBorderColor(spell->IsBeneficialSpell(), caster, kBuffSelfCast);
-		m_ctx.Icons->DrawSpellIcon(spell->SpellIcon, CXSize(iconSize, iconSize), kBuffTint, border);
+		BuffInfo b;
+		b.slot       = static_cast<int>(buffs.size());
+		b.spellId    = spell->ID;
+		b.iconId     = spell->SpellIcon;
+		b.durationMs = static_cast<int>(buffInfo.GetBuffTimer());
+		b.name       = spell->Name;
+		b.caster     = caster ? caster : "";
+		b.beneficial = spell->IsBeneficialSpell();
+		buffs.push_back(std::move(b));
+	}
 
+	myui::BuffIconLineupOpts opts;
+	opts.pulse = pulse;
+	opts.iconSize = static_cast<int>(20.0f * w.iconScale);
+	opts.selfCast = kBuffSelfCast;
+	opts.contextMenu = [](const BuffInfo& buff)
+	{
 		if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && pSpellDisplayManager)
 		{
-			pSpellDisplayManager->ShowSpell(spell->ID, true, true, SpellDisplayType_SpellBookWnd);
+			pSpellDisplayManager->ShowSpell(buff.spellId, true, true, SpellDisplayType_SpellBookWnd);
 		}
+	};
 
-		if (ImGui::IsItemHovered())
-		{
-			char timeLabel[32];
-			myui::FormatDuration(timeLabel, sizeof(timeLabel), buffInfo.GetBuffTimer());
-			ImGui::BeginTooltip();
-			ImGui::Text("%s", spell->Name);
-			ImGui::Text("Time: %s", timeLabel);
-			ImGui::EndTooltip();
-		}
-
-		ImGui::PopID();
-
-		lineWidth += iconSize + 2.0f;
-		if (lineWidth < avail - iconSize)
-		{
-			ImGui::SameLine(0.0f, 2.0f);
-		}
-		else
-		{
-			lineWidth = 0.0f;
-		}
-	}
+	myui::DrawBuffIconLineup("##targetbuffs", buffs, opts, m_ctx.Icons);
 }

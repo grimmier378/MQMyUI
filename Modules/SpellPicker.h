@@ -19,9 +19,9 @@ public:
 		int IconID = 0;
 		int RankNum = 0;
 		int SpellBookIndex = 0;
-		char* Name = nullptr;
-		const char* Category = nullptr;
-		const char* SubCategory = nullptr;
+		std::string Name;
+		std::string Category;
+		std::string SubCategory;
 	};
 
 	bool m_pickerOpen = false;
@@ -49,5 +49,5 @@ private:
 	void PopulateSpellData();
 	void RebuildCategorized(bool applyFilter);
 
-	std::unordered_map<const char*, std::unordered_map<const char*, std::vector<SpellData>>> m_categorized;
+	std::unordered_map<std::string, std::unordered_map<std::string, std::vector<SpellData>>> m_categorized;
 };

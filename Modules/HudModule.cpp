@@ -147,7 +147,7 @@ void HudModule::DrawStatusEffects()
 		ImGui::PopFont();
 		if (ImGui::IsItemClicked())
 		{
-			pLocalPlayer->StandState = STANDSTATE_STAND;
+			EzCommand("/stand");
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -214,7 +214,7 @@ void HudModule::DrawStatusEffects()
 		}
 		if (ImGui::IsItemClicked())
 		{
-			pLocalPlayer->StandState = STANDSTATE_STAND;
+			EzCommand("/stand");
 		}
 		ImGui::SameLine();
 	}

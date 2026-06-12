@@ -302,8 +302,6 @@ std::string SettingsStore::Fetch(const std::string& module, const std::string& n
 
 void SettingsStore::WriteRow(const std::string& module, const std::string& name, const char* type, const std::string& value)
 {
-	m_cache[MakeKey(module, name)] = CacheEntry{ value, true };
-
 	sqlite3_stmt* stmt = nullptr;
 	if (!PrepareAndStep(kInsertSettingSql, stmt))
 	{
@@ -313,7 +311,10 @@ void SettingsStore::WriteRow(const std::string& module, const std::string& name,
 	BindContext(stmt, 1, m_server, m_character, module, name);
 	sqlite3_bind_text(stmt, 5, type, -1, SQLITE_TRANSIENT);
 	sqlite3_bind_text(stmt, 6, value.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_step(stmt);
+	if (sqlite3_step(stmt) == SQLITE_DONE)
+	{
+		m_cache[MakeKey(module, name)] = CacheEntry{ value, true };
+	}
 	sqlite3_finalize(stmt);
 }
 
@@ -385,6 +386,11 @@ void SettingsStore::BeginTransaction()
 void SettingsStore::CommitTransaction()
 {
 	ExecSQL("COMMIT");
+}
+
+void SettingsStore::RollbackTransaction()
+{
+	ExecSQL("ROLLBACK");
 }
 
 void SettingsStore::CopyCharacterSettings(const std::string& fromServer, const std::string& fromChar,
@@ -580,7 +586,7 @@ void SettingsStore::SaveTheme(const std::string& themeName, const std::vector<Th
 		return;
 	}
 
-	ExecSQL("BEGIN");
+	BeginTransaction();
 
 	sqlite3_stmt* del = nullptr;
 	if (PrepareAndStep("DELETE FROM themes WHERE theme=?", del))
@@ -590,13 +596,15 @@ void SettingsStore::SaveTheme(const std::string& themeName, const std::vector<Th
 		sqlite3_finalize(del);
 	}
 
+	bool ok = true;
 	for (const ThemeRow& row : rows)
 	{
 		sqlite3_stmt* stmt = nullptr;
 		if (!PrepareAndStep(
 			"INSERT INTO themes (theme, name, type, value) VALUES (?, ?, ?, ?)", stmt))
 		{
-			continue;
+			ok = false;
+			break;
 		}
 
 		sqlite3_bind_text(stmt, 1, themeName.c_str(), -1, SQLITE_TRANSIENT);
@@ -607,7 +615,14 @@ void SettingsStore::SaveTheme(const std::string& themeName, const std::vector<Th
 		sqlite3_finalize(stmt);
 	}
 
-	ExecSQL("COMMIT");
+	if (ok)
+	{
+		CommitTransaction();
+	}
+	else
+	{
+		RollbackTransaction();
+	}
 }
 
 std::vector<ThemeRow> SettingsStore::LoadTheme(const std::string& themeName)
@@ -670,7 +685,7 @@ void SettingsStore::SaveSpellSet(const std::string& setName, const std::vector<S
 		return;
 	}
 
-	ExecSQL("BEGIN");
+	BeginTransaction();
 
 	sqlite3_stmt* del = nullptr;
 	if (PrepareAndStep("DELETE FROM spell_sets WHERE server=? AND character=? AND set_name=?", del))
@@ -682,13 +697,15 @@ void SettingsStore::SaveSpellSet(const std::string& setName, const std::vector<S
 		sqlite3_finalize(del);
 	}
 
+	bool ok = true;
 	for (const SpellSetRow& row : rows)
 	{
 		sqlite3_stmt* stmt = nullptr;
 		if (!PrepareAndStep(
 			"INSERT INTO spell_sets (server, character, set_name, gem_slot, spell_id) VALUES (?, ?, ?, ?, ?)", stmt))
 		{
-			continue;
+			ok = false;
+			break;
 		}
 
 		sqlite3_bind_text(stmt, 1, m_server.c_str(), -1, SQLITE_TRANSIENT);
@@ -700,7 +717,14 @@ void SettingsStore::SaveSpellSet(const std::string& setName, const std::vector<S
 		sqlite3_finalize(stmt);
 	}
 
-	ExecSQL("COMMIT");
+	if (ok)
+	{
+		CommitTransaction();
+	}
+	else
+	{
+		RollbackTransaction();
+	}
 }
 
 std::vector<SpellSetRow> SettingsStore::LoadSpellSet(const std::string& setName)
@@ -794,10 +818,11 @@ void SettingsStore::SaveTrackedItems(const std::vector<std::string>& items)
 		return;
 	}
 
-	ExecSQL("BEGIN");
+	BeginTransaction();
 	ExecSQL("DELETE FROM itrack_items");
 
 	int ord = 0;
+	bool ok = true;
 	for (const std::string& name : items)
 	{
 		if (name.empty())
@@ -808,7 +833,8 @@ void SettingsStore::SaveTrackedItems(const std::vector<std::string>& items)
 		sqlite3_stmt* stmt = nullptr;
 		if (!PrepareAndStep("INSERT OR IGNORE INTO itrack_items (ordinal, item_name) VALUES (?, ?)", stmt))
 		{
-			continue;
+			ok = false;
+			break;
 		}
 
 		sqlite3_bind_int(stmt, 1, ord++);
@@ -817,5 +843,12 @@ void SettingsStore::SaveTrackedItems(const std::vector<std::string>& items)
 		sqlite3_finalize(stmt);
 	}
 
-	ExecSQL("COMMIT");
+	if (ok)
+	{
+		CommitTransaction();
+	}
+	else
+	{
+		RollbackTransaction();
+	}
 }

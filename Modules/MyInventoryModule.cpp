@@ -605,7 +605,7 @@ void MyInventoryModule::DrawBags(float cellSize, bool showBackground)
 					m_openContainers.insert(p);
 				}
 			}
-			else
+			else if (!myui::CursorHasItem())
 			{
 				myui::UseItem(bag);
 			}

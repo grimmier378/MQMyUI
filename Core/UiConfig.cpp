@@ -729,4 +729,8 @@ void UiConfig::PersistField(const std::string& window, const std::string& name)
 	{
 		m_store->SetNumber(window, name, w.nums[name]);
 	}
+	else if (w.strs.count(name))
+	{
+		m_store->SetString(window, name, w.strs[name]);
+	}
 }

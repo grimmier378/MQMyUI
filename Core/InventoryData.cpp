@@ -500,7 +500,7 @@ void RenderItemInfo(IconHelper* icons, const ItemRef& ref, bool interactive)
 	}
 
 	bool tooHigh = def->RequiredLevel > PlayerLevel();
-	bool canUse = pLocalPC && pLocalPC->CanUseItem(ref.item, true, false);
+	bool canUse = ItemUsableByMe(ref, true);
 
 	float headerY = ImGui::GetCursorPosY();
 

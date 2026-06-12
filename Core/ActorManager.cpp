@@ -252,6 +252,17 @@ void ActorManager::PublishInventory(const std::string& removeItem)
 	m_dropbox.Post(addr, env);
 }
 
+void ActorManager::EnsurePeerSync(const std::string& server, const std::string& character,
+	const std::string& peerKey, const myui::PeerRecord& peer)
+{
+	// First time we have seen this peer: pull its settings into our local mirror, unless it
+	// shares our SQLite file (same-store), in which case the rows are already present.
+	if (m_seenPeers.insert(peerKey).second && !IsSameStore(peer))
+	{
+		SendSettingsRequest(server, character);
+	}
+}
+
 void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg)
 {
 	if (!msg || !msg->Payload)
@@ -278,7 +289,6 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		}
 
 		const std::string peerKey = myui::PeerKey(v.server(), v.character());
-		const bool isNewPeer = (m_peers.find(peerKey) == m_peers.end());
 		auto& p = m_peers[peerKey];
 		p.server      = v.server();
 		p.character   = v.character();
@@ -308,12 +318,7 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		p.hasVitals   = true;
 		p.lastSeen    = now;
 
-		// First time we have seen this peer: pull its settings into our local mirror, unless it
-		// shares our SQLite file (same-store), in which case the rows are already present.
-		if (isNewPeer && m_seenPeers.insert(peerKey).second && !IsSameStore(p))
-		{
-			SendSettingsRequest(v.server(), v.character());
-		}
+		EnsurePeerSync(v.server(), v.character(), peerKey, p);
 		break;
 	}
 	case mq::proto::myui::MyUIEnvelope::PayloadCase::kAa:
@@ -324,7 +329,8 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 			return;
 		}
 
-		auto& p = m_peers[myui::PeerKey(a.server(), a.character())];
+		const std::string peerKey = myui::PeerKey(a.server(), a.character());
+		auto& p = m_peers[peerKey];
 		p.server      = a.server();
 		p.character   = a.character();
 		p.level       = a.level();
@@ -339,6 +345,7 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		p.groupLeader = a.group_leader();
 		p.hasAA       = true;
 		p.lastSeen    = now;
+		EnsurePeerSync(a.server(), a.character(), peerKey, p);
 		break;
 	}
 	case mq::proto::myui::MyUIEnvelope::PayloadCase::kBuffs:
@@ -349,7 +356,8 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 			return;
 		}
 
-		auto& p = m_peers[myui::PeerKey(list.server(), list.character())];
+		const std::string peerKey = myui::PeerKey(list.server(), list.character());
+		auto& p = m_peers[peerKey];
 		p.server    = list.server();
 		p.character = list.character();
 		p.buffs.clear();
@@ -369,6 +377,7 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		}
 		p.hasBuffs = true;
 		p.lastSeen = now;
+		EnsurePeerSync(list.server(), list.character(), peerKey, p);
 		break;
 	}
 	case mq::proto::myui::MyUIEnvelope::PayloadCase::kCommand:
@@ -398,7 +407,14 @@ void ActorManager::OnReceive(const std::shared_ptr<mq::postoffice::Message>& msg
 		if (!snap.remove().empty())
 		{
 			const std::string& removed = snap.remove();
-			m_itemCounts.erase(removed);
+			for (auto it = m_itemCounts.begin(); it != m_itemCounts.end(); ++it)
+			{
+				if (ci_equals(it->first, removed))
+				{
+					m_itemCounts.erase(it);
+					break;
+				}
+			}
 			for (auto it = m_trackedItems.begin(); it != m_trackedItems.end(); ++it)
 			{
 				if (ci_equals(*it, removed))
@@ -748,8 +764,8 @@ bool ActorManager::ReloadTargetsSelf(const std::string& targetList) const
 			continue;
 		}
 		std::vector<std::string> parts = mq::split(entry, '|');
-		const std::string& srv = parts.size() > 0 ? parts[0] : std::string();
-		const std::string& chr = parts.size() > 1 ? parts[1] : std::string();
+		const std::string srv = parts.size() > 0 ? parts[0] : std::string();
+		const std::string chr = parts.size() > 1 ? parts[1] : std::string();
 		if (ci_equals(chr, m_character) && (srv.empty() || ci_equals(srv, m_server)))
 		{
 			return true;
