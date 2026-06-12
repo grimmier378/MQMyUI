@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Window Modules — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html" class="active">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Window Modules</h1>
+    <p>Each module is a <code>ModuleBase</code> subclass rendering one ImGui window. <code>GetName()</code> is both the
+    window's config key (in <code>UiConfig</code>) and its <code>/myui &lt;name&gt;</code> toggle name. Modules read all
+    settings live from <code>m_ctx.UI</code> each frame and own only transient runtime state. The table is in
+    registration / render order.</p>
+
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Key</th><th>Hooks</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>PlayerModule</code></td><td>Player</td><td>RenderGUI (PlayerModule.cpp:65)</td><td>Player vitals + target block (HP/Mana/End/TargetHP/Aggro bars, combat pulse, target buffs with flash on low duration, bodytype). Target buffs build a <code>BuffInfo</code> vector from <code>pTargetWnd->GetBuffRange()</code> and render via <code>myui::DrawBuffIconLineup</code></td></tr>
+        <tr><td><code>PetModule</code></td><td>Pet</td><td>RenderGUI (:53)</td><td>Pet HP/target bars + command buttons (Attack/Guard/Follow/Sit/Taunt/Hold/Kill…), stateful toggles</td></tr>
+        <tr><td><code>BuffsModule</code></td><td>Buffs</td><td>Pulse (:48), RenderGUI (:56)</td><td>Long buffs; table or icon view; empty-slot placeholders; flash on low duration; group-only peer view. Buffs and Songs now both delegate to shared <code>myui::DrawBuffIconLineup</code> helper via <code>DrawIconLineupRow</code></td></tr>
+        <tr><td><code>SongsModule</code></td><td>Songs</td><td>Pulse (:38), RenderGUI (:46)</td><td>Short buffs (songs); table/icon view; flash on low duration (skips empty slots). Delegates to shared <code>myui::DrawBuffIconLineup</code> helper via <code>DrawIconLineupRow</code></td></tr>
+        <tr><td><code>SpellsModule</code></td><td>Spells</td><td>Init (:65), Pulse (:70), RenderGUI (:276)</td><td>Spell gems (game tint overlay) + Spell Set Manager (left-click gear) for named per-character gem loadouts; context menu (right-click gear) for quick Save / Load / Clear All Gems; gem-hover spell effects; deferred DB queue; uses <code>SpellPicker</code> for set-slot editing. Key methods: <code>DrawSpellSetManager</code>, <code>DrawQuickSetMenu</code>, <code>OpenPickerForSetSlot</code>, <code>ApplyEditorToGame</code>, <code>ApplyNamedSetToGame</code>, <code>ProcessDbQueue</code>, <code>CurrentLoadout</code>, <code>EditorRows</code>, <code>SeedEditorFromGems</code>, <code>LoadSetIntoEditor</code>.</td></tr>
+        <tr><td><code>CastingModule</code></td><td>Casting</td><td>Pulse (:9), RenderGUI (:35)</td><td>Cast bar with spell preview</td></tr>
+        <tr><td><code>HudModule</code></td><td>HUD</td><td>RenderGUI (:53), Shutdown (:44)</td><td>Floating status-effects HUD (default <strong>visible</strong>)</td></tr>
+        <tr><td><code>GroupModule</code></td><td>Group + Raid</td><td>RenderGUI (GroupModule.cpp:769)</td><td>Group window + raid grid; merges in-zone CharData with out-of-zone peers; distance/move/sit, role/LOS icons; click-to-target; out-of-zone members tinted via <code>ApplyOutOfZoneColor</code>; empty placeholder slots via <code>ShowEmptySlots</code> flag; right-click context menu includes <strong>Kick</strong> option</td></tr>
+        <tr><td><code>XpBarsModule</code></td><td>XPBars</td><td>RenderGUI (XpBarsModule.cpp:164)</td><td>Per-character XP / AA-XP / Air tiles over actors; AA allocation buttons (Min/Less/Mid/More/Max). Renamed from "AAParty"</td></tr>
+        <tr><td><code>MyAAModule</code></td><td>AA</td><td>Pulse (MyAAModule.cpp:398), RenderGUI (:234)</td><td>AA spend/manage window: 5 Type tabs, table, description pane, Train/Hotkey via native AA window automation</td></tr>
+        <tr><td><code>ThemeZModule</code></td><td>Themes</td><td>RenderGUI (:39), Shutdown (:9)</td><td>Theme editor (colors + style metrics), live preview</td></tr>
+        <tr><td><code>SettingsModule</code></td><td>Settings</td><td>RenderGUI (SettingsModule.cpp:176)</td><td>Tabbed config: Windows/Bars/Scaling/Display/Toggles/Theme; cross-char remote editing</td></tr>
+        <tr><td><code>CopyModule</code></td><td>Copy</td><td>Pulse (:98), RenderGUI (:152)</td><td>Diff + copy settings to one or more destination characters</td></tr>
+        <tr><td><code>MyInventoryModule</code></td><td>Inventory</td><td>RenderGUI (MyInventoryModule.cpp:63)</td><td>Paperdoll + bags, per-bag pop-outs, equip swap, coin pickup, item info / augment slotting</td></tr>
+        <tr><td><code>BigBagModule</code></td><td>BigBag</td><td>RenderGUI (BigBagModule.cpp:17)</td><td>All-in-one inventory browser (Items/Clickies/Augments/Bank/Details), search, sort, bulk trade</td></tr>
+        <tr><td><code>ITrackModule</code></td><td>iTrack</td><td>RenderGUI (ITrackModule.cpp:9)</td><td>Cross-character item tracker (shared/broadcast list)</td></tr>
+        <tr><td><code>ToolbarModule</code></td><td>Toolbar</td><td>RenderGUI (ToolbarModule.cpp:12)</td><td>Always-on launcher buttons (Settings/BigBag/Inventory/iTrack/AA); default <strong>visible</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Notes</h2>
+    <ul>
+      <li><strong>Default visibility:</strong> only <code>HUD</code> and <code>Toolbar</code> are seeded visible; every
+        other window defaults hidden on fresh characters. See <code>UiConfig::SeedDefaults</code>.</li>
+      <li><strong>Transient windows</strong> (<code>BigBag</code>, <code>Inventory</code>, <code>iTrack</code>,
+        <code>Settings</code>, <code>AA</code>) never persist visibility and always start hidden — they are summoned
+        from the Toolbar. See <a href="settings.html">Settings &amp; UiConfig</a>.</li>
+      <li><strong><code>GroupModule</code> owns two window keys</strong>: <code>Group</code> and <code>Raid</code> are
+        separate <code>UiConfig</code> entries (each its own scaling/visibility/bars; Raid reuses Group's HP/Mana/End/Pet
+        roles). Both group rows and raid tiles render through the same <code>DrawMemberRow</code> path, so each shows 3D
+        member distance (<code>Distance3DToSpawn</code>) plus the sit / moving (teal <code>ICON_MD_DIRECTIONS_RUN</code>) /
+        standing and LOS status icons.</li>
+      <li><strong>Peer-consuming modules:</strong> <code>XpBarsModule</code>, <code>GroupModule</code>, and
+        <code>BuffsModule</code> read <code>ActorManager::Peers()</code>; the rest are local-only.</li>
+      <li><strong>Spell gem recast overlay:</strong> <code>DrawRadialCooldown</code> (<code>SpellsModule.cpp:57</code>,
+        called <code>:418</code>) draws a circular clock-sweep shadow over the square gem icon while on recast. The dark
+        wedge is sized to <code>remaining = (SpellGemETA[i] - now) / spell-&gt;RecastTime</code> and its leading edge
+        sweeps clockwise from 12 o'clock, clearing to nothing at ready. Rendered as a triangle fan from the icon center
+        (anti-aliased fill toggled off across the fan to avoid alpha seams), radius = icon half-size + 3px, color
+        <code>kCooldownShadow</code>. The numeric countdown still draws on top.</li>
+      <li><strong>Player name in combat:</strong> <code>PlayerModule</code> draws the name with
+        <code>myui::DrawScrollingGradientText</code> (red→white scrolling gradient via the coverage alpha-mask; see
+        <a href="bars-widgets.html">Bars &amp; Widgets</a>) when <code>CharSnapshot::inCombat</code> is set
+        (<code>PlayerModule.cpp:150</code>), independent of the <code>CombatPulse</code> border-flash flag.</li>
+      <li><strong>BigBag sort key:</strong> <code>BigBagModule::SortItems</code> chains the
+        <code>SortType</code>/<code>SortName</code>/<code>SortStack</code> flags in priority type→name→stack. "By type"
+        compares the descriptive item-type string from <code>myui::ItemTypeName</code> (<code>InventoryData.cpp:943</code>
+        — <code>szItemClasses[ItemClass]</code>, <code>szCombineTypes[Combine]</code> for containers, <code>"Book"</code>
+        for books), <em>not</em> the raw <code>ItemDefinition::Type</code> enum (which only separates NORMAL/PACK/BOOK and
+        collapsed all normal items into one group). Matches the original MyUI Lua. <code>ItemTypeName</code> was
+        extended for this and also backs the Details-tab Type label.</li>
+    </ul>
+
+    <h2><code>SpellPicker</code> — helper, not a window</h2>
+    <p><code>SpellPicker</code> (<code>SpellPicker.h:12</code>) is a reusable spell-selection dialog (category tree +
+    search) embedded by spell-related modules. Key methods: <code>DrawSpellPicker</code> (<code>SpellPicker.cpp:164</code>),
+    <code>DrawSpellTree</code> (<code>:10</code>), <code>InitializeSpells</code> (<code>:65</code>),
+    <code>FilterSpells</code> (<code>:136</code>), <code>SetOpen</code> / <code>ClearSelection</code>. It holds
+    <code>SpellData</code> records (<code>SpellPicker.h:15</code>) and is <em>not</em> registered with the
+    <code>ModuleManager</code>.</p>
+
+    <div class="page-nav">
+      ← <a href="core-services.html">Core Services</a> |
+      Next: <a href="bars-widgets.html">Bars &amp; Widgets →</a>
+    </div>
+  </main>
+</body>
+</html>

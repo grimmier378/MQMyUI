@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html" class="active">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-06</em></p>
+    <h1>Architecture</h1>
+    <p>MQMyUI is a single MacroQuest plugin DLL. <code>MQMyUI.cpp</code> owns a fixed set of service singletons and a
+    <code>ModuleManager</code>; each UI window is a <code>ModuleBase</code> subclass that reads the shared services
+    <em>live every frame</em>. Multi-character sync rides a protobuf actor mailbox, settings persist to SQLite, and one
+    global ImGui theme wraps the entire render pass.</p>
+
+    <div class="note"><strong>The one big idea:</strong> modules never cache settings and never poll the game's TLOs.
+    A single <code>CharData::Refresh()</code> snapshots the game each pulse, and modules pull from
+    <code>CharData</code> + <code>UiConfig</code> every frame. This makes settings edits apply instantly and keeps
+    per-frame game access cheap.</p>
+
+    <h2>Plugin entry (<code>MQMyUI.cpp</code>)</h2>
+
+    <h3>Service singletons (lines 38–45)</h3>
+    <p>Eight file-static objects are constructed once and shared with every module through a <code>ModuleContext</code>.</p>
+    <table>
+      <thead>
+        <tr><th>Object</th><th>Type</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>s_settings</code></td><td><code>SettingsStore</code></td><td>SQLite-backed settings/theme DB</td></tr>
+        <tr><td><code>s_themes</code></td><td><code>ThemeManager</code></td><td>ImGui style / color themes</td></tr>
+        <tr><td><code>s_charData</code></td><td><code>CharData</code></td><td>Local character snapshot (vitals, buffs, group/raid)</td></tr>
+        <tr><td><code>s_chat</code></td><td><code>ChatBridge</code></td><td>Optional MQMyChat output bridge</td></tr>
+        <tr><td><code>s_icons</code></td><td><code>IconHelper</code></td><td>Texture-animation / icon loader</td></tr>
+        <tr><td><code>s_actors</code></td><td><code>ActorManager</code></td><td>Peer-to-peer sync + peer registry</td></tr>
+        <tr><td><code>s_ui</code></td><td><code>UiConfig</code></td><td>Per-window visibility / scaling / flags / bars</td></tr>
+        <tr><td><code>s_modules</code></td><td><code>ModuleManager</code></td><td>Module registry + lifecycle</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Lifecycle hooks</h3>
+    <table>
+      <thead>
+        <tr><th>Hook</th><th>Lines</th><th>Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>InitializePlugin</code></td><td>248–256</td><td>Add <code>/myui</code> command; <code>RegisterModules()</code>; set actor reload handler (<code>InvalidateCache</code> + <code>Load</code>); detect MQMyChat</td></tr>
+        <tr><td><code>InitForCharacter</code></td><td>82–115</td><td>First pulse when in-game: open <code>{gPathConfig}/MQMyUI/MQMyUI.db</code>, init Themes / UiConfig / Actors, <code>CharData::Refresh()</code>, <code>ModuleManager::InitAll()</code>, arm 5s flush</td></tr>
+        <tr><td><code>TeardownCharacter</code></td><td>117–128</td><td><code>ShutdownAll()</code>, <code>Actors.Shutdown()</code>, settings flush</td></tr>
+        <tr><td><code>OnPulse</code></td><td>274–306</td><td>Every pulse: <code>PulseActions()</code>, <code>UiConfig::ProcessPending()</code>. Every 250ms: <code>CharData::Refresh()</code>, <code>PulseAll()</code>, <code>Actors.Pulse()</code>. Every 5s: <code>Settings.Flush()</code></td></tr>
+        <tr><td><code>OnUpdateImGui</code></td><td>308–319</td><td><code>ApplyTheme(Resolved())</code> → <code>RenderAll()</code> → <code>DrawPoppedInfoWindows()</code> → <code>ResetTheme(saved)</code></td></tr>
+        <tr><td><code>SetGameState</code></td><td>266–272</td><td>On non-INGAME: <code>TeardownCharacter()</code></td></tr>
+        <tr><td><code>OnZoned</code></td><td>321–327</td><td><code>ModuleManager::ZoneAll()</code></td></tr>
+        <tr><td><code>OnLoadPlugin</code> / <code>OnUnloadPlugin</code></td><td>329–343</td><td>Track MQMyChat presence for <code>ChatBridge</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pulse timing</h3>
+    <p>Work is split across three cadences so that cheap bookkeeping runs every pulse while expensive game reads and
+    network publishes are throttled.</p>
+    <table>
+      <thead>
+        <tr><th>Work</th><th>Interval</th><th>Driver</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Actions queue, UiConfig pending save / reload</td><td>every pulse</td><td><code>OnPulse</code></td></tr>
+        <tr><td><code>CharData::Refresh</code>, <code>PulseAll</code>, <code>Actors.Pulse</code></td><td>250 ms</td><td><code>OnPulse</code> throttle</td></tr>
+        <tr><td>Publish vitals / AA / buffs / inventory</td><td>1s / 2s / 3s / 4s</td><td><code>ActorManager::Pulse</code></td></tr>
+        <tr><td>Prune stale peers (&gt; 60s)</td><td>5s</td><td><code>ActorManager::Pulse</code></td></tr>
+        <tr><td>SettingsStore flush (WAL checkpoint)</td><td>5s</td><td><code>OnPulse</code></td></tr>
+        <tr><td><code>RenderAll</code></td><td>every frame</td><td><code>OnUpdateImGui</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Module system</h2>
+    <p>The module layer is intentionally thin — see <a href="module-system.html">Module System</a> for the full contract
+    and a worked "add a module" example. In brief:</p>
+    <ul>
+      <li><strong><code>ModuleBase</code></strong> (<code>ModuleBase.h:25</code>) — virtual hooks
+        <code>OnInit</code> / <code>OnPulse</code> / <code>OnRenderGUI</code> / <code>OnShutdown</code> / <code>OnZone</code>,
+        a <code>bool IsEnabled</code>, and a protected <code>ModuleContext m_ctx</code>. Pure-virtual <code>GetName()</code>
+        returns the window/config key.</li>
+      <li><strong><code>ModuleContext</code></strong> (<code>ModuleBase.h:14</code>) — the shared-dependency struct:
+        <code>Settings, Themes, Char, Chat, Actors, Icons, UI</code> pointers, injected once per module.</li>
+      <li><strong><code>ModuleManager</code></strong> (<code>ModuleManager.h:9</code>) — <code>RegisterModule&lt;T&gt;()</code>
+        constructs + injects context + stores; <code>InitAll / PulseAll / RenderAll / ZoneAll</code> iterate
+        <em>enabled</em> modules; <code>ShutdownAll</code> iterates all; <code>Find</code> (case-insensitive) and
+        <code>SetEnabled</code> toggle at runtime.</li>
+    </ul>
+
+    <h3>Registration / render order (<code>RegisterModules</code>, MQMyUI.cpp:51–80)</h3>
+    <div class="diagram">Player → Pet → Buffs → Songs → Spells → Casting → HUD → Group → XpBars
+   → AA → Themes → Settings → Copy → Inventory → BigBag → ITrack → Toolbar</div>
+    <p>Render order follows this list, so later modules draw on top.</p>
+
+    <h2>Data flow</h2>
+    <div class="diagram">game (eqlib globals)                 SQLite (MQMyUI.db)
+   |                                     ^
+   v 250ms                               | live read each frame / write-through
+CharData::Refresh --> CharSnapshot --> modules <-- UiConfig (Window/Bar/Flag/Num/Str)
+   |                                     |
+   v publish 1-4s          render v      | visibility/lock immediate; styling on Save
+ActorManager --> protobuf mailbox "myui" <--> peer boxes
+   | receive
+   v
+m_peers[server|char]  -->  Group / XPBars / Buffs / iTrack modules</div>
+    <ul>
+      <li><strong><code>CharData::Refresh()</code></strong> (<code>CharData.cpp:81</code>) reads
+        <code>pLocalPC</code> / <code>pLocalPlayer</code> / zone / aggro / <code>pAAWnd</code> into a
+        <code>CharSnapshot</code>; <code>RefreshGroupRaid</code> (<code>CharData.cpp:292</code>) scans group (≤6) and raid (≤72);
+        <code>RefreshBuffs</code> / <code>RefreshSongs</code> walk <code>pBuffWnd</code> / <code>pSongWnd</code> slots
+        (empty slots included for both Buffs and Songs).</li>
+      <li><strong><code>ActorManager</code></strong> publishes the local snapshot as protobuf and stores received peers in
+        <code>m_peers</code> keyed <code>server|char</code>. See <a href="actors-protocol.html">Actors &amp; Protocol</a>.</li>
+      <li><strong>Modules read live:</strong> a module never caches settings — it calls <code>UI-&gt;Window(name)</code>,
+        <code>UI-&gt;Flag/Num/Str</code>, <code>UI-&gt;Bar(name, role)</code> every frame, so edits apply instantly.</li>
+    </ul>
+
+    <h2>Theming</h2>
+    <p>One global theme is applied around the <em>whole</em> render pass, not per-module. <code>OnUpdateImGui</code> calls
+    <code>ThemeManager::ApplyTheme(Resolved())</code> (which mutates <code>ImGui::GetStyle()</code> and returns the prior
+    style), renders all modules, then <code>ThemeManager::ResetTheme(saved)</code> restores it. <code>Resolved()</code>
+    returns the editor preview if the Themes editor is active, else the per-character active theme. Themes persist in the
+    <code>themes</code> SQLite table. See <a href="settings.html">Settings &amp; UiConfig</a>.</p>
+
+    <h2><code>/myui</code> command (MQMyUI.cpp:143–246)</h2>
+    <table>
+      <thead>
+        <tr><th>Command</th><th>Effect</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/myui</code> | <code>/myui help</code></td><td>List commands</td></tr>
+        <tr><td><code>/myui list</code></td><td>List windows + visibility</td></tr>
+        <tr><td><code>/myui &lt;window&gt;</code></td><td>Toggle a window (persists immediately)</td></tr>
+        <tr><td><code>/myui show|hide &lt;window&gt;</code></td><td>Force show / hide</td></tr>
+        <tr><td><code>/myui settings</code></td><td>Open Settings window</td></tr>
+        <tr><td><code>/myui theme</code></td><td>Toggle Themes editor</td></tr>
+        <tr><td><code>/myui theme list</code></td><td>List themes</td></tr>
+        <tr><td><code>/myui theme set &lt;name&gt;</code></td><td>Apply + persist active theme</td></tr>
+      </tbody>
+    </table>
+    <p>Window names resolve case-insensitively via <code>MatchWindow</code> against <code>UiConfig::WindowKeys()</code>.</p>
+
+    <div class="page-nav">
+      ← <a href="index.html">Overview</a> |
+      Next: <a href="module-system.html">Module System →</a>
+    </div>
+  </main>
+</body>
+</html>

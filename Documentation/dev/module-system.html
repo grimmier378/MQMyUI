@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module System — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html" class="active">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-06</em></p>
+    <h1>Module System</h1>
+    <p>Every window in MQMyUI is a <code>ModuleBase</code> subclass. The system is deliberately small: an abstract base
+    with five virtual hooks, a context struct of shared service pointers, and a manager that owns the modules and drives
+    their lifecycle. This page is the contract you implement when adding a window.</p>
+
+    <h2><code>ModuleBase</code> (<code>Core/ModuleBase.h:25</code>)</h2>
+    <p>The base declares the lifecycle hooks (all no-ops by default except the pure-virtual <code>GetName()</code>) and
+    holds the injected <code>ModuleContext</code>.</p>
+    <pre><code>class ModuleBase
+{
+public:
+    virtual const char* GetName() const = 0;   // window + config key, also /myui &lt;name&gt;
+
+    virtual void OnInit() {}        // once, when the character goes in-game
+    virtual void OnPulse() {}       // throttled background work (~250ms)
+    virtual void OnRenderGUI() {}   // every frame; do all ImGui here
+    virtual void OnShutdown() {}    // teardown on logout / plugin unload
+    virtual void OnZone() {}        // on zone change
+
+    bool IsEnabled = true;          // disabled modules skip Init/Pulse/Render/Zone
+
+protected:
+    ModuleContext m_ctx;            // shared services, injected by the manager
+};</code></pre>
+
+    <div class="note"><strong>Hook discipline:</strong> do all ImGui drawing in <code>OnRenderGUI</code> only. Use
+    <code>OnPulse</code> for periodic non-UI work (e.g. rebuilding a derived list) — it runs about every 250&nbsp;ms, not
+    every frame. Never poll the game's TLOs in render; read <code>m_ctx.Char</code> instead.</div>
+
+    <h2><code>ModuleContext</code> (<code>Core/ModuleBase.h:14</code>)</h2>
+    <p>A flat struct of raw pointers to the seven service singletons. The manager sets it on each module via the
+    friended <code>SetContext</code> before <code>OnInit</code>. Modules reach everything through <code>m_ctx</code>.</p>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Use it for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Settings</code></td><td><code>SettingsStore*</code></td><td>Raw SQLite key/value + theme rows (usually go through <code>UI</code> instead)</td></tr>
+        <tr><td><code>Themes</code></td><td><code>ThemeManager*</code></td><td>The active ImGui theme (Themes editor only)</td></tr>
+        <tr><td><code>Char</code></td><td><code>CharData*</code></td><td>Local character snapshot: vitals, buffs, group, raid</td></tr>
+        <tr><td><code>Chat</code></td><td><code>ChatBridge*</code></td><td>Routed chat output (MQMyChat or console)</td></tr>
+        <tr><td><code>Actors</code></td><td><code>ActorManager*</code></td><td>Peer registry + remote commands</td></tr>
+        <tr><td><code>Icons</code></td><td><code>IconHelper*</code></td><td>Spell / item / status icon drawing</td></tr>
+        <tr><td><code>UI</code></td><td><code>UiConfig*</code></td><td>This window's visibility, scaling, flags, and bar styles</td></tr>
+      </tbody>
+    </table>
+
+    <h2><code>ModuleManager</code> (<code>Core/ModuleManager.h:9</code>)</h2>
+    <p>Owns the modules in a vector and drives them.</p>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>RegisterModule&lt;T&gt;()</code></td><td>Constructs <code>T</code>, injects the context, stores it. Call order = render order.</td></tr>
+        <tr><td><code>SetContext(ctx)</code></td><td>Stores the context to inject into every registered module.</td></tr>
+        <tr><td><code>InitAll / PulseAll / RenderAll / ZoneAll</code></td><td>Iterate <strong>enabled</strong> modules, calling the matching hook.</td></tr>
+        <tr><td><code>ShutdownAll</code></td><td>Iterates <strong>all</strong> modules (even disabled) for clean teardown.</td></tr>
+        <tr><td><code>Find(name)</code> / <code>SetEnabled(name, on)</code></td><td>Case-insensitive lookup and runtime enable toggle.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>A minimal module</h2>
+    <p>The smallest real module, <code>ITrackModule</code>, shows the shape: a header declaring <code>GetName()</code> and
+    the one hook it overrides, plus private runtime state.</p>
+    <pre><code>// Modules/ITrackModule.h
+class ITrackModule : public ModuleBase
+{
+public:
+    const char* GetName() const override { return "iTrack"; }
+    void OnRenderGUI() override;
+
+private:
+    void DrawItemList();
+    void DrawItemDetails();
+
+    char m_input[128] = { 0 };   // transient UI state only — never settings
+    std::string m_selected;
+};</code></pre>
+
+    <h2>Adding a new window</h2>
+    <ol>
+      <li><strong>Create</strong> <code>Modules/MyThingModule.h/.cpp</code> subclassing <code>ModuleBase</code>;
+        return a unique key from <code>GetName()</code> (e.g. <code>"MyThing"</code>).</li>
+      <li><strong>Render</strong> in <code>OnRenderGUI</code>. Read <code>WindowConfig&amp; w = m_ctx.UI-&gt;Window(GetName());</code>,
+        bail if <code>!w.visible</code>, pass <code>&amp;w.visible</code> to <code>ImGui::Begin</code> so the X-close flips
+        visibility, and persist visibility changes immediately (see <a href="settings.html">Settings &amp; UiConfig</a>).</li>
+      <li><strong>Seed defaults</strong> for the window in <code>UiConfig::SeedDefaults</code> (visibility, flags, nums,
+        bar roles). Without a seed entry the window still works but starts with bare defaults.</li>
+      <li><strong>Register</strong> it in <code>RegisterModules()</code> (<code>MQMyUI.cpp</code>) at the position that
+        gives the render order you want.</li>
+      <li><strong>Add the files</strong> to <code>MQMyUI.vcxproj</code> and <code>.vcxproj.filters</code>.</li>
+    </ol>
+    <div class="tip">The window automatically gains a <code>/myui MyThing</code> toggle and shows up in
+    <code>/myui list</code>, because both resolve against <code>UiConfig::WindowKeys()</code> — no extra wiring.</div>
+
+    <div class="warning">A module's private members are for <em>transient</em> runtime state only (selection, scratch
+    buffers, animation timers). Anything the user should keep across relogs belongs in <code>UiConfig</code> /
+    <code>SettingsStore</code>, read live each frame — not in a member loaded once in <code>OnInit</code>.</div>
+
+    <div class="page-nav">
+      ← <a href="architecture.html">Architecture</a> |
+      Next: <a href="core-services.html">Core Services →</a>
+    </div>
+  </main>
+</body>
+</html>

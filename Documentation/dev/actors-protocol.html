@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actors &amp; Protocol — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html" class="active">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Actors &amp; Protocol</h1>
+    <p>Cross-character features (group/raid merge, XP bars, shared buffs, item tracking, remote settings, "come
+    here"/switch) ride a single MacroQuest PostOffice mailbox named <strong><code>myui</code></strong>, carrying
+    protobuf <code>MyUIEnvelope</code> messages. There are no driver/client roles — <em>every box publishes its own state
+    and reacts to commands addressed to it</em>. DanNet / EQBC are not used.</p>
+
+    <div class="diagram">box A                         mailbox "myui"                        box B
+  CharSnapshot --publish 1-4s--> [ MyUIEnvelope ] --broadcast--> OnReceive
+                                                                   |
+                                                          m_peers[server|char]
+  OnReceive <--broadcast-- [ MyUIEnvelope ] <--publish 1-4s-- CharSnapshot
+       |
+m_peers[server|char]</div>
+
+    <h2>ActorManager (<code>ActorManager.h:20</code>, <code>ActorManager.cpp</code>)</h2>
+
+    <h3>Publish (from <code>Pulse</code>, ActorManager.cpp:66)</h3>
+    <table>
+      <thead><tr><th>Payload</th><th>Interval</th><th>Builds from</th><th>Proto</th></tr></thead>
+      <tbody>
+        <tr><td>Vitals</td><td>1s (<code>kVitalsInterval</code>)</td><td><code>CharSnapshot</code></td><td><code>CharVitals</code></td></tr>
+        <tr><td>AA</td><td>2s (<code>kAAInterval</code>)</td><td><code>CharSnapshot</code> AA fields</td><td><code>AAInfo</code></td></tr>
+        <tr><td>Buffs</td><td>3s (<code>kBuffsInterval</code>)</td><td><code>RefreshBuffs</code> (every slot incl. empties)</td><td><code>BuffList</code></td></tr>
+        <tr><td>Inventory</td><td>4s (<code>kInventoryInterval</code>)</td><td>tracked-item counts</td><td><code>InventorySnapshot</code></td></tr>
+        <tr><td>Prune</td><td>5s</td><td>drops peers unseen &gt; 60s (<code>kStaleAfter</code>)</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p>Messages post with <code>addr.Mailbox = kMailbox</code> and no <code>Character</code> set, so they broadcast to
+    all boxes.</p>
+
+    <h3>Receive (<code>OnReceive</code>, ActorManager.cpp:244)</h3>
+    <p>Stores peers in <code>m_peers[PeerKey(server,char)]</code> (a <code>PeerRecord</code>), setting
+    <code>hasVitals/hasAA/hasBuffs</code> and <code>lastSeen</code>. Self messages are ignored. When a peer is first seen
+    (via <code>m_seenPeers.insert(peerKey).second</code>), a settings-request is queued via the private helper
+    <code>EnsurePeerSync(server, character, peerKey, peer)</code> (ActorManager.cpp:255) regardless of which message type
+    triggered discovery (<code>kVitals</code>, <code>kAa</code>, or <code>kBuffs</code> — previously the request was only
+    sent for vitals, so a peer whose AA or buffs arrived first was silently never synced). Inventory payloads update
+    <code>m_itemCounts[item][char]</code> and merge the shared tracked-item list. Command payloads dispatch to
+    <code>ExecuteCommand</code> when <code>to_char</code> matches self. A broadcast <code>ReloadSettings</code> command
+    only invokes the reload handler when this box's <code>server|char</code> appears in the command's <code>arg_str</code>
+    (checked via <code>ReloadTargetsSelf</code>) — it does not reload on every broadcast.</p>
+
+    <h3>Reload path</h3>
+    <p><code>SetReloadHandler</code> is wired in <code>InitializePlugin</code> to
+    <code>[]{ s_settings.InvalidateCache(); s_ui.Load(); }</code>. A setting copied/edited on another box only takes
+    effect because <code>InvalidateCache()</code> clears that box's stale cache <em>before</em> <code>Load()</code>
+    re-reads. <code>BroadcastReload(targetList)</code> posts one <code>ReloadSettings</code> command with
+    <code>arg_str = "srv|char;srv|char"</code>; each receiver runs <code>ReloadTargetsSelf</code> and reloads only if its
+    own name matches.</p>
+    <div class="warning"><strong>Cross-box cache pitfall:</strong> <code>SettingsStore::SetRaw(server,char,…)</code> only
+    invalidates the cache when <code>(server,char)</code> is the <em>current</em> context. Writing another box's rows
+    leaves <em>its</em> cache stale — which is exactly why the reload handler must call <code>InvalidateCache()</code>
+    before <code>Load()</code>.</div>
+
+    <h2>Settings sync (<code>SettingsSync</code> payload)</h2>
+    <p>Beyond the coarse <code>ReloadSettings</code> command, MQMyUI carries actual setting <em>rows</em> over the wire so a
+    change made on one box can be applied to another's DB. This rides the same mailbox as a <code>SettingsSync</code>
+    envelope (<code>settings=6</code>). Three send helpers, all on <code>ActorManager</code>:</p>
+    <table>
+      <thead><tr><th>Helper</th><th>Kind</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>SendSettingsPush(srv, char, rows, full)</code></td><td><code>PUSH</code> (directed)</td><td>"You are the authoritative owner — apply these rows to <em>your own</em> DB and reply." (ActorManager.cpp:633)</td></tr>
+        <tr><td><code>BroadcastSettingsPush(rows)</code></td><td><code>PUSH</code> (undirected, <code>to_char</code> empty)</td><td>"Mirror me" — every receiver writes the sender's rows into its local mirror copy. (ActorManager.cpp:660)</td></tr>
+        <tr><td><code>SendSettingsRequest(srv, char)</code></td><td><code>REQUEST</code></td><td>"Send me your full snapshot." Target replies with a <code>REPLY</code> built from <code>GetAllSettings</code>. (ActorManager.cpp:682)</td></tr>
+      </tbody>
+    </table>
+    <p>Receive-side dispatch lives in <code>OnReceive</code> (ActorManager.cpp:453) and routes through two handlers wired in
+    <code>InitializePlugin</code> (MQMyUI.cpp:280):</p>
+    <ul>
+      <li><strong>Apply handler</strong> (<code>SetSettingsApplyHandler</code>) — for a <em>directed</em> PUSH where we are the
+      target: <code>s_settings.ApplySettingRows(...)</code> writes the rows authoritatively, then
+      <code>InvalidateCache()</code> + <code>s_ui.Load()</code> make them take effect live; it returns the resulting current
+      values, which are sent back as a <code>REPLY</code>.</li>
+      <li><strong>Mirror handler</strong> (<code>SetSettingsMirrorHandler</code>) — for an <em>undirected</em> PUSH ("mirror me")
+      or a <code>REPLY</code>: writes another character's authoritative values into our local mirror DB
+      (<code>ApplySettingRows</code>, no UI reload). Same-store senders are skipped (the shared DB file is already current,
+      <code>IsSameStore</code>).</li>
+      <li>A <code>REQUEST</code> addressed to us is answered with a full <code>REPLY</code> from
+      <code>SettingsStore::GetAllSettings</code>.</li>
+    </ul>
+    <p>Callers: <code>SettingsModule</code> sends a directed push to a chosen peer or a broadcast on demand
+    (SettingsModule.cpp:353/369); <code>CopyModule</code> sends a directed push when copying a window's settings to another
+    box (CopyModule.cpp:164). Each <code>SettingRow</code> is <code>{module, name, type, value}</code> — the same shape as a
+    row in the <code>settings</code> table.</p>
+
+    <h2>Command actions (<code>ExecuteCommand</code>, ActorManager.cpp:422)</h2>
+    <table>
+      <thead><tr><th>Action</th><th>Arg</th><th>Local effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>Switch</code></td><td>—</td><td><code>/foreground</code></td></tr>
+        <tr><td><code>ComeTo</code></td><td>dist</td><td><code>/nav spawn ="&lt;from&gt;" dist=&lt;arg&gt; lineofsight=on</code></td></tr>
+        <tr><td><code>ComeLoc</code></td><td>zone_id; arg_str = "loc x y z"</td><td><code>/nav locxyz &lt;x&gt; &lt;y&gt; &lt;z&gt;</code> — only runs when this box's zone matches <code>arg</code></td></tr>
+        <tr><td><code>FollowMe</code></td><td>—</td><td><code>/nav stop</code> then <code>/afollow spawn &lt;id&gt;</code> using sender's spawn ID</td></tr>
+        <tr><td><code>FollowStop</code></td><td>—</td><td><code>/afollow off</code></td></tr>
+        <tr><td><code>MakeLeader</code></td><td>—</td><td><code>/makeleader &lt;from&gt;</code></td></tr>
+        <tr><td><code>Less</code> / <code>More</code></td><td>—</td><td><code>/notify AAWindow AAW_LessExpButton|AAW_MoreExpButton leftmouseup</code></td></tr>
+        <tr><td><code>Min</code> / <code>Mid</code> / <code>Max</code></td><td>—</td><td><code>/alt on 0</code> / <code>50</code> / <code>100</code></td></tr>
+        <tr><td><code>RemoveBuff</code></td><td>name</td><td><code>/removebuff "&lt;arg_str&gt;"</code></td></tr>
+        <tr><td><code>BlockBuff</code></td><td>spellId</td><td><code>/blockspell add me &lt;arg&gt;</code></td></tr>
+        <tr><td><code>ReloadSettings</code></td><td>targets</td><td>invoke reload handler if self is targeted</td></tr>
+      </tbody>
+    </table>
+    <p><code>SendCommand(server, char, action, arg=0, argStr="")</code> addresses one peer; the XP Bars allocation
+    buttons and Group/iTrack context actions go through it.</p>
+    <div class="note">AA's own Train/Hotkey do <strong>not</strong> use actors — they drive the local native AA window
+    directly. Actors are only for acting on <em>other</em> boxes.</div>
+
+    <h2>Protobuf schema (<code>Proto\myui.proto</code>)</h2>
+    <p>Regenerates <code>myui.pb.{h,cc}</code> on build. The envelope is a oneof so a single mailbox carries every
+    payload type.</p>
+
+    <h3><code>MyUIEnvelope</code> (oneof payload)</h3>
+    <pre><code>vitals=1 (CharVitals)  ·  aa=2 (AAInfo)     ·  buffs=3 (BuffList)
+command=4 (Command)    ·  inventory=5 (InventorySnapshot)  ·  settings=6 (SettingsSync)</code></pre>
+
+    <h3>Message fields</h3>
+    <table>
+      <thead><tr><th>Message</th><th>Fields</th></tr></thead>
+      <tbody>
+        <tr><td><code>CharVitals</code></td><td><code>server=1, character=2, class_short=3, level=4, cur_hp=5, max_hp=6, cur_mana=7, max_mana=8, cur_end=9, max_end=10, zone_id=11, zone_name=12, pct_aggro=13, stand_state=14, velocity=15, pet_id=16, pet_pct_hp=17, pet_name=18, group_leader=19, role_mask=20, storage_id=21, host=22, race=23</code></td></tr>
+        <tr><td><code>AAInfo</code></td><td><code>server=1, character=2, level=3, aa_spent=4, aa_total=5, aa_available=6, pct_aa_exp=7, pct_exp=8, pct_air=9, state=10, allocation=11, group_leader=12</code></td></tr>
+        <tr><td><code>BuffEntry</code></td><td><code>name=1, spell_id=2, duration_ms=3, icon_id=4, beneficial=5, caster=6, slot=7, is_empty=8</code></td></tr>
+        <tr><td><code>BuffList</code></td><td><code>server=1, character=2, repeated BuffEntry buffs=3</code></td></tr>
+        <tr><td><code>Command</code></td><td><code>from_server=1, from_char=2, to_char=3, action=4, arg=5, arg_str=6</code></td></tr>
+        <tr><td><code>InventoryItemCount</code></td><td><code>name=1, inventory=2, bank=3</code></td></tr>
+        <tr><td><code>InventorySnapshot</code></td><td><code>server=1, character=2, repeated InventoryItemCount items=3, repeated string tracking=4, string remove=5</code></td></tr>
+        <tr><td><code>SettingRow</code></td><td><code>module=1, name=2, type=3, value=4</code></td></tr>
+        <tr><td><code>SettingsSync</code></td><td><code>from_server=1, from_char=2, to_server=3, to_char=4, Kind kind=5 (PUSH=0, REPLY=1, REQUEST=2), repeated SettingRow rows=6, bool full=7</code></td></tr>
+      </tbody>
+    </table>
+    <p><code>slot</code> + <code>is_empty</code> on <code>BuffEntry</code> mirror empty buff slots across boxes so the
+    group buff view lines up.</p>
+
+    <div class="note"><strong>Names on the wire are always real.</strong> <code>character</code> carries the real name (peers
+    use it for commands and selection keys). <code>race=23</code> was added so the <strong>anonymizer is purely local</strong>:
+    each client builds the peer's <code>RACE_CLASS_LEVEL</code> code from the real race/class/level on receive
+    (<code>PeerRecord.maskedName</code>). Nothing masked is ever broadcast. See <a href="types.html#anonymizer">Types &amp; Constants → Anonymizer</a>.</div>
+
+    <div class="warning"><strong>Linking:</strong> as an external plugin, MQMyUI must explicitly link
+    <code>libprotobuf(d).lib</code> + <code>utf8_range</code>/<code>utf8_validity</code> + all <code>absl_*.lib</code>
+    (x86-windows-static) — MQ2Main exports none of it. See <a href="building.html">Building</a>.</div>
+
+    <div class="page-nav">
+      ← <a href="bars-widgets.html">Bars &amp; Widgets</a> |
+      Next: <a href="settings.html">Settings &amp; UiConfig →</a>
+    </div>
+  </main>
+</body>
+</html>

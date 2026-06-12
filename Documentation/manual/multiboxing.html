@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Boxing — MQMyUI User Manual</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI User Manual</h2>
+    <ul>
+      <li><a href="index.html">Welcome</a></li>
+      <li><a href="getting-started.html">Getting Started</a></li>
+      <li><a href="windows.html">Your Windows</a></li>
+      <li><a href="inventory.html">Inventory &amp; Items</a></li>
+      <li><a href="multiboxing.html" class="active">Multi-Boxing</a></li>
+      <li><a href="customizing.html">Customizing &amp; Themes</a></li>
+      <li><a href="controls.html">Commands &amp; Controls</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Multi-Boxing</h1>
+    <p>If you run several characters at once, MQMyUI links them together. Each of your boxed characters quietly shares its
+    health, mana, buffs, experience, and tracked items with the others, so a single window can show your whole team — and
+    let you act on any of them. There's nothing to configure: as long as MQMyUI is loaded on each character, they find
+    each other. When a character logs in, it automatically pulls settings from the others so your windows and customizations
+    mirror reliably across your entire team.</p>
+
+    <div class="note">This sharing happens between your own running characters on the same setup. It doesn't require any
+    other add-on, and it only involves your own team.</div>
+
+    <h2>The Group window</h2>
+    <p>The Group window shows your party's health, mana, endurance, and pets. Its standout feature is that it includes
+    characters who are <strong>out of your zone</strong>, as long as they're your own boxes — so you can keep an eye on a
+    character parked elsewhere. It also shows:</p>
+    <ul>
+      <li><strong>Role and line-of-sight icons</strong> — who's the tank, who's the assist, who can see the target.</li>
+      <li><strong>Distance and movement</strong> — how far away each member is and whether they're moving or sitting.</li>
+      <li><strong>Click to target</strong> — click a member to make them your target.</li>
+    </ul>
+
+    <!-- Screenshot suggestion: the Group window showing in-zone and out-of-zone members with role icons -->
+
+    <h2>The Raid window</h2>
+    <p>For larger groups, the Raid window lays out your whole raid as a compact grid. It keeps its own size and styling
+    separate from the Group window, so you can tune each for its job.</p>
+
+    <h2>XP Bars and AA allocation</h2>
+    <p>The XP Bars window shows a tile for each character with their experience, AA experience, and breath/air. Each tile
+    also has quick buttons to control how that character splits experience into AA:</p>
+    <table>
+      <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Min</td><td>Send no experience to AA</td></tr>
+        <tr><td>Less / More</td><td>Nudge the AA share down or up by one step</td></tr>
+        <tr><td>Mid</td><td>Send about half of experience to AA</td></tr>
+        <tr><td>Max</td><td>Send all experience to AA</td></tr>
+      </tbody>
+    </table>
+    <p>Because these buttons reach across to each character, you can set everyone's AA split from one window without
+    switching screens.</p>
+
+    <h2>Acting on another character</h2>
+    <p>Right-click a character in the group, raid, or other shared windows for a menu of actions that run on
+    <em>that</em> character:</p>
+    <table>
+      <thead><tr><th>Action</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Come to me</td><td>Has that character navigate to you</td></tr>
+        <tr><td>Switch to</td><td>Brings that character's game window to the foreground</td></tr>
+        <tr><td>Make leader</td><td>Passes group leadership</td></tr>
+        <tr><td>Remove buff</td><td>Removes a named buff from that character</td></tr>
+        <tr><td>Block buff</td><td>Stops a spell from landing on that character again</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Shared buffs</h2>
+    <p>The Buffs window can show your group members' buffs, not just your own, so you can confirm everyone has the buffs
+    they should — useful before a fight or after a wipe-recovery rebuff.</p>
+
+    <h2>Shared item tracking</h2>
+    <p>The iTrack window's counts are shared across your team: add an item to the tracked list once and every character
+    reports how many they're carrying. See <a href="inventory.html">Inventory &amp; Items</a>.</p>
+
+    <h2>Copying a setup to another character</h2>
+    <p>Once you've styled one character the way you like, you don't have to redo it on the others. The
+    <strong>Copy</strong> tool (opened from the Settings window) copies a setup from one character onto another, and the
+    receiving character updates immediately. See <a href="customizing.html">Customizing &amp; Themes</a>.</p>
+
+    <h2>Streaming &amp; privacy (anonymizer)</h2>
+    <p>If you record or stream, turning on <strong>MacroQuest's anonymize</strong> hides every character name in MyUI —
+    player, group, raid, target, buffs, XP/AA, inventory and item-tracking — replacing each with a safe code built from
+    that character's race, class and level (for example <code>HIE_WIZ_65</code>). These codes are never valid character
+    names, so a viewer can't copy a name off your video to harass or mass-report the player. <strong>Your own character
+    still shows as "Me"</strong> so you can always pick yourself out at a glance. Real, in-game targets that aren't players
+    (mobs, NPCs) keep their names. Turn it off again and real names return instantly.</p>
+
+    <div class="page-nav">
+      ← <a href="inventory.html">Inventory &amp; Items</a> |
+      Next: <a href="customizing.html">Customizing &amp; Themes →</a>
+    </div>
+  </main>
+</body>
+</html>

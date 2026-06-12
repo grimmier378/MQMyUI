@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html" class="active">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-06</em></p>
+    <h1>Building</h1>
+    <p>MQMyUI is built inside the MacroQuest Visual Studio solution as an external plugin. There is <strong>no separate
+    build system, linter, or test harness</strong> — you build the DLL in VS and test it manually in-game with
+    <code>/plugin MQMyUI</code>.</p>
+
+    <h2>Toolchain</h2>
+    <ul>
+      <li><strong>Visual Studio</strong> (the MacroQuest solution), C++ standard matching the MQ tree.</li>
+      <li>Project files: <code>MQMyUI.vcxproj</code> + <code>MQMyUI.vcxproj.filters</code>. New <code>.cpp</code>/<code>.h</code>
+        files must be added to both.</li>
+      <li>Target: a plugin DLL loaded into MacroQuest at runtime.</li>
+    </ul>
+
+    <h2>Dependencies</h2>
+    <table>
+      <thead><tr><th>Dependency</th><th>Why</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>sqlite3.lib</code></td><td>Settings + themes DB</td><td>Already present in the MQ tree</td></tr>
+        <tr><td>protobuf + abseil</td><td>Actor message (de)serialization</td><td>Must be linked <strong>explicitly</strong> — see below</td></tr>
+        <tr><td>MQ <code>ProtocolBuffer</code> MSBuild item</td><td>Compiles <code>myui.proto</code> → <code>myui.pb.{h,cc}</code></td><td>Regenerates on build when the <code>.proto</code> changes</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Protobuf / abseil linking</h2>
+    <p>Because MQMyUI is an <em>external</em> plugin, MQ2Main exports none of the protobuf runtime. The project must
+    explicitly link all of it (x86-windows-static):</p>
+    <pre><code>libprotobuf(d).lib
+utf8_range.lib
+utf8_validity.lib
+absl_*.lib            (the full abseil set)</code></pre>
+    <div class="warning">Missing or partial abseil linkage produces a wall of unresolved-external linker errors at the
+    very end of an otherwise clean build. If a build fails only at link with <code>absl::</code> symbols, the abseil lib
+    set is incomplete — not a code problem.</div>
+
+    <h2>The proto build step</h2>
+    <p><code>Proto\myui.proto</code> is compiled by MQ's <code>ProtocolBuffer</code> MSBuild item into
+    <code>Proto\myui.pb.h</code> and <code>Proto\myui.pb.cc</code>, which are committed alongside the schema. Editing the
+    <code>.proto</code> regenerates them on the next build. See <a href="actors-protocol.html">Actors &amp; Protocol</a>
+    for the message layout.</p>
+
+    <h2>Common compile-time gotchas</h2>
+    <p>These are MQ/eqlib-specific traps that show up while editing the plugin:</p>
+    <ul>
+      <li>Translation units that dereference a <code>ForeignPointer</code> global (<code>pLocalPC</code>,
+        <code>pAAWnd</code>, <code>pAltAdvManager</code>, <code>pDBStr</code>, <code>pCastSpellWnd</code>,
+        <code>pItemDisplayManager</code>, <code>pSpellDisplayManager</code>) need <code>#include &lt;cassert&gt;</code>.</li>
+      <li><code>VePointer</code> exposes only an explicit <code>operator bool</code> — test it with
+        <code>if</code>/ternary/<code>static_cast&lt;bool&gt;</code>, never <code>!= nullptr</code>.</li>
+      <li>The item-spell enum is <code>ItemSpellTypes</code> (alias <code>eItemSpellType</code>), not
+        <code>ItemSpellType</code>.</li>
+      <li><code>mq::join</code> does not exist in this MQ install (only <code>split</code> in
+        <code>mq/base/String.h</code>). Prefer the MQ string helpers there over hand-rolling.</li>
+      <li>Headers not pulled in by <code>&lt;mq/Plugin.h&gt;</code> must be included explicitly —
+        <code>mq/imgui/Widgets.h</code>, <code>imgui/fonts/IconsFontAwesome.h</code>, <code>mq/base/String.h</code>.</li>
+    </ul>
+    <p>See <a href="types.html">Types &amp; Constants</a> for the full gotcha list.</p>
+
+    <h2>Running</h2>
+    <pre><code>/plugin MQMyUI        load the plugin
+/myui                 command help
+/myui list            list windows + visibility
+/myui &lt;window&gt;         toggle a window</code></pre>
+    <p>The DB is created on first in-game pulse at <code>{gPathConfig}/MQMyUI/MQMyUI.db</code>. On a fresh character only
+    the HUD and Toolbar windows appear; everything else is summoned from the Toolbar or <code>/myui</code>.</p>
+
+    <h2>Live vs EMU client compatibility</h2>
+    <p>The plugin compiles against <strong>both</strong> eqlib branches. The branch checked out in <code>src/eqlib</code>
+    selects the client and bitness: <code>emu-rof2</code> → <strong>Win32</strong> (defines <code>EMULATOR</code> /
+    <code>IS_EMU_CLIENT=1</code>); <code>live</code> → <strong>x64</strong> (defines <code>LIVE</code> /
+    <code>IS_EMU_CLIENT=0</code>). The vcxproj already has all four configs and imports the platform-aware
+    <code>Common.props</code>, so no project edits are needed to build x64 — just build with
+    <code>-p:Platform=x64</code>.</p>
+    <div class="note">There is roughly 12 years of client divergence between RoF2 (emu) and Live. Gate divergent code with
+    <code>eqlib/BuildType.h</code> macros (<code>IS_EMU_CLIENT</code>, <code>HAS_*</code>). <strong>Prefer a
+    <code>Get*()</code> accessor present on both branches over an <code>#ifdef</code></strong>; only guard a field/feature
+    that exists on just one side.</div>
+    <table>
+      <thead><tr><th>Divergence</th><th>Where</th><th>Handling</th></tr></thead>
+      <tbody>
+        <tr><td><code>ItemDefinition</code> combat-mod + heroic-resist fields (<code>DamShield</code>, <code>Avoidance</code>,
+          <code>Accuracy</code>, <code>HeroicSv*</code>, …) removed on live</td><td><code>InventoryData.cpp</code></td>
+          <td>Use <code>ItemBase::Get*()</code> accessors (emu = real value, live = 0) via the
+          <code>AugmentedStatFn</code> / <code>augTotalFn</code> / <code>candFn</code> / <code>wornFn</code> helpers
+          (member-fn-pointer <code>int (ItemBase::*)() const</code>). No <code>#ifdef</code>.</td></tr>
+        <tr><td><code>RaidMember::IsInZone</code> — emu-only field</td><td><code>CharData.cpp</code></td>
+          <td><code>#if IS_EMU_CLIENT</code>; live infers presence from <code>GetSpawnByName</code>.</td></tr>
+        <tr><td><code>PlayerClient::HPCurrent</code> — <code>int32</code>→<code>int64</code> on live</td>
+          <td><code>CharData.cpp</code>, <code>PlayerModule.cpp</code></td>
+          <td><code>static_cast&lt;int&gt;()</code> at the percent assignments.</td></tr>
+        <tr><td>Portable — no change</td><td>—</td>
+          <td><code>Exp</code>/<code>AAExp</code> (live <code>__declspec(property)</code>), <code>EXP_TO_PCT_RATIO</code>
+          (branch-selected), the full <code>RefreshStats</code> stat block, spell/buff/group/AA paths,
+          <code>SpellInfo</code> (uses <code>ShowSpellSlotInfo</code>).</td></tr>
+        <tr><td>Runtime divergence (not <code>#ifdef</code>-able)</td><td><code>CharData.cpp</code> scrapes</td>
+          <td>Live EQUI XML renames many <code>IWS_*</code> / some <code>AAW_*</code> controls, so stat-cap / AA scrapes
+          degrade gracefully (already null-checked) on live. Verify against the live UI XML when porting.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-nav">
+      ← <a href="types.html">Types &amp; Constants</a>
+    </div>
+  </main>
+</body>
+</html>

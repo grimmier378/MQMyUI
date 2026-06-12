@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core Services — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html" class="active">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Core Services</h1>
+    <p>The <code>Core\</code> directory holds the framework: shared service classes (injected into every module via
+    <code>ModuleContext</code>) plus stateless <code>myui::</code> free-function helpers. No <code>Core\</code> file
+    renders a top-level window.</p>
+
+    <h2>Service classes (in <code>ModuleContext</code>)</h2>
+
+    <h3>UiConfig (<code>UiConfig.h:66</code>)</h3>
+    <p>Per-window settings, read live each frame. The typed layer over <code>SettingsStore</code>; see
+    <a href="settings.html">Settings &amp; UiConfig</a> for the persistence policy.</p>
+    <table>
+      <thead><tr><th>Method</th><th>File:Line</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>Window(name)</code></td><td>UiConfig.h:80</td><td>Get/create a <code>WindowConfig</code></td></tr>
+        <tr><td><code>Bar(window, role)</code></td><td>UiConfig.h:81</td><td>Get/create a <code>BarStyle</code></td></tr>
+        <tr><td><code>Flag/SetFlag</code></td><td>UiConfig.h:83-84</td><td>Bool field (default-seeding getter)</td></tr>
+        <tr><td><code>Num/SetNum</code></td><td>UiConfig.h:85-86</td><td>Float field</td></tr>
+        <tr><td><code>Str/SetStr</code></td><td>UiConfig.h:87-88</td><td>String field</td></tr>
+        <tr><td><code>Color/SetColor</code></td><td>UiConfig.h:89-90</td><td>MQColor field (string-backed via ColorToStr/StrToColor in strs map)</td></tr>
+        <tr><td><code>ToggleVisible(name)</code></td><td>UiConfig.h:92</td><td>Flip visibility + persist</td></tr>
+        <tr><td><code>WindowKeys()</code></td><td>UiConfig.h:93</td><td>All window names (load order)</td></tr>
+        <tr><td><code>Load/Save</code></td><td>UiConfig.cpp:404/494</td><td>Seed+read from DB / batch write</td></tr>
+        <tr><td><code>LoadForCharacter/SaveForCharacter</code></td><td>UiConfig.h:72-73</td><td>Operate on another char's rows (remote edit)</td></tr>
+        <tr><td><code>RequestSave/RequestReload/ProcessPending</code></td><td>UiConfig.h:74-76</td><td>Deferred save/reload (drained in <code>OnPulse</code>)</td></tr>
+        <tr><td><code>PersistVisibility/PersistField</code></td><td>UiConfig.h:77-78</td><td>Immediate single-field write-through</td></tr>
+      </tbody>
+    </table>
+
+    <h3>SettingsStore (<code>SettingsStore.h:36</code>)</h3>
+    <p>SQLite settings + themes + spell-sets. <code>Open/Close/IsOpen</code>, <code>SetContext/Server/Character</code>, typed
+    <code>Get/Set{String,Number,Bool}</code>, <code>GetGlobal/SetGlobal</code> (server=''/char='' rows),
+    <code>Flush</code>, <code>InvalidateCache</code>, <code>Begin/CommitTransaction</code>,
+    <code>CopyCharacterSettings</code>, <code>GetCharacterList</code>, <code>GetAllSettings</code>,
+    <code>SetRaw</code> (cross-context write), <code>DeleteSetting</code>, theme ops
+    <code>SaveTheme/LoadTheme/GetThemeNames/DeleteTheme</code>, and spell-set ops
+    <code>SaveSpellSet/LoadSpellSet/GetSpellSetNames/DeleteSpellSet</code> (manage per-character gem loadouts in the
+    <code>spell_sets</code> table; mirror the theme API). <code>SpellSetRow</code> (<code>:30</code>) holds
+    <code>{gemSlot, spellId}</code> per gem assignment (spellId 0 = clear). See <a href="settings.html">Settings &amp; UiConfig</a>.</p>
+
+    <h3>ThemeManager (<code>ThemeManager.h:44</code>)</h3>
+    <p>One global ImGui theme. <code>Init</code>, <code>LoadAll</code>, <code>GetTheme/GetThemeNames</code>,
+    <code>DefaultStyle</code>, <code>ApplyTheme</code> → saved style / static <code>ResetTheme</code>,
+    <code>SaveTheme/DeleteTheme</code>, <code>SetActiveTheme/LoadActiveTheme/ActiveName</code>, and the editor seam
+    <code>SetPreview/ClearPreview/Resolved</code>. The <code>Theme</code> struct (<code>ThemeManager.h:11</code>) holds
+    full ImGui colors + rounding/border/spacing/padding.</p>
+
+    <h3>CharData (<code>CharData.h:125</code>)</h3>
+    <p>Local snapshot. <code>Refresh</code> (<code>CharData.cpp:81</code>), <code>Get</code> → <code>CharSnapshot</code>,
+    <code>IsIngame</code>, <code>RefreshStats/Stats()</code> → <code>StatsSnapshot</code> (inventory stats path),
+    <code>RefreshBuffs/RefreshSongs</code> + <code>Buffs()/Songs()</code>,
+    <code>Group()/Raid()/InRaid()</code>. Structs: <code>CharSnapshot</code> (<code>:19</code>),
+    <code>StatsSnapshot</code> (<code>:68</code>), <code>StatVal</code> (<code>:61</code>),
+    <code>GroupMemberSnap</code> (<code>:101</code>), <code>BuffInfo</code> (<code>:7</code>). See
+    <a href="types.html">Types &amp; Constants</a>.</p>
+
+    <h3>ActorManager (<code>ActorManager.h:21</code>)</h3>
+    <p>Multi-character sync. <code>Init/Shutdown/Pulse/IsValid</code>, <code>SendCommand</code>,
+    <code>BroadcastReload</code>, <code>SetReloadHandler</code>, settings sync
+    <code>SendSettingsPush/BroadcastSettingsPush/SendSettingsRequest</code> +
+    <code>SetSettingsApplyHandler/SetSettingsMirrorHandler</code>, <code>Peers()/FindPeerByName</code>, item-track
+    <code>TrackedItems/AddTrackedItem/RemoveTrackedItem/CountsForItem</code>, <code>SwitchTo</code>. See
+    <a href="actors-protocol.html">Actors &amp; Protocol</a>.</p>
+
+    <h3>ChatBridge (<code>ChatBridge.h:5</code>)</h3>
+    <p><code>DetectMyChat</code>, <code>SetMyChatPresent/IsMyChatPresent</code>, <code>Print</code> — routes output
+    through MQMyChat (<code>${MyChat.Send[...]}</code>) when present, else <code>WriteChatf</code>.</p>
+
+    <h3>IconHelper (<code>IconHelper.h:8</code>)</h3>
+    <p>Texture animations. <code>Shutdown</code>; cached getters
+    <code>SpellIcons/GemBackground/GemHolder/SpellBook/ItemIcon</code>; <code>DrawSpellIcon</code> (by spell ID),
+    <code>DrawEmptySlot</code> (numbered placeholder + tooltip), <code>DrawStatusIcon</code> (named animation + tooltip).</p>
+
+    <h2>Stateless <code>myui::</code> helpers</h2>
+
+    <h3>BarEngine (<code>BarEngine.h</code>)</h3>
+    <p><code>myui::DrawStyledBar(id, pct, BarStyle, cur=-1, max=-1)</code> — ports the Lua bar engine: tween,
+    multicolor gradient fill (4-corner colors + coverage-mask rounding), background, ticks, shimmer, glow, border,
+    centered text. Also exposes <code>DrawStyledBarRect(...)</code> for an explicit screen rect. Consumes a
+    <code>BarStyle</code>. See <a href="bars-widgets.html">Bars &amp; Widgets</a>.</p>
+
+    <h3>Widgets (<code>Widgets.h</code>)</h3>
+    <p>A full imanim-driven, theme-colored widget set (shared verbatim by the sibling MQMy* plugins):
+    <code>DrawToggle</code>, <code>PillTabBar</code>/<code>PillSelectable</code>,
+    <code>BeginAnimatedHeader</code>/<code>BeginAnimatedTreeNode</code>, <code>StyledSliderFloat/Int</code>,
+    <code>StyledCombo</code>/<code>StyledBeginCombo</code>, <code>StyledCheckbox</code>,
+    <code>StyledButton</code>/<code>StyledSmallButton</code> (drop-in for <code>ImGui::Button</code>),
+    <code>OpenInputPopup</code>/<code>InputPopup</code>, <code>StyledEditField</code>, and <code>HelpMarker</code>.
+    Reusable primitives: <code>SoftGlowRoundRect</code>, <code>HoverIntensity</code>, <code>PressScale</code>,
+    <code>DrawHoverShimmer</code>, <code>Soften</code>. <code>SetAnimationsEnabled(bool)</code> is the global motion
+    switch. See <a href="bars-widgets.html">Bars &amp; Widgets</a>.</p>
+
+    <h3>Actions (<code>Actions.h:6</code>)</h3>
+    <p>Deferred game automation, serviced by <code>PulseActions()</code> each pulse:
+    <code>GiveItemTo(spawnId)</code>, <code>SwapToWornSlot(...)</code>, <code>PickupCoin(...)</code>,
+    <code>StartBulkTrade(...)</code>, <code>KickFromGroup(spawnId, name)</code>, and
+    <code>StartSpellSetLoad(steps)</code>/<code>SpellSetLoadActive()</code>. State machines drive <code>/itemnotify</code>,
+    <code>/nav</code>, native window clicks, and spell-gem loading — so UI code can request an action and let it complete
+    over several pulses. <code>KickFromGroup</code> defers target-setting + <code>/disband</code> until the target matches
+    the intended member. <code>StartSpellSetLoad</code> loads a gem loadout via <code>/memspell</code> per slot with
+    per-slot waits + timeout-skip, clears non-set slots, then stands; consumes a vector of <code>SpellSetStep</code>
+    (<code>:15</code>, <code>{slot, spellId}</code>).</p>
+
+    <h3>InventoryData (<code>InventoryData.h</code>)</h3>
+    <p>Live inventory reader/renderer. Frame-local readers
+    <code>WornItem/BagItem/BagContents/GetBagContents/GetBank/GetCompatibleItems/CursorItem/GetFreeSlots/FindItemById/FindBagItemByName</code>;
+    predicates <code>IsClicky/IsAugment/ItemFitsSlot</code>; counts <code>CountInventory/CountBank</code>; commands
+    <code>PickupCommand/PickupOrDrop/UseItem</code>; rendering
+    <code>DrawItemIcon/RenderTooltip/RenderCompareTooltip/RenderCompareSideBySide/PopInfoWindow/DrawPoppedInfoWindows/DrawCurrencyRow/DrawCoinQuantityWindow/DrawDropZones</code>;
+    deferred <code>PulseAugInsert</code> (drives augment-slot state machine each pulse).
+    <code>ItemRef</code> (<code>:21</code>) wraps an item pointer + location. The item-info tooltip / popped window,
+    augment slotting, and spell-effect rendering all live here.</p>
+
+    <h3>AAData (<code>AAData.h:25</code>)</h3>
+    <p>Alternate-advancement reader. <code>Update</code> (rebuild on AA-points change), <code>Rebuild</code> (walk
+    <code>pAltAdvManager-&gt;abilities</code>), <code>Available/Spent/Total</code>, <code>CategoryRanks/AllRanks</code>,
+    <code>ByType/Find/All</code>, <code>Description</code> (+ resolved spell effect text), <code>Ready</code>.
+    <code>AAEntry</code> (<code>:6</code>) is one consolidated entry per AA GroupID.</p>
+
+    <h3>SpellInfo (<code>SpellInfo.h</code>)</h3>
+    <p><code>myui::SpellEffectText(spellId)</code> returns value-resolved per-slot effect text via MQ's exported
+    <code>ShowSpellSlotInfo</code> (the only source that fills the DB's <code>#1</code>/<code>%z</code> tokens);
+    <code>myui::RenderSpellEffects(spellId)</code> draws a separator + wrapped soft-blue effect block inside any
+    tooltip/window. Shared by item efx, AA descriptions, the spell gems, and the ability picker.</p>
+
+    <h3>HotkeyCombo (<code>HotkeyCombo.h</code>)</h3>
+    <p><code>myui::ToggleCombo</code> (key + 3 mods + mouse); <code>ReadCombo(WindowConfig)</code> and
+    <code>CheckToggleCombo</code> (ImGui key + mods, skips while typing) drive per-window show/hide hotkeys.</p>
+
+    <h3>ColorUtil (<code>ColorUtil.h</code>) / UiHelpers (<code>UiHelpers.h</code>)</h3>
+    <p><code>myui::FlashTint</code> (breathing white tint below a threshold), <code>CalculateColor</code> (2/3-point
+    gradient), legacy <code>DrawBar/DrawBarPct/DrawVertBar</code>; <code>TrimName</code>, <code>ColumnsForWidth</code>
+    (grid column count for an available width); <code>RaceShort(raceId)</code> + <code>MaskedCode(raceId, classShort, level)</code> —
+    build the anonymized <code>RACE_CLASS_LEVEL</code> name code (e.g. <code>HIE_WIZ_65</code>) used when
+    <code>mq::IsAnonymized()</code> is active (see <a href="types.html#anonymizer">Anonymizer</a>);
+    <code>SpawnPctHP(const PlayerClient* sp)</code> (<code>UiHelpers.h:169</code>) returns <code>HPMax&gt;0 ? HPCurrent*100/HPMax : HPCurrent</code>.</p>
+
+    <h3>PeerData (<code>PeerData.h</code>)</h3>
+    <p><code>myui::PeerRecord</code> (remote snapshot), <code>myui::ItemCount</code>, <code>GroupRoleBit</code> flags,
+    <code>PeerKey(server, char)</code> key builder. See <a href="types.html">Types &amp; Constants</a>.</p>
+
+    <h3>Buff icon renderer (<code>BuffRow.h/.cpp</code>)</h3>
+    <p><code>myui::DrawBuffIconLineup(const char* idKey, const std::vector&lt;BuffInfo&gt;&amp; buffs,
+    const BuffIconLineupOpts&amp; opts, IconHelper* icons)</code> (<code>BuffRow.cpp:12</code>) draws a line-wrapping row of buff/song
+    icons. Shared by the Buffs window, Songs window, and Player module's target buffs. The caller owns the surrounding table/row/name
+    layout; this renders only the icon lineup at the cursor. Each icon shows an empty-slot placeholder if empty, flash tint on
+    expiry, border color (beneficial/detrimental/self-cast), and on-hover tooltip with caster and duration. Optional
+    <code>contextMenu</code> callback in <code>opts</code> fires on right-click. See <code>BuffIconLineupOpts</code> (<code>BuffRow.h:13</code>)
+    in <a href="types.html">Types &amp; Constants</a>.</p>
+
+    <div class="page-nav">
+      ← <a href="module-system.html">Module System</a> |
+      Next: <a href="modules.html">Window Modules →</a>
+    </div>
+  </main>
+</body>
+</html>

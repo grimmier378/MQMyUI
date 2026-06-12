@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings &amp; UiConfig — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html" class="active">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Settings &amp; UiConfig</h1>
+    <p>All persistence lives in one SQLite DB at <code>{gPathConfig}/MQMyUI/MQMyUI.db</code>. <code>SettingsStore</code>
+    is the low-level key/value + theme store; <code>UiConfig</code> is the typed per-window layer that modules read
+    <em>live</em> each frame. The split matters: <code>SettingsStore</code> knows about rows and SQL,
+    <code>UiConfig</code> knows about windows, bars, and the save/visibility policy.</p>
+
+    <h2>SettingsStore (<code>SettingsStore.cpp</code>)</h2>
+
+    <h3>Schema (<code>InitSchema</code>, lines 144–170)</h3>
+    <table>
+      <thead><tr><th>Table</th><th>Columns / PK</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>schema_version</code></td><td><code>(id=1, version INT)</code></td><td>Migration tracker</td></tr>
+        <tr><td><code>settings</code></td><td><code>(server, character, module, name, type, value)</code>, PK <code>(server,character,module,name)</code></td><td><code>type ∈ {string, number, boolean}</code>. Global rows use <code>server=''</code>/<code>character=''</code></td></tr>
+        <tr><td><code>themes</code></td><td><code>(theme, name, type, value)</code>, PK <code>(theme,name)</code></td><td><code>type ∈ {imvec4, imvec2, float, int, bool}</code></td></tr>
+        <tr><td><code>spell_sets</code></td><td><code>(server, character, set_name, gem_slot, spell_id)</code>, PK <code>(server,character,set_name,gem_slot)</code></td><td>Named gem loadouts per character. Methods: <code>SaveSpellSet</code>, <code>LoadSpellSet</code>, <code>GetSpellSetNames</code>, <code>DeleteSpellSet</code> (delete-then-insert pattern like themes)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Migrations (<code>RunMigrations</code>, lines 115–141)</h3>
+    <table>
+      <thead><tr><th>To</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>v1</td><td>initialize</td></tr>
+        <tr><td>v2</td><td>drop the old (JSON) themes table</td></tr>
+        <tr><td>v3</td><td><code>UPDATE settings SET module='XPBars' WHERE module='AAParty'</code> (Phase-7 rename)</td></tr>
+        <tr><td><strong>v4</strong></td><td>create <code>spell_sets</code> table for named gem loadouts</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Cache</h3>
+    <p>A per-context <code>m_cache</code> keyed by module + name joined with an internal <code>\x1F</code> separator (implicitly the current server/character).
+    <code>Fetch</code> (180) reads cache→DB; <code>WriteRow</code> (303) now updates the in-memory cache <strong>only after</strong> <code>sqlite3_step() == SQLITE_DONE</code>, so a failed write does not diverge the cache from the DB.</p>
+    <div class="warning"><strong>Cross-box pitfall:</strong> <code>SetRaw(server,char,…)</code> only invalidates the
+    cache when <code>(server,char)</code> is the current context — so writing another box's rows leaves <em>its</em>
+    cache stale. The reload handler calls <code>InvalidateCache()</code> before <code>UiConfig::Load()</code> to fix
+    this. See <a href="actors-protocol.html">Actors &amp; Protocol</a>.</div>
+
+    <h3>Transactions (<code>BeginTransaction</code> / <code>CommitTransaction</code> / <code>RollbackTransaction</code>, lines 381–394)</h3>
+    <p>Three query-wrappers for transactional batching. <code>SaveTheme</code>, <code>SaveSpellSet</code>, and <code>SaveTrackedItems</code> wrap their row loops in <code>BeginTransaction()…CommitTransaction()</code>, rolling back on a mid-loop failure (step returns non-DONE) to keep the cache and DB in sync. Previously, a failed write to row N left rows 0…N-1 committed and the cache partially updated; now the entire transaction reverts.</p>
+
+    <h2>UiConfig (<code>UiConfig.cpp</code>)</h2>
+
+    <h3>Model</h3>
+    <p>One <code>WindowConfig</code> per window holds <code>visible, locked, textScale, iconScale</code> plus
+    <code>flags&lt;bool&gt;</code>, <code>nums&lt;float&gt;</code>, <code>strs&lt;string&gt;</code>,
+    <code>bars&lt;BarStyle&gt;</code> maps (the bar map keyed by role). Modules call
+    <code>Window/Flag/Num/Str/Bar/Color</code> every frame — there is no caching, so edits apply instantly.
+    <code>Color</code> (line 89) and <code>SetColor</code> (line 90) are string-backed MQColor accessors that persist
+    via the <code>strs</code> map using <code>ColorToStr</code>/<code>StrToColor</code> converters (lines 12–47).</p>
+
+    <h3>Persistence policy</h3>
+    <p>This is the core design decision of the settings layer, chosen so that dragging a slider doesn't thrash the disk:</p>
+    <ul>
+      <li><strong>Styling edits</strong> (bars, and flags/nums/strs via <code>SetFlag/SetNum/SetStr</code>) are
+        in-memory until the Settings window's <strong>Save</strong> → <code>RequestSave</code> → <code>Save()</code>
+        (a batched transaction, then <code>Flush</code>).</li>
+      <li><strong>Visibility, lock, and active theme</strong> write through <strong>immediately</strong>
+        (<code>PersistVisibility</code> / <code>PersistField</code>) — they're infrequent and toggled outside the
+        Settings window.</li>
+      <li><code>Load()</code> (404) calls <code>SeedDefaults()</code> then overwrites from the DB; it only reloads on
+        character change, so zoning never wipes unsaved edits.</li>
+      <li>Bar fields serialize as <code>Bar.&lt;role&gt;.&lt;field&gt;</code> rows; colors as <code>{r,g,b,a}</code>
+        strings.</li>
+    </ul>
+    <div class="note"><strong>Consequence:</strong> closing the Settings window without Save keeps your live changes for
+    the session; a relog restores the last-saved styling. The Settings window's <strong>Revert</strong> button is just
+    <code>Load()</code> again.</div>
+
+    <h3>Transient visibility (<code>IsTransientVisibility</code>, lines 120–123)</h3>
+    <p><code>BigBag</code>, <code>Inventory</code>, <code>iTrack</code>, <code>Settings</code>, <code>AA</code> —
+    <code>PersistVisibility</code> early-returns for these and <code>Load()</code> force-hides them.
+    <strong>Rule:</strong> any window with a Toolbar toggle button belongs in this set (no persisted visibility, always
+    starts hidden — it's summoned from the Toolbar).</p>
+
+    <h2>Seeded windows (<code>SeedDefaults</code>, lines 232–402)</h2>
+    <p>Every window's defaults — visibility, bar roles, flags, nums, and colors — are seeded here. Only <code>HUD</code> and
+    <code>Toolbar</code> start visible.</p>
+    <table>
+      <thead><tr><th>Window</th><th>Visible</th><th>Bar roles</th><th>Notable flags</th><th>Nums / Colors</th></tr></thead>
+      <tbody>
+        <tr><td>Player</td><td>no</td><td>HP, Mana, End, TargetHP, Aggro</td><td>ShowTarget, SplitTarget, CombatPulse, TargetTextOverlay</td><td>—</td></tr>
+        <tr><td>Pet</td><td>no</td><td>HP, PetTarget</td><td>Attack/Back/Guard/Follow/Sit/Stop/Taunt/Hold/NoHold/Kill/Health</td><td>—</td></tr>
+        <tr><td>Group</td><td>no</td><td>HP, Mana, End, Pet (vert)</td><td>ShowMana/End/Pet/Self, ShowRoleIcons, ShowLevel, ShowMoveStatus, ShowDistance, VertPet, ShowEmptySlots</td><td>NavDist=10, MaxRaidColumns=4, OutOfZoneColor=grey(116,116,116)</td></tr>
+        <tr><td>Raid</td><td>no</td><td>HP/Mana/End (h=10), Pet (w=10 vert)</td><td>—</td><td>TileWidth=180</td></tr>
+        <tr><td>Buffs</td><td>no</td><td>—</td><td>IconView, ShowGroupOnly</td><td>FlashThreshold=18</td></tr>
+        <tr><td>Songs</td><td>no</td><td>—</td><td>ShowTimer, IconView</td><td>FlashThreshold=18</td></tr>
+        <tr><td>Spells</td><td>no</td><td>—</td><td>Vertical</td><td>GemHeight=32</td></tr>
+        <tr><td>Casting</td><td>no</td><td>Cast</td><td>—</td><td>—</td></tr>
+        <tr><td>XPBars</td><td>no</td><td>XP, AAExp, Air (h=6)</td><td>AutoSize, ShowTooltip, AlphaSort, MyGroupOnly, ShowLeader</td><td>—</td></tr>
+        <tr><td>AA</td><td>no</td><td>—</td><td>TrainableOnly, AffordableOnly, ConfirmPurchase, ShowHotkeyButton</td><td>—</td></tr>
+        <tr><td><strong>HUD</strong></td><td><strong>yes</strong></td><td>—</td><td>ShowHpMana</td><td>—</td></tr>
+        <tr><td><strong>Toolbar</strong></td><td><strong>yes</strong></td><td>—</td><td>—</td><td>ItemSize=32</td></tr>
+        <tr><td>Inventory</td><td>no</td><td>XP, AAExp</td><td>ShowSlotBackground, AutoInventoryOnSwap, BagLock[0..N]</td><td>ItemSize=40 + ToggleKey/Mods</td></tr>
+        <tr><td>BigBag</td><td>no</td><td>—</td><td>ShowSlotBackground, DimUnusable, Sort{Name,Stack,Type}</td><td>ItemSize=40, MinSlotsWarn=3 + ToggleKey/Mods</td></tr>
+        <tr><td>iTrack</td><td>no</td><td>—</td><td>—</td><td>ToggleKey/Mods</td></tr>
+        <tr><td>Toggles <em>(internal)</em></td><td>no</td><td>—</td><td>RightLabel/GlowOnHover/PulseOnHover (on); StarKnob/KnobBorder/AnimateKnob/AnimateOnHover (off)</td><td>Width=0, Height=0</td></tr>
+        <tr><td>Themes / Settings / Copy</td><td>no</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p><code>Toggles</code> is an <strong>internal</strong> pseudo-window (<code>WindowConfig::internal = true</code>)
+    holding the global <code>DrawToggle</code> style for the Settings → Toggles tab (see
+    <a href="bars-widgets.html">Bars &amp; Widgets</a>). It persists like any window but is skipped by
+    <code>/myui list</code> and <code>/myui &lt;window&gt;</code> matching, so it never appears as a toggleable window.
+    Hotkey windows seed <code>ToggleKey</code>/<code>ToggleMod1-3</code>/<code>ToggleMouse</code> strings.</p>
+
+    <div class="page-nav">
+      ← <a href="actors-protocol.html">Actors &amp; Protocol</a> |
+      Next: <a href="types.html">Types &amp; Constants →</a>
+    </div>
+  </main>
+</body>
+</html>

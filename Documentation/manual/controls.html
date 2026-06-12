@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commands &amp; Controls — MQMyUI User Manual</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI User Manual</h2>
+    <ul>
+      <li><a href="index.html">Welcome</a></li>
+      <li><a href="getting-started.html">Getting Started</a></li>
+      <li><a href="windows.html">Your Windows</a></li>
+      <li><a href="inventory.html">Inventory &amp; Items</a></li>
+      <li><a href="multiboxing.html">Multi-Boxing</a></li>
+      <li><a href="customizing.html">Customizing &amp; Themes</a></li>
+      <li><a href="controls.html" class="active">Commands &amp; Controls</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-01</em></p>
+    <h1>Commands &amp; Controls</h1>
+    <p>A quick reference for the typed commands and the mouse interactions you'll use most.</p>
+
+    <h2>The <code>/myui</code> command</h2>
+    <table>
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>/myui</code> or <code>/myui help</code></td><td>List the available commands</td></tr>
+        <tr><td><code>/myui list</code></td><td>List every window and whether it's currently shown</td></tr>
+        <tr><td><code>/myui &lt;window&gt;</code></td><td>Toggle a window on or off (for example <code>/myui Player</code>)</td></tr>
+        <tr><td><code>/myui show &lt;window&gt;</code></td><td>Force a window to show</td></tr>
+        <tr><td><code>/myui hide &lt;window&gt;</code></td><td>Force a window to hide</td></tr>
+        <tr><td><code>/myui settings</code></td><td>Open the Settings window</td></tr>
+        <tr><td><code>/myui theme</code></td><td>Open or close the Themes editor</td></tr>
+        <tr><td><code>/myui theme list</code></td><td>List the available themes</td></tr>
+        <tr><td><code>/myui theme set &lt;name&gt;</code></td><td>Switch to a theme by name</td></tr>
+      </tbody>
+    </table>
+    <div class="tip">Window names aren't case-sensitive, so <code>/myui player</code> and <code>/myui Player</code> both
+    work. Use <code>/myui list</code> if you're not sure of a window's name.</div>
+
+    <h2>Window controls</h2>
+    <table>
+      <thead><tr><th>Action</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Drag the title bar</td><td>Move the window</td></tr>
+        <tr><td>Drag an edge or corner</td><td>Resize the window</td></tr>
+        <tr><td>Click the X</td><td>Close the window</td></tr>
+        <tr><td>Lock toggle (Settings → Windows, or the bag pop-out lock icon)</td><td>Stop a window from being moved or resized</td></tr>
+        <tr><td>Press Esc (in a pop-out bag or container)</td><td>Close that pop-out</td></tr>
+      </tbody>
+    </table>
+    <p>Some windows (such as Inventory and iTrack) can also be opened and closed with a <strong>hotkey</strong> you set
+    yourself, configured in the Settings window.</p>
+
+    <h2>Item controls</h2>
+    <p>These work anywhere an item appears — in your bags, in BigBag, or on the paperdoll:</p>
+    <table>
+      <thead><tr><th>Action</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Hover</td><td>Show the item's tooltip with full details</td></tr>
+        <tr><td>Left-click</td><td>Pick the item up (or drop a held item)</td></tr>
+        <tr><td>Right-click</td><td>Use the item</td></tr>
+        <tr><td>Ctrl + Right-click</td><td>Open the game's built-in item display</td></tr>
+        <tr><td>Shift + Right-click</td><td>Open MQMyUI's detailed item info window</td></tr>
+        <tr><td>Right-click a worn slot</td><td>Open the equipment swap menu for that slot</td></tr>
+        <tr><td>Right-click a bag</td><td>Pop that bag open as its own window</td></tr>
+      </tbody>
+    </table>
+    <p>Inside the item info window, click a <strong>green</strong> empty socket (while holding a matching augment) to
+    insert the augment, and click a socketed augment to open its own info. See
+    <a href="inventory.html">Inventory &amp; Items</a>.</p>
+
+    <h2>Spell gem controls</h2>
+    <table>
+      <thead><tr><th>Action</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Hover a gem</td><td>Show what the spell does, with the real numbers</td></tr>
+        <tr><td>Left-click a gem</td><td>Cast the spell</td></tr>
+        <tr><td>Right-click a gem</td><td>Memorize a different spell into that slot</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Group and team controls</h2>
+    <table>
+      <thead><tr><th>Action</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Click a group/raid member</td><td>Target that member</td></tr>
+        <tr><td>Right-click a member</td><td>Open the actions menu (come to me, switch to, make leader, remove/block buff)</td></tr>
+        <tr><td>XP Bars buttons (Min/Less/Mid/More/Max)</td><td>Set how much experience that character sends to AA</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-nav">
+      ← <a href="customizing.html">Customizing &amp; Themes</a>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bars &amp; Widgets — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html" class="active">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Bars &amp; Widgets</h1>
+    <p>MQMyUI ships a custom-drawn widget set that gives it a consistent animated look: a fully styled progress bar
+    (<code>BarEngine</code>) plus a family of <strong>imanim</strong>-driven controls in <code>Core/Widgets.{h,cpp}</code>
+    — toggle, pill tabs/lists, accordion tree, collapsing headers, glowing sliders, combos, checkbox, drop-in styled
+    buttons, a cursor-anchored input popup and a click-to-edit field. They render through the ImGui draw list and read
+    colors live from the active theme. The bar is driven by <code>UiConfig</code> data (per-window, no code changes).</p>
+    <div class="note"><strong>Shared across plugins.</strong> <code>Core/Widgets.{h,cpp}</code> is reused verbatim by the
+    sibling MQMy* plugins, so it stays dependency-light (ImGui + imanim + <code>mq/imgui/AlphaMask.h</code>) and
+    theme-neutral. The full reference lives in the KB: <code>D:\CLAUDE\MQMyUI\KnowledgeBase\styled-widgets.md</code>
+    (the source of truth shared by MQMyDPS/MQMyChat). This page is the developer-facing overview.</div>
+
+    <h2>The bar engine (<code>Core/BarEngine.h/.cpp</code>)</h2>
+    <p>Two public entry points consume a <code>BarStyle</code> and draw the whole bar:</p>
+    <pre><code>namespace myui {
+    // Lays out the bar at the current ImGui cursor position.
+    void DrawStyledBar(const char* id, float pct, const BarStyle&amp; style,
+                       int curValue = -1, int maxValue = -1);
+
+    // Draws at an explicit screen rect given two corner points (top-left p0,
+    // bottom-right p1) — use for overlays or anchored positions.
+    void DrawStyledBarRect(const char* id, float pct, const BarStyle&amp; style,
+                           const ImVec2&amp; p0, const ImVec2&amp; p1,
+                           int curValue = -1, int maxValue = -1);
+}</code></pre>
+    <p><code>pct</code> is 0..100 (clamped internally before use). <code>curValue</code>/<code>maxValue</code> are optional and only used when the style's
+    text overlay shows raw or cur·max values. The <code>id</code> keys the per-bar tween state, so each bar animates
+    independently.</p>
+
+    <h3>What it renders, in order</h3>
+    <ol>
+      <li><strong>Tween</strong> — eases the displayed value toward the target (keyed by <code>id</code>).</li>
+      <li><strong>Background</strong> — <code>bgColor</code> rounded rect.</li>
+      <li><strong>Fill</strong> — a single <code>AddRectFilledMultiColor</code> call with 4 corner colors, followed by a
+        coverage-mask pass that clips the corners to produce the rounded look. No strip-slicing is used.</li>
+      <li><strong>Ticks</strong>, <strong>shimmer</strong>, <strong>glow</strong>, <strong>border</strong>.</li>
+      <li><strong>Text overlay</strong> — none / value / percent / cur·max, with a per-bar text scale.</li>
+    </ol>
+
+    <div class="note"><strong>Gradient + rounded corners.</strong> The fill uses <code>AddRectFilledMultiColor</code> with
+    4 independently computed corner colors (derived from <code>gradientDir</code> and the low/high fill colors), then a
+    second coverage-mask pass clips the quad corners to the bar's rounding radius. This avoids strip-slicing while
+    still supporting rounded corners with diagonal gradients.</div>
+
+    <h3>BarStyle (Tiers 1–3, 30 fields)</h3>
+    <p>A bar is defined entirely by its <code>BarStyle</code> (<code>UiConfig.h:11</code>), grouped into the same tiers
+    the Settings → Bars tab exposes:</p>
+    <table>
+      <thead><tr><th>Group</th><th>Fields</th></tr></thead>
+      <tbody>
+        <tr><td>Geometry</td><td><code>vertical</code>, <code>height</code>(18), <code>width</code>(0), <code>padEnd</code>(4), <code>rounding</code>(0)</td></tr>
+        <tr><td>Fill &amp; Gradient</td><td><code>fillLow</code>, <code>fillHigh</code>, <code>gradientOn</code>, <code>gradientMode</code>(static/dynamic), <code>gradientDir</code>(H/V/Diag1/Diag2)</td></tr>
+        <tr><td>Background</td><td><code>bgColor</code></td></tr>
+        <tr><td>Border</td><td><code>border</code>, <code>borderThickness</code>(1), <code>borderColor</code></td></tr>
+        <tr><td>Text</td><td><code>textMode</code>: 0 = none (no overlay); 2 = cur/max raw integers; any other non-zero = format string via <code>textFormat</code>. <code>textFormat</code>("%.0f%%"), <code>textScale</code>(1), <code>textDropShadow</code>(true)</td></tr>
+        <tr><td>Ticks</td><td><code>ticksOn</code>, <code>tickEvery</code>(0.10), <code>tickThickness</code>(1), <code>tickAlpha</code>(80)</td></tr>
+        <tr><td>Shimmer</td><td><code>shimmerOn</code>, <code>shimmerSpeed</code>(0.5), <code>shimmerWidth</code>(45), <code>shimmerFollows</code>(true)</td></tr>
+        <tr><td>Glow</td><td><code>glowOn</code>, <code>glowThickness</code>(0), <code>glowAlpha</code>(90)</td></tr>
+        <tr><td>Animation</td><td><code>tweenSeconds</code>(0)</td></tr>
+      </tbody>
+    </table>
+    <p>Defaults are seeded from the original hardcoded look with all effects <em>off</em>, so nothing changes visually
+    until a user opts in. Modules fetch a style with <code>m_ctx.UI-&gt;Bar(GetName(), "HP")</code> and pass it straight
+    to <code>DrawStyledBar</code>.</p>
+    <div class="note">There is no Tier 4 (no image-mask overlay) and no OKLAB color space — color interpolation is plain
+    RGB lerp. The legacy <code>DrawBar/DrawBarPct/DrawVertBar</code> in <code>ColorUtil.h</code> remain as simple shims.</div>
+    <div class="note"><strong>Internal helpers — not public API.</strong> <code>DrawMaskedFill</code> and
+    <code>DrawStencilMaskedFill</code> live in an anonymous (file-local) namespace inside <code>BarEngine.cpp</code>.
+    They are implementation details of the fill/coverage-mask pass and are not part of the <code>myui::</code> public
+    interface.</div>
+
+    <h3>Gradient-masked text (<code>DrawScrollingGradientText</code>)</h3>
+    <p>A public BarEngine helper (<code>BarEngine.h:17</code>, defined <code>BarEngine.cpp:340</code>) that fills the
+    glyphs of a string with an animated gradient by reusing the <strong>coverage</strong> alpha-mask &mdash; the text
+    itself is the mask:</p>
+    <pre><code>void DrawScrollingGradientText(ImDrawList* dl, const ImVec2&amp; pos, const char* text,
+                              const ImVec4&amp; colorA, const ImVec4&amp; colorB);</code></pre>
+    <ul>
+      <li><code>CreateCoverageMaskLayer(dl, p0, p1)</code> over the text's bounding box, then
+        <code>dl-&gt;AddText(p0, IM_COL32_WHITE, text)</code> writes the glyph coverage into the framebuffer alpha.</li>
+      <li>Between <code>BeginCoverageMaskedDraw</code> / <code>EndCoverageMaskedDraw</code> the box is filled with ~32
+        stacked <code>AddRectFilledMultiColor</code> bands. Because coverage masking takes opacity from the mask and
+        treats content as full-alpha color, the opaque gradient renders as gradient-filled, anti-aliased glyphs.</li>
+      <li>Band color is a <strong>triangle wave</strong> (<code>colorA→colorB→colorA</code>, one cycle = text height)
+        offset by <code>phase = fmod(GetTime()*scrollSpeed, 1)</code> with a <code>-phase</code> term, so the band
+        scrolls <strong>downward</strong> and loops seamlessly. <code>scrollSpeed</code> and <code>period</code> are
+        local constants.</li>
+      <li>Reserves <em>no</em> layout space &mdash; the caller advances the cursor (e.g. <code>ImGui::Dummy(CalcTextSize(text))</code>).</li>
+    </ul>
+    <div class="note">First consumer: <code>PlayerModule</code> draws the player name with this (red→white) when
+    <code>CharSnapshot::inCombat</code> is set (<code>PlayerModule.cpp:152</code>), else plain <code>ImGui::Text</code>.
+    The helper is generic and intended for reuse on other text. Unlike <code>DrawMaskedFill</code>, this one <em>is</em>
+    part of the <code>myui::</code> public interface.</div>
+
+    <h2>imanim integration (the engine behind the controls)</h2>
+    <p>All motion is driven by <strong>imanim</strong> (<code>iam_*</code>), compiled into MQ core's ImGui. The plugin
+    <strong>owns an imanim context</strong> and makes it current around its render pass in
+    <code>OnUpdateImGui</code>; it must <em>not</em> call <code>iam_update_begin_frame()</code> (the host drives the
+    clock — calling it doubles the speed) and must <code>iam_context_destroy()</code> on unload (a dangling context
+    crashes the host). Tweens are keyed by <code>ImGui::GetID(label)</code> + a channel hash, so each instance animates
+    independently. Full wiring + gotchas: see the KB.</p>
+
+    <div class="warning"><strong>Animation master switch.</strong> <code>SetAnimationsEnabled(bool)</code> /
+    <code>AnimationsEnabled()</code> gate the whole set. Every <code>iam_tween_*</code> call in the file goes through
+    file-local <code>AnimFloat</code>/<code>AnimColor</code> wrappers that <em>snap to the target</em> (no motion) when
+    off; effect helpers no-op. It's pushed once per frame in <code>MQMyUI.cpp:OnUpdateImGui</code> from the per-char
+    <code>Flag("Global","AnimatedWidgets")</code> (Settings → General toggle). <strong>Bars are not gated</strong> —
+    they keep their own per-bar shimmer/glow settings.</div>
+
+    <h2>The toggle switch (<code>DrawToggle</code>)</h2>
+    <p>A pill-track toggle used for every boolean across the UI:</p>
+    <pre><code>namespace myui {
+    bool DrawToggle(const char* id, bool* value,
+                    int flags = kUseGlobalToggleFlags,
+                    ImVec2 size = ImVec2(0,0));   // returns true on change
+
+    void SetGlobalToggleStyle(int flags, ImVec2 size = ImVec2(0,0));
+}</code></pre>
+    <p>Passing <code>kUseGlobalToggleFlags</code> (<code>-1</code>) makes a toggle inherit the global style set by
+    <code>SetGlobalToggleStyle</code> — which the Settings → Toggles tab drives — so one place controls the look of every
+    switch. Motion (all imanim): the thumb slides with an <code>out_back</code> overshoot, the track crossfades on↔off in
+    <strong>OKLAB</strong>, the glow/pulse fade in/out through a <strong>hover-intensity tween</strong>, and the knob
+    <strong>rocks</strong> toward its direction of travel as it settles. With <code>ToggleFlags_StarKnob</code> the off
+    state draws a <strong>moon as a single alpha-masked crescent</strong> (<code>mq::imgui</code> stencil
+    <code>Subtract</code>, not stacked circles) and the on state a star. The switch <strong>sizes to the label's text
+    height</strong> (<code>CalcTextSize(label).y</code>), not the padded frame.</p>
+
+    <h3>ToggleFlags (<code>Widgets.h</code>)</h3>
+    <table>
+      <thead><tr><th>Flag</th><th>Value</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>ToggleFlags_StarKnob</code></td><td>1&lt;&lt;0</td><td>Star (on) / alpha-masked crescent moon (off) instead of a circle</td></tr>
+        <tr><td><code>ToggleFlags_RightLabel</code></td><td>1&lt;&lt;1</td><td>Draw the label to the right of the pill</td></tr>
+        <tr><td><code>ToggleFlags_AnimateKnob</code></td><td>1&lt;&lt;2</td><td>Animate the knob glyph (rotating star)</td></tr>
+        <tr><td><code>ToggleFlags_GlowOnHover</code></td><td>1&lt;&lt;3</td><td>Breathing aura on hover (hover-intensity eased)</td></tr>
+        <tr><td><code>ToggleFlags_AnimateOnHover</code></td><td>1&lt;&lt;4</td><td>Animate only while hovered</td></tr>
+        <tr><td><code>ToggleFlags_PulseOnHover</code></td><td>1&lt;&lt;5</td><td>Pulse the knob color on hover</td></tr>
+        <tr><td><code>ToggleFlags_KnobBorder</code></td><td>1&lt;&lt;6</td><td>Outline the knob</td></tr>
+      </tbody>
+    </table>
+    <p><code>kDefaultToggleFlags = RightLabel | GlowOnHover | PulseOnHover</code> (value <code>42</code>) is the default —
+    a plain circle knob with hover glow + pulse and a right-side label.</p>
+
+    <h2>Styled buttons (<code>StyledButton</code> / <code>StyledSmallButton</code>)</h2>
+    <p>Drop-in replacements for <code>ImGui::Button</code>/<code>SmallButton</code> (used project-wide); same sizing and
+    release-activation semantics:</p>
+    <pre><code>bool StyledButton(const char* label, ImVec2 size = ImVec2(0,0), int flags = -1);
+bool StyledSmallButton(const char* label, int flags = -1);   // small = no vertical pad</code></pre>
+    <p>Rendered as a <strong>full pill</strong> (<code>rounding = height*0.5</code>, ignores <code>FrameRounding</code>):
+    an OKLAB fill crossfade (<code>ImGuiCol_Button</code>/<code>Hovered</code>/<code>Active</code>), a soft hover glow, a
+    top gloss, an always-visible theme-accent rim, a <strong>spring press scale</strong> (shrinks while held, overshoots
+    past 1.0 on release), and a <strong>diagonal hover sheen</strong> masked to the pill. The fill is forced near-opaque
+    and the label gets a drop shadow so the effects never wash the text. <code>kDefaultButtonFlags = GlowOnHover |
+    PressSink | Shimmer</code>. The toolbar's <code>IconButton</code> is built from the same primitives (rounded-square
+    slots instead of pills).</p>
+
+    <h3>Reusable animated-control primitives</h3>
+    <p>The button and toolbar are assembled from theme-neutral, self-gating helpers any host/plugin can reuse:</p>
+    <table>
+      <thead><tr><th>Helper</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td><code>SoftGlowRoundRect(dl,p0,p1,r,col,intensity)</code></td><td>Soft outer halo behind a rounded rect.</td></tr>
+        <tr><td><code>HoverIntensity(id,hovered) → float</code></td><td>Eased 0→1 hover ramp (snaps when animations off).</td></tr>
+        <tr><td><code>PressScale(id,active,pressedScale=0.86) → float</code></td><td>Spring press scale (shrink-hold, overshoot-release). 1.0 when off. Apply to the drawn rect.</td></tr>
+        <tr><td><code>DrawHoverShimmer(dl,p0,p1,r,intensity)</code></td><td>Diagonal (TL→BR) sheen, stencil-masked to the shape.</td></tr>
+        <tr><td><code>Soften(accent) → ImVec4</code></td><td>Blends a bright accent 35% toward <code>WindowBg</code> (theme-relative) so fills aren't harsh and text stays readable.</td></tr>
+      </tbody>
+    </table>
+    <div class="tip"><strong>Soften is applied to every accent fill</strong> — button fill/rim/glow, pill selectable,
+    tab pills, slider fill, checkbox, collapsing headers, and the toolbar slots. The single <code>0.35f</code> blend in
+    <code>Soften()</code> is the global mute dial.</div>
+
+    <h2>Shared buff/song icon renderer (<code>DrawBuffIconLineup</code>)</h2>
+    <p>See <a href="core-services.html">Core Services</a> for the full description and <a href="types.html">Types &amp; Constants</a>
+    for <code>BuffIconLineupOpts</code>. The renderer is reused by Buffs, Songs, and the Player module's target buffs row.</p>
+
+    <h2>Edit popups &amp; click-to-edit field</h2>
+    <p>One shared cursor-anchored popup body, <code>EditPopupRun(popupId, width, extraFlags, hint)</code>, backs both the
+    slider's Ctrl+click numeric editor and the generic input popup: a focused <code>InputText</code> + styled
+    <strong>Accept/Cancel</strong>, Enter accepts / Esc cancels, one shared scratch buffer (one popup open at a time).
+    The shared file-static <code>ImGuiID g_editPopupOwner</code> (<code>Widgets.cpp:702</code>) records which control opened the
+    popup; <code>EditPopupRun</code> closes and early-returns if the open popup is not owned by the caller, preventing the slider
+    edit and generic <code>InputPopup</code> from stomping each other's shared <code>g_editPopupBuf</code>.</p>
+    <pre><code>// Generic input popup (open at the mouse, then poll each frame)
+void OpenInputPopup(const char* popupId, const char* initialText);
+bool InputPopup(const char* popupId, std::string&amp; out, const char* hint = nullptr);
+
+// Click-to-edit field: read-only framed display + pencil; click opens the popup.
+bool StyledEditField(const char* label, std::string* value, const char* hint = nullptr);
+bool StyledEditField(const char* label, char* buf, size_t bufSize, const char* hint = nullptr);</code></pre>
+    <p><code>StyledEditField</code> draws a rounded read-only display of the value (with an <code>ICON_FA_PENCIL</code>
+    affordance and hover-eased bg/rim), and on click opens <code>InputPopup</code> to edit — writing the value and
+    returning <code>true</code> only on accept. It's the drop-in for persistent value fields you don't want saving per
+    keystroke (per-window string settings, the bar Text format, the ThemeZ name). <strong>Live search/filter boxes and
+    type-then-press add fields stay as plain <code>ImGui::InputText</code></strong>.</p>
+
+    <div class="page-nav">
+      ← <a href="modules.html">Window Modules</a> |
+      Next: <a href="actors-protocol.html">Actors &amp; Protocol →</a>
+    </div>
+  </main>
+</body>
+</html>

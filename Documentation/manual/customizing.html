@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customizing &amp; Themes — MQMyUI User Manual</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI User Manual</h2>
+    <ul>
+      <li><a href="index.html">Welcome</a></li>
+      <li><a href="getting-started.html">Getting Started</a></li>
+      <li><a href="windows.html">Your Windows</a></li>
+      <li><a href="inventory.html">Inventory &amp; Items</a></li>
+      <li><a href="multiboxing.html">Multi-Boxing</a></li>
+      <li><a href="customizing.html" class="active">Customizing &amp; Themes</a></li>
+      <li><a href="controls.html">Commands &amp; Controls</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-08</em></p>
+    <h1>Customizing &amp; Themes</h1>
+    <p>Almost everything you see can be reshaped, recolored, and resized. It all happens in the <strong>Settings</strong>
+    window — open it from the Toolbar's Settings button or by typing <code>/myui settings</code>.</p>
+
+    <!-- Screenshot suggestion: the Settings window open on the Bars tab, with the window/bar tree on the left and the style editor on the right -->
+
+    <h2>Saving your changes</h2>
+    <p>The Settings window has three buttons across the top:</p>
+    <table>
+      <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Save Settings</td><td>Saves all your styling changes so they survive logout</td></tr>
+        <tr><td>Revert</td><td>Throws away unsaved changes and goes back to your last save</td></tr>
+        <tr><td>Copy Settings…</td><td>Opens the tool for copying your setup to another character</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><strong>Styling changes apply instantly but aren't kept until you press Save.</strong> So you can
+    freely experiment — drag sliders, try colors — and either keep the result with <strong>Save Settings</strong> or
+    discard it with <strong>Revert</strong> (or simply by logging out). Showing/hiding a window, locking a window, and
+    choosing a theme are the exceptions: those are saved the moment you do them.</div>
+
+    <h2>Editing another character's settings</h2>
+    <p>At the top of the Settings window is an <strong>Editing</strong> dropdown — "Edit this character, or push changes
+    to another box." Normally it reads <strong>This Character</strong> and you're editing your own setup. Open the dropdown
+    to pick one of your other characters instead:</p>
+    <ul>
+      <li>Characters currently logged in appear available to select; offline ones are dimmed but still selectable.</li>
+      <li>When you pick another character, the window title shows you're editing them (highlighted), and a reminder line
+        appears: <em>"Editing &lt;name&gt; (remote) — Save applies the changes to that character."</em></li>
+      <li>Make your changes, then press <strong>Save Settings</strong> to send them to that character. <strong>Revert</strong>
+        discards them.</li>
+    </ul>
+    <div class="note">An <strong>online</strong> character applies your changes live and confirms them back. An
+    <strong>offline</strong> character can't receive them yet, so the changes are stored on your side and sync to them the
+    next time they log in.</div>
+    <div class="tip">When you save your <em>own</em> settings, any changes are also pushed automatically to your other
+    logged-in characters running MyUI — so a tweak you make on one box can ripple out to the rest without opening the Copy
+    tool.</div>
+
+    <h2>The Settings tabs</h2>
+    <table>
+      <thead><tr><th>Tab</th><th>What you can change</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Windows</strong></td><td>Show or hide each window, and lock it in place.</td></tr>
+        <tr><td><strong>Bars</strong></td><td>Style every progress bar (see below).</td></tr>
+        <tr><td><strong>Scaling</strong></td><td>Set the text size and icon size for each window independently.</td></tr>
+        <tr><td><strong>Display</strong></td><td>Per-window options — things like showing the target block, using an
+          icon view for buffs, a vertical pet bar, or Group window color and slot display settings.</td></tr>
+        <tr><td><strong>Toggles</strong></td><td>The look of the on/off switches used throughout the interface
+          (label position, hover glow, knob style, and more).</td></tr>
+        <tr><td><strong>Theme</strong></td><td>Pick an overall color theme, or open the Themes editor to make your own.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Turning animations on or off</h3>
+    <p>The interface's buttons, switches, and highlights have subtle motion — a soft glow when you hover, a
+    little "press" bounce when you click, and a gentle sheen. If you'd rather have a calmer, completely still
+    interface, turn off <strong>Animated Widgets</strong> in the General settings. Everything keeps its colors
+    and stays fully usable — it simply stops moving. (Progress bars aren't affected; they keep their own
+    per-bar shimmer and glow settings.)</p>
+
+    <div class="tip"><strong>Editing a text value?</strong> Some settings show their value in a small framed box
+    with a pencil icon. Click it and a little editor pops up at your mouse — type the new value and press
+    <strong>Accept</strong> (or Enter), or <strong>Cancel</strong> (or Esc) to leave it unchanged. Search and
+    filter boxes still work the usual way: just type, and the list filters as you go.</div>
+
+    <h2>Styling your bars</h2>
+    <p>The <strong>Bars</strong> tab is the heart of customization. On the left is a tree: pick a window, then one of its
+    bars (for example <em>Player → HP</em>). On the right, an editor lets you change that bar in detail:</p>
+    <table>
+      <thead><tr><th>Group</th><th>What you control</th></tr></thead>
+      <tbody>
+        <tr><td>Geometry</td><td>Horizontal or vertical, height/width, corner rounding, end padding</td></tr>
+        <tr><td>Fill &amp; Gradient</td><td>The fill colors and an optional gradient (including diagonal directions), static or changing with the value</td></tr>
+        <tr><td>Border</td><td>An optional outline, its thickness and color</td></tr>
+        <tr><td>Text</td><td>What to show on the bar — nothing, a value, a percent, or current·max — its format, and its size</td></tr>
+        <tr><td>Ticks</td><td>Optional tick marks along the bar</td></tr>
+        <tr><td>Shimmer</td><td>A moving sheen, with speed and width</td></tr>
+        <tr><td>Glow</td><td>A soft glow around the bar</td></tr>
+        <tr><td>Animation</td><td>How smoothly the bar slides to a new value</td></tr>
+      </tbody>
+    </table>
+    <p>Two handy buttons sit alongside the editor: <strong>Copy this style to…</strong> applies the bar you just styled to
+    another bar (so you can make all your bars match in one move), and <strong>Reset to default</strong> restores a bar to
+    its starting look.</p>
+    <div class="tip">Bars start out plain — every fancy effect is off by default — so the interface looks clean until you
+    decide to add flair. Turn on a gradient, rounding, and a subtle glow for a modern look, or keep it simple.</div>
+
+    <h2>Group and Raid window display settings</h2>
+    <p>The <strong>Display</strong> tab includes options for how the Group window (which also apply to the Raid window) shows your party or raid members:</p>
+    <table>
+      <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Out-of-Zone Bar Color</strong></td><td>A color picker that sets the color of health/mana bars for members who are in a different zone from you — such as your other boxed characters. This makes them stand out at a glance. Default is grey.</td></tr>
+        <tr><td><strong>Show Empty Slots</strong></td><td>When enabled, the Group window draws a placeholder tile for each empty group slot, making it clear how many members you could add. When disabled, only filled slots appear.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Scaling text and icons</h2>
+    <p>The <strong>Scaling</strong> tab lets you set the text size and icon size of each window on its own. Make the
+    group window's text bigger for readability, or shrink the inventory icons to fit more on screen — your choice, per
+    window.</p>
+
+    <h2>Themes</h2>
+    <p>A <strong>theme</strong> is the overall color scheme for the whole interface. On the <strong>Theme</strong> tab,
+    pick a theme from the dropdown and it applies immediately. You can also type <code>/myui theme set &lt;name&gt;</code>
+    to switch themes, or <code>/myui theme list</code> to see what's available.</p>
+
+    <h3>The Themes editor</h3>
+    <p>Want your own colors? Open the <strong>Themes</strong> editor (from the Theme tab or <code>/myui theme</code>). It
+    lets you adjust colors and spacing with a <strong>live preview</strong>, then save your creation under a name so you
+    can switch to it any time.</p>
+
+    <h2>Copying a setup between characters</h2>
+    <p>The <strong>Copy Settings…</strong> button opens a tool that copies a setup from one of your characters onto
+    another:</p>
+    <ol>
+      <li>Choose a <strong>source</strong> character (the one you like) and one or more <strong>destination</strong>
+        characters — Ctrl+click in the destination list to pick several at once.</li>
+      <li>The tool lists the differences, grouped by window. Each difference shows the source value and the destination
+        value side by side.</li>
+      <li>Copy a single setting, a whole window's section, or use <strong>Copy All</strong> for everything. The copy goes
+        to every destination you selected.</li>
+    </ol>
+    <p>If a destination character is currently logged in, it updates right away — no need to log out and back in. This
+    is the quick way to give all your characters the same look.</p>
+
+    <div class="page-nav">
+      ← <a href="multiboxing.html">Multi-Boxing</a> |
+      Next: <a href="controls.html">Commands &amp; Controls →</a>
+    </div>
+  </main>
+</body>
+</html>

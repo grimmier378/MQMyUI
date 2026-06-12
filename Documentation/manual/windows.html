@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Windows — MQMyUI User Manual</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI User Manual</h2>
+    <ul>
+      <li><a href="index.html">Welcome</a></li>
+      <li><a href="getting-started.html">Getting Started</a></li>
+      <li><a href="windows.html" class="active">Your Windows</a></li>
+      <li><a href="inventory.html">Inventory &amp; Items</a></li>
+      <li><a href="multiboxing.html">Multi-Boxing</a></li>
+      <li><a href="customizing.html">Customizing &amp; Themes</a></li>
+      <li><a href="controls.html">Commands &amp; Controls</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Your Windows</h1>
+    <p>MQMyUI is made of focused windows, each showing one part of your character. Show only the ones you want — turn the
+    rest off in the Settings window's <strong>Windows</strong> tab. Here's what each one does.</p>
+
+    <!-- Screenshot suggestion: a typical layout with Player, Pet, Buffs, Spells, and Casting windows arranged on screen -->
+
+    <h2>Vitals and combat</h2>
+    <table>
+      <thead><tr><th>Window</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Player</strong></td><td>Your health, mana, and endurance bars, plus a target block showing the
+          target's health, your aggro, and the target's buffs (which flash gently as their timers run low, just like in the Buffs window). The bars can pulse while you're in combat, and your
+          name animates with a red-to-white gradient that scrolls down the text whenever you're fighting.</td></tr>
+        <tr><td><strong>Pet</strong></td><td>Your pet's health and its target, with command buttons (Attack, Guard,
+          Follow, Sit, Taunt, Hold, Kill, and more) so you can control your pet from one place.</td></tr>
+        <tr><td><strong>Casting</strong></td><td>A cast bar that fills while you cast, with a preview of the spell being
+          cast.</td></tr>
+        <tr><td><strong>HUD</strong></td><td>A small floating heads-up display of your current status effects. This one
+          is shown by default.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Buffs, songs, and spells</h2>
+    <table>
+      <thead><tr><th>Window</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Buffs</strong></td><td>Your long-duration buffs with timers. You can view them as a list or as a
+          grid of icons. Buffs about to expire gently flash so you notice them.</td></tr>
+        <tr><td><strong>Songs</strong></td><td>Your short-duration buffs (bard songs and similar), with timers and the
+          same flashing reminder as buffs.</td></tr>
+        <tr><td><strong>Spells</strong></td><td>Your spell gem bar plus a spell manager. Hover a gem to see what the
+          spell does; left-click to cast it; right-click to memorize a different spell. The spell picker groups spells by category and sub-category (both alphabetical), and within each sub-category lists the spells by level, highest first, making them easy to find. While a spell is recharging, a
+          shaded "clock sweep" wipes around the gem &mdash; it starts covering the whole icon and clears clockwise as the
+          recast counts down, emptying out the moment the spell is ready (the seconds-remaining number still shows on top).</td></tr>
+      </tbody>
+    </table>
+    <div class="tip">Hovering almost any spell — a gem, an AA, or a spell in the picker — shows a clear, plain-language
+    breakdown of its effects, with the real numbers filled in.</div>
+
+    <h3>Spell Sets</h3>
+    <p>The Spells window has a pencil button that lets you save and load named gem loadouts for your character. Left-click the pencil to open the <strong>Spell Set Manager</strong>, or right-click it for a quick menu to <strong>Save</strong> your current gems as a named set, <strong>Load</strong> a saved set, or <strong>Clear All Gems</strong>.</p>
+    <p>A "spell set" is a named collection of spells (one per gem slot) saved just for your character. For example, you might have a "Healing" set with your healing spells and a "DPS" set with damage spells.</p>
+
+    <h4>Using the Spell Set Manager</h4>
+    <p>The Manager window is split into two halves:</p>
+    <ul>
+      <li><strong>Left side:</strong> A list of your saved spell sets. Pick one from the list to edit or load it.</li>
+      <li><strong>Right side:</strong> A table showing every gem slot (slot number, icon, spell name) and a trash button next to each. Click a slot's icon or spell name to choose a spell from the picker. Edit slots however you want — the changes don't touch your currently memorized gems until you load the set.</li>
+    </ul>
+    <p><strong>Manager buttons:</strong></p>
+    <ul>
+      <li><strong>Save</strong> — Type a name for your current edit and click to save it as a new set.</li>
+      <li><strong>Update</strong> — Replace the selected set with your current edits.</li>
+      <li><strong>Delete</strong> — Remove the selected set.</li>
+      <li><strong>New</strong> — Start editing a blank (empty) set.</li>
+      <li><strong>From Gems</strong> — Copy your character's currently memorized gems into the editor so you can save them as a named set.</li>
+      <li><strong>Load to Game</strong> — Memorize the edited set onto your actual gems. Your character sits, learns each spell from the set onto the right gem slots, then stands. Any slots not in the set are cleared. If you don't have a spell in your spellbook, it's skipped (and you'll see a note in chat).</li>
+    </ul>
+
+    <h2>Group and raid</h2>
+    <table>
+      <thead><tr><th>Window</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Group</strong></td><td>Your group's health, mana, endurance, and pets — including members who
+          are out of your zone if they're your own boxed characters. Shows role and line-of-sight icons, distance, and
+          movement status. Click a member to target them.</td></tr>
+        <tr><td><strong>Raid</strong></td><td>A compact grid of your whole raid, arranged by group. Each tile shows the
+          same per-member info as the Group window — health, mana, endurance, distance, and status icons — and has its
+          own size and styling separate from the Group window.</td></tr>
+        <tr><td><strong>XP Bars</strong></td><td>A tidy row of tiles, one per character, showing experience, AA
+          experience, and (where relevant) breath/air. Includes quick buttons to set how much experience each character
+          pours into AA.</td></tr>
+      </tbody>
+    </table>
+    <p>Next to each group or raid member you'll see small status icons: a <strong>moon</strong> when they're sitting, a
+    teal <strong>running figure</strong> when they're moving, and a <strong>smiling face</strong> when they're standing
+    still. An <strong>eye</strong> icon shows whether they're in your line of sight, and the number is their distance from
+    you (shown in green up close, red when far).</p>
+
+    <h3>Real Values vs. Percentages</h3>
+    <p>Full, detailed bars — actual health, mana, and endurance numbers — are only available for <strong>your own
+    character</strong> and for <strong>your other boxed characters that are also running this plugin</strong> (their data
+    arrives over the cross-character link). For everyone else — group or raid members who aren't yours, or who aren't
+    running MyUI — the EverQuest client only hands us a <strong>percentage</strong>, so those members show a percentage
+    instead of real values.</p>
+    <p>On EMU servers the raid system only reports <strong>health</strong> for raid members who aren't in your own group.
+    Their mana and endurance only appear if that character is one of your boxes supplying its own data; otherwise those
+    bars stay empty for raid-only members.</p>
+
+    <h3>Out-of-Zone Members</h3>
+    <p>If one of your boxed characters is in a different zone, they'll show in the Group and Raid windows in a special color so they're easy to spot. You can pick that color in <strong>Settings → Display → Out-of-Zone Color</strong>. All their health, mana, endurance, and status bars still update normally even when they're far away.</p>
+
+    <h3>Empty Group Slots</h3>
+    <p>By default, the Group window only shows members who are actually in the group. Turn on <strong>Settings → Display → Show Empty Slots</strong> to draw a placeholder tile for each unfilled group slot (e.g., you have 2 of 6 slots filled, so you'll see 4 empty boxes).</p>
+
+    <h3>Kicking Group Members</h3>
+    <p>Right-click on any group member to see a menu. One option is <strong>Kick</strong>, which removes that member from your group.</p>
+
+    <p>The group, raid, and XP windows are most useful when you play several characters at once — see
+    <a href="multiboxing.html">Multi-Boxing</a>.</p>
+
+    <h2>Character management</h2>
+    <table>
+      <thead><tr><th>Window</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AA</strong></td><td>An Alternate Advancement manager: browse your AAs across five category
+          tabs, read a description of each, and train or hotkey them right from the window.</td></tr>
+        <tr><td><strong>Inventory</strong></td><td>A paperdoll of your worn gear plus your bags, with pop-out bag
+          windows, quick equipment swapping, and coin handling. See <a href="inventory.html">Inventory &amp; Items</a>.</td></tr>
+        <tr><td><strong>BigBag</strong></td><td>An all-in-one item browser with tabs for Items, Clickies, Augments,
+          Bank, and item Details, plus search, sorting, and bulk trading.</td></tr>
+        <tr><td><strong>iTrack</strong></td><td>A shared item tracker that shows how many of a tracked item each of your
+          characters is carrying.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Customization windows</h2>
+    <table>
+      <thead><tr><th>Window</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Toolbar</strong></td><td>A compact launcher bar with buttons to open the Settings window and
+          toggle your other windows. The handiest way to reach everything; its text and button size are adjustable like
+          any other window.</td></tr>
+        <tr><td><strong>Settings</strong></td><td>The control center: show/hide windows, lock them, style your bars,
+          scale text and icons, and pick a theme. See <a href="customizing.html">Customizing &amp; Themes</a>.</td></tr>
+        <tr><td><strong>Themes</strong></td><td>A theme editor for fine-tuning colors and spacing, with a live preview.</td></tr>
+        <tr><td><strong>Copy</strong></td><td>A tool for copying one character's setup onto another. Opened from the
+          Settings window.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-nav">
+      ← <a href="getting-started.html">Getting Started</a> |
+      Next: <a href="inventory.html">Inventory &amp; Items →</a>
+    </div>
+  </main>
+</body>
+</html>

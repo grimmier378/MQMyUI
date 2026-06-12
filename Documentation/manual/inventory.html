@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory &amp; Items — MQMyUI User Manual</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI User Manual</h2>
+    <ul>
+      <li><a href="index.html">Welcome</a></li>
+      <li><a href="getting-started.html">Getting Started</a></li>
+      <li><a href="windows.html">Your Windows</a></li>
+      <li><a href="inventory.html" class="active">Inventory &amp; Items</a></li>
+      <li><a href="multiboxing.html">Multi-Boxing</a></li>
+      <li><a href="customizing.html">Customizing &amp; Themes</a></li>
+      <li><a href="controls.html">Commands &amp; Controls</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-08</em></p>
+    <h1>Inventory &amp; Items</h1>
+    <p>MQMyUI gives you three ways to handle your gear: the <strong>Inventory</strong> window for your worn equipment
+    and bags, the <strong>BigBag</strong> browser for searching and sorting everything at once, and <strong>iTrack</strong>
+    for keeping an eye on items across your characters. All three open from the Toolbar.</p>
+
+    <h2>The Inventory window</h2>
+    <p>Inventory shows a <strong>paperdoll</strong> of your worn slots on the left and your <strong>bags</strong> on the
+    right, with your coin at the bottom. It resizes itself to fit.</p>
+
+    <!-- Screenshot suggestion: the Inventory window showing the paperdoll, bags, and coin row -->
+
+    <h3>Handling items</h3>
+    <p>Items respond to the mouse the same way throughout the interface:</p>
+    <table>
+      <thead><tr><th>Action</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>Left-click</td><td>Pick the item up onto your cursor (or drop a held item)</td></tr>
+        <tr><td>Right-click</td><td>Use the item</td></tr>
+        <tr><td>Ctrl + Right-click</td><td>Open the game's built-in item display for that item</td></tr>
+        <tr><td>Shift + Right-click</td><td>Open MQMyUI's own detailed item info window</td></tr>
+      </tbody>
+    </table>
+    <div class="note">Hovering an item always shows a tooltip with its full details. The four hint lines at the bottom of
+    the tooltip remind you of these click options.</div>
+
+    <h3>Swapping equipment</h3>
+    <p>Right-click one of your <strong>worn slots</strong> (with no modifier key) to open a swap menu. It lists every
+    item in your bags that fits that slot, so you can change gear without digging through bags. To keep the list short and
+    clear, if you're carrying several copies of an item with the same final stats, they show up as a single entry — and
+    an augmented version of an item is listed separately from a plain one, so you can tell them apart. Hover an entry to
+    compare its stats against what you have equipped.</p>
+
+    <h3>Bag pop-outs</h3>
+    <p>Right-click a bag in the bags area to pop it open as its own window. Each pop-out has a small <strong>lock</strong>
+    icon — click it to lock that bag's window in place so it can't be moved or resized by accident. Press <strong>Esc</strong>
+    while a pop-out is focused to close it.</p>
+
+    <h2>The item info window</h2>
+    <p>Shift + Right-click any item to open the detailed info window. It lays out the item's stats in neat aligned
+    columns and adds things the standard display doesn't:</p>
+    <ul>
+      <li><strong>Augment sockets</strong> — every socket on the item, with the augment in it (if any). Click a socketed
+        augment to open its own info window.</li>
+      <li><strong>Spell effects</strong> — for clicky items, procs, and focus effects, the spell name is a clickable
+        link and a plain-language description of what it does is shown right there.</li>
+      <li><strong>Augmented totals</strong> — stat lines include the bonuses from your socketed augments, so the numbers
+        match what you actually get.</li>
+    </ul>
+
+    <!-- Screenshot suggestion: the item info window for an augmented item, showing sockets and a clicky effect description -->
+
+    <h3>Inserting an augment</h3>
+    <p>You can socket an augment straight from the info window:</p>
+    <ol>
+      <li>Pick up the augment so it's on your cursor.</li>
+      <li>Open the item info window for the item you want to augment (Shift + Right-click it).</li>
+      <li>Empty sockets that the augment <em>fits</em> turn <strong>green</strong>. Click a green socket.</li>
+      <li>A confirmation appears at your cursor — confirm it, and the augment is inserted. The window refreshes to show
+        the new augment and updated stats.</li>
+    </ol>
+    <div class="tip">The game decides whether an augment fits a socket, so only valid sockets light up green. If nothing
+    turns green, that augment can't go in that item.</div>
+
+    <h2>The BigBag browser</h2>
+    <p>BigBag is for when you want to see everything at once. It has tabs for <strong>Items</strong>,
+    <strong>Clickies</strong>, <strong>Augments</strong>, <strong>Bank</strong>, and item <strong>Details</strong>. You
+    can search by name, sort by name, stack size, or type, and start bulk trades. It's the fastest way to find a
+    particular item or clean house.</p>
+    <p>The <strong>Name</strong>, <strong>Stack</strong>, and <strong>Type</strong> sort checkboxes stack together in
+    that priority: type first, then name, then stack size. With <strong>Type</strong> on, items are grouped by what they
+    are &mdash; all your armor together, all your food together, each weapon type together &mdash; then alphabetically by
+    name within each group, and finally larger stacks first. Turn off any checkbox to drop that level of sorting.</p>
+
+    <h2>Tracking items across characters</h2>
+    <p>The <strong>iTrack</strong> window keeps a shared list of items you care about and shows how many each of your
+    characters is holding — handy for tracking down who has the key, the food, or the tradeskill component. Your boxes
+    share these counts automatically. See <a href="multiboxing.html">Multi-Boxing</a> for how sharing works.</p>
+
+    <div class="page-nav">
+      ← <a href="windows.html">Your Windows</a> |
+      Next: <a href="multiboxing.html">Multi-Boxing →</a>
+    </div>
+  </main>
+</body>
+</html>

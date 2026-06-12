@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Types &amp; Constants — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html" class="active">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-11</em></p>
+    <h1>Types &amp; Constants</h1>
+    <p>Key structs, enums, flags, and constants. File:line references are to
+    <code>D:\gitStuff\macroquest\plugins\MQMyUI\</code>.</p>
+
+    <h2>Structs</h2>
+
+    <h3>BarStyle (<code>UiConfig.h:11</code>) — 30 fields</h3>
+    <p>The full per-bar style. Grouped: <strong>Geometry</strong> (<code>vertical</code>,
+    <code>height</code>/<code>width</code>/<code>padEnd</code>/<code>rounding</code>); <strong>Fill</strong>
+    (<code>fillLow</code>, <code>fillHigh</code>, <code>bgColor</code>; <code>gradientOn</code>,
+    <code>gradientMode</code>(1)/<code>gradientDir</code>(0)); <strong>Border</strong> (<code>border</code>,
+    <code>borderThickness</code>(1), <code>borderColor</code>); <strong>Text</strong> (<code>textMode</code>(0),
+    <code>textFormat</code>("%.0f%%"), <code>textScale</code>(1), <code>textDropShadow</code>(true)); <strong>Ticks</strong> (<code>ticksOn</code>,
+    <code>tickEvery</code>(0.10), <code>tickThickness</code>(1), <code>tickAlpha</code>(80)); <strong>Shimmer</strong>
+    (<code>shimmerOn</code>, <code>shimmerSpeed</code>(0.5), <code>shimmerWidth</code>(45),
+    <code>shimmerFollows</code>(true)); <strong>Glow</strong> (<code>glowOn</code>, <code>glowThickness</code>(0),
+    <code>glowAlpha</code>(90)); <strong>Animation</strong> (<code>tweenSeconds</code>(0)). Consumed by
+    <a href="bars-widgets.html"><code>DrawStyledBar</code></a>.</p>
+
+    <h3>WindowConfig (<code>UiConfig.h:53</code>)</h3>
+    <p><code>visible</code>(false), <code>locked</code>(false), <code>textScale</code>(1), <code>iconScale</code>(1),
+    <code>flags</code> map&lt;str,bool&gt;, <code>nums</code> map&lt;str,float&gt;, <code>strs</code> map&lt;str,string&gt;,
+    <code>bars</code> map&lt;str,BarStyle&gt;.</p>
+
+    <h3>CharSnapshot (<code>CharData.h:19</code>)</h3>
+    <p><code>valid, name, server, classShort, raceId, classId, level, cur/maxHP, cur/maxMana, cur/maxEnd, isCaster, inCombat,
+    standState, petId, petPctHP, petName, zoneId, zoneName, pctAggro, velocity, groupLeader, roleMask, aaSpent, aaTotal,
+    aaAvailable, pctAAExp, pctExp, pctAir, combatState, allocation</code>. <code>raceId</code> is broadcast to peers so they
+    can build our anonymized code locally (see the <a href="#anonymizer">Anonymizer</a>); self displays show "Me", so there is
+    no <code>maskedName</code> here.</p>
+
+    <h3>GroupMemberSnap (<code>CharData.h:101</code>)</h3>
+    <p><code>name, maskedName, classShort, classId, level, isSelf, present, offline, isLeader, inLOS, roleMask, spawnId, petId, petPctHP,
+    standState, velocity, distance, pctHP, pctMana, pctEnd, groupNumber</code>. <code>maskedName</code> is the precomputed
+    <code>RACE_CLASS_LEVEL</code> code (<code>"Me"</code> for the local-player row). <code>classId</code> (group: <code>sp-&gt;GetClass()</code>,
+    raid: <code>rm.nClass</code>) drives mana-class detection via <code>eqlib ClassInfo[classId].CanCast</code>; <code>distance</code> is 3D
+    (<code>Distance3DToSpawn</code>) and populated for both group and raid members.</p>
+
+    <h3 id="anonymizer">Anonymizer (name masking)</h3>
+    <p>When <code>mq::IsAnonymized()</code> is active, every displayed character name and tooltip is replaced with a
+    <code>RACE_CLASS_LEVEL</code> code (e.g. <code>HIE_WIZ_65</code>) — a string that can never be a real name, so a stream
+    can't be scraped to mass-report players. <strong>Self renders as "Me".</strong> Helpers: <code>UiHelpers.h</code>
+    <code>RaceShort(raceId)</code> + <code>MaskedCode(raceId, classShort, level)</code>. <strong>Masking is local-only</strong> —
+    actor messages carry the real name (used for commands / selection keys); the peer's real <code>race</code> rides the
+    vitals message so each client builds the code locally (<code>PeerRecord.maskedName</code>). PC spawn targets build the code
+    inline (NPCs keep their name); name-only spots (buff caster, group-leader header) fall back to a generic token; display
+    sites use a <code>##realname</code> id so duplicate codes don't collide.</p>
+
+    <h3>BuffInfo (<code>CharData.h:7</code>)</h3>
+    <p><code>slot, isEmpty, spellId, iconId, durationMs, name, caster, beneficial</code>.</p>
+
+    <h3>BuffIconLineupOpts (<code>BuffRow.h:13</code>)</h3>
+    <p>Options for the shared buff/song icon renderer. Fields: <code>pulse</code>(0.0f, breathing intensity below which icons flash),
+    <code>iconSize</code>(24, icon dimension), <code>flashThreshold</code>(18, duration in sec below which icon flashes),
+    <code>trimTrailingEmpty</code>(false, skip trailing empty slots — used by Songs), <code>showCaster</code>(true, include caster
+    name in tooltip), <code>withHours</code>(false, format durations as "Xh Ym" when &gt;1 hour), <code>selfCast</code>(kBuffSelfCast,
+    MQColor override for self-cast icon border), <code>contextMenu</code>(null callback invoked on right-click, receives the
+    <code>BuffInfo</code>). See <a href="core-services.html">Core Services</a>.</p>
+
+    <h3>StatVal (<code>CharData.h:61</code>)</h3>
+    <p>One resolved stat value: <code>value</code> (current total), <code>cap</code>(-1 = uncapped), <code>heroic</code> (heroic-attribute contribution).</p>
+
+    <h3>StatsSnapshot (<code>CharData.h:68</code>)</h3>
+    <p>Full inventory-stats snapshot. <code>valid</code> flag; vitals <code>hpCur/hpMax, manaCur/manaMax, endCur/endMax</code>;
+    combat <code>ac, attack, hastePct</code>; regen <code>hpRegen, manaRegen, endRegen</code>;
+    base stats <code>str, sta, agi, dex, wis, intel, cha</code> (each a <code>StatVal</code>);
+    resists <code>rMagic, rFire, rCold, rDisease, rPoison, rCorrupt</code>;
+    avoidance/mitigation <code>combatEffects, spellShield, shielding, dmgShield, dotShield, dsMitigation, avoidance, accuracy, stunResist, strikeThrough</code>;
+    <code>spellDamage</code> (int); <code>skillMod[9]</code>; <code>weight</code>; <code>className, deityName</code>. Populated by <code>CharData::RefreshStats()</code>.</p>
+
+    <h3>PeerRecord (<code>PeerData.h:25</code>)</h3>
+    <p>Mirrors <code>CharSnapshot</code> for a remote box — its <code>state</code> field is the equivalent of
+    <code>CharSnapshot::combatState</code> (renamed for the wire format). Also carries <code>maskedName</code> (the anonymized
+    <code>RACE_CLASS_LEVEL</code> code, built locally on receive — see <a href="#anonymizer">Anonymizer</a>), <code>buffs</code>
+    vector&lt;BuffInfo&gt;, the receive flags <code>hasVitals/hasAA/hasBuffs</code>, and <code>lastSeen</code> (steady_clock).
+    Keyed by <code>PeerKey(server,char)</code> = <code>"server|char"</code>.</p>
+
+    <h3>AAEntry (<code>AAData.h:6</code>)</h3>
+    <p><code>groupId, index, name, type(1-5), curRank, maxRank, nextCost, minLevel, spellId(-1=passive), passive,
+    reuseSecs, prereqGroup(-1=none), prereqRank, canTrain, category</code>. One consolidated entry per AA GroupID.</p>
+
+    <h3>ItemRef (<code>InventoryData.h:21</code>)</h3>
+    <p><code>item</code> (ItemPtr), <code>location</code> (plain <code>int</code>, default <code>ItemLoc_Worn</code>),
+    <code>slotId</code>(-1), <code>bagSlot</code>(-1). Frame-local. Helpers <code>valid/id/name/icon/stack/charges/isContainer</code>.</p>
+
+    <h3>Render option structs (<code>InventoryData.h</code>)</h3>
+    <p><code>DrawItemOptions</code> (<code>:73</code>):
+    <code>size(40)/showBackground/highlightUseable/handleLeftClick/handleUse/handlePopInfo/backgroundAnim</code>
+    (<code>backgroundAnim</code>: <code>const char*</code>, default <code>nullptr</code> — overrides the icon background animation name);
+    <code>CoinPicker</code> (<code>:92</code>): <code>show/focus/type/buf[32]/posX/posY</code>.</p>
+
+    <h3>ToggleCombo (<code>HotkeyCombo.h:9</code>)</h3>
+    <p><code>key, mod1, mod2, mod3, mouse</code> (strings; "None" when unset).</p>
+
+    <h3>SpellSetRow (<code>Core/SettingsStore.h:30</code>)</h3>
+    <p><code>gemSlot</code> (int), <code>spellId</code> (int). One spell in a named gem loadout; used by SpellsModule to persist per-character gem sets.</p>
+
+    <h3>SpellSetStep (<code>Core/Actions.h:15</code>)</h3>
+    <p><code>slot</code> (int), <code>spellId</code> (int, 0 = clear). One step in a deferred spell-load action; queued by the Spell Set Manager and drained by the deferred loader on OnPulse.</p>
+
+    <h3>SpellData (<code>Modules/SpellPicker.h:15</code>)</h3>
+    <p><code>ID</code>, <code>Level</code>, <code>IconID</code>, <code>RankNum</code>, <code>SpellBookIndex</code> (all int);
+    <code>Name</code>, <code>Category</code>, <code>SubCategory</code> (all <code>std::string</code>). The categorized map
+    (<code>m_categorized</code>) is now keyed by <code>std::string</code> for content-based alphabetical sort with no dangling
+    pointers after zoning. One entry per spell in the spellbook.</p>
+
+    <h2>Enums &amp; flags</h2>
+
+    <h3>ToggleFlags (<code>Widgets.h</code>)</h3>
+    <p><code>ToggleFlags_None=0, ToggleFlags_StarKnob=1&lt;&lt;0, ToggleFlags_RightLabel=1&lt;&lt;1,
+    ToggleFlags_AnimateKnob=1&lt;&lt;2, ToggleFlags_GlowOnHover=1&lt;&lt;3,
+    ToggleFlags_AnimateOnHover=1&lt;&lt;4, ToggleFlags_PulseOnHover=1&lt;&lt;5, ToggleFlags_KnobBorder=1&lt;&lt;6</code>.
+    <code>kDefaultToggleFlags = ToggleFlags_RightLabel|ToggleFlags_GlowOnHover|ToggleFlags_PulseOnHover</code> (42).
+    <code>kUseGlobalToggleFlags = -1</code> (sentinel → inherit global style). See
+    <a href="bars-widgets.html">Bars &amp; Widgets</a>.</p>
+
+    <h3>ButtonFlags (<code>Widgets.h</code>)</h3>
+    <p><code>ButtonFlags_None=0, ButtonFlags_GlowOnHover=1&lt;&lt;0, ButtonFlags_PressSink=1&lt;&lt;1 (drives the
+    spring press scale), ButtonFlags_Shimmer=1&lt;&lt;2 (diagonal hover sheen)</code>.
+    <code>kDefaultButtonFlags = GlowOnHover|PressSink|Shimmer</code> (7); <code>kUseGlobalButtonFlags = -1</code>.
+    Used by <code>StyledButton</code>/<code>StyledSmallButton</code> — see <a href="bars-widgets.html">Bars &amp; Widgets</a>.</p>
+
+    <h3>ItemLocationKind (<code>InventoryData.h:12</code>)</h3>
+    <p><code>ItemLoc_Worn=0, ItemLoc_Bag=1, ItemLoc_Bank=2, ItemLoc_Cursor=3</code>.</p>
+
+    <h3>GroupRoleBit (<code>PeerData.h:11</code>)</h3>
+    <p><code>kRoleMainTank=0x1, kRoleMainAssist=0x2, kRolePuller=0x4</code> (packed into <code>roleMask</code>).</p>
+
+    <h3>AA Type (<code>AAEntry.type</code>)</h3>
+    <p><code>1=General, 2=Archetype, 3=Class, 4=Special, 5=Focus</code> — drive the AA window's 5 tabs.</p>
+
+    <h2>Key constants</h2>
+
+    <h3>Actor cadence (<code>ActorManager.cpp:13-20</code>)</h3>
+    <p><code>kMailbox="myui"</code>, <code>kVitalsInterval=1s</code>, <code>kAAInterval=2s</code>,
+    <code>kBuffsInterval=3s</code>, <code>kInventoryInterval=4s</code>, <code>kPruneInterval=5s</code>,
+    <code>kStaleAfter=60s</code>.</p>
+
+    <table>
+      <thead><tr><th>Name</th><th>Value</th><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>kMailbox</code></td><td>"myui"</td><td>ActorManager.cpp:13</td><td>PostOffice mailbox name</td></tr>
+        <tr><td><code>kDefaultToggleFlags</code></td><td>RightLabel|GlowOnHover|PulseOnHover (42)</td><td>Widgets.h:21</td><td>Toggle default look</td></tr>
+        <tr><td><code>kUseGlobalToggleFlags</code></td><td>-1</td><td>Widgets.h:24</td><td>Sentinel → use global toggle style</td></tr>
+        <tr><td><code>kDefaultButtonFlags</code></td><td>GlowOnHover|PressSink|Shimmer (7)</td><td>Widgets.h:68</td><td>Styled button default effects</td></tr>
+        <tr><td>schema version</td><td>4</td><td>SettingsStore.cpp:139</td><td>Current DB schema (v4 = added <code>spell_sets</code> table; v3 = AAParty→XPBars)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Build gotchas (compile-time)</h2>
+    <ul>
+      <li>TUs dereferencing a <code>ForeignPointer</code> global (<code>pAAWnd</code>, <code>pAltAdvManager</code>,
+        <code>pLocalPC</code>, <code>pDBStr</code>, <code>pCastSpellWnd</code>, <code>pItemDisplayManager</code>,
+        <code>pSpellDisplayManager</code>) need <code>#include &lt;cassert&gt;</code>.</li>
+      <li>Item-spell enum type is <code>ItemSpellTypes</code> (alias <code>eItemSpellType</code>), NOT
+        <code>ItemSpellType</code>.</li>
+      <li><code>VePointer</code> has only an explicit <code>operator bool</code> — use <code>if</code>/ternary/
+        <code>static_cast&lt;bool&gt;</code>, not <code>!= nullptr</code>.</li>
+      <li><code>mq::join</code> does not exist in this MQ install (only <code>split</code> in
+        <code>mq/base/String.h</code>).</li>
+      <li>Things not pulled by <code>&lt;mq/Plugin.h&gt;</code> need explicit includes
+        (<code>mq/imgui/Widgets.h</code>, <code>imgui/fonts/IconsFontAwesome.h</code>,
+        <code>mq/base/String.h</code>).</li>
+      <li>A <code>SpanAllColumns</code> Selectable needs <code>ImGuiSelectableFlags_AllowOverlap</code> or it eats clicks
+        of buttons in other columns.</li>
+    </ul>
+
+    <div class="page-nav">
+      ← <a href="settings.html">Settings &amp; UiConfig</a> |
+      Next: <a href="building.html">Building →</a>
+    </div>
+  </main>
+</body>
+</html>

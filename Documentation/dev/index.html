@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview — MQMyUI Dev Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>MQMyUI Dev Docs</h2>
+    <ul>
+      <li><a href="index.html" class="active">Overview</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="module-system.html">Module System</a></li>
+      <li><a href="core-services.html">Core Services</a></li>
+      <li><a href="modules.html">Window Modules</a></li>
+      <li><a href="bars-widgets.html">Bars &amp; Widgets</a></li>
+      <li><a href="actors-protocol.html">Actors &amp; Protocol</a></li>
+      <li><a href="settings.html">Settings &amp; UiConfig</a></li>
+      <li><a href="types.html">Types &amp; Constants</a></li>
+      <li><a href="building.html">Building</a></li>
+    </ul>
+  </nav>
+  <main class="content">
+    <p><em>Last Updated: 2026-06-01</em></p>
+    <h1>MQMyUI Developer Documentation</h1>
+    <p><strong>MQMyUI</strong> is a native C++ MacroQuest plugin that ports the <strong>MyUI</strong> Lua UI bundle
+    into a single self-contained DLL. It renders all player / group / raid / inventory / AA UI through ImGui,
+    persists per-character settings in SQLite, syncs live state across boxed characters peer-to-peer with protobuf
+    actors, and is fully customizable (per-window scaling, per-bar styling, global themes).</p>
+
+    <p>The architecture is <strong>modular</strong>: one <code>ModuleBase</code> subclass per window, orchestrated by a
+    <code>ModuleManager</code>, all reading a fixed set of shared services <em>live</em> every frame. There is no build
+    system or test harness here — the plugin is built inside the MacroQuest Visual Studio solution and tested manually
+    in-game.</p>
+
+    <div class="note">New to the codebase? Read <a href="architecture.html">Architecture</a> first for the big picture,
+    then <a href="module-system.html">Module System</a> to learn how to add a window. The other pages are reference.</div>
+
+    <div class="link-grid">
+      <a href="architecture.html">
+        <strong>Architecture</strong>
+        <p>Plugin entry, lifecycle hooks, pulse timing, data flow, theming</p>
+      </a>
+      <a href="module-system.html">
+        <strong>Module System</strong>
+        <p>ModuleBase / ModuleContext / ModuleManager — and how to add a module</p>
+      </a>
+      <a href="core-services.html">
+        <strong>Core Services</strong>
+        <p>The injected service classes and stateless <code>myui::</code> helpers</p>
+      </a>
+      <a href="modules.html">
+        <strong>Window Modules</strong>
+        <p>Every UI window: key, hooks, and purpose</p>
+      </a>
+      <a href="bars-widgets.html">
+        <strong>Bars &amp; Widgets</strong>
+        <p>The styled bar engine and animated toggle switch</p>
+      </a>
+      <a href="actors-protocol.html">
+        <strong>Actors &amp; Protocol</strong>
+        <p>Peer-to-peer sync over the protobuf mailbox</p>
+      </a>
+      <a href="settings.html">
+        <strong>Settings &amp; UiConfig</strong>
+        <p>SQLite schema, migrations, cache, and the live-read config layer</p>
+      </a>
+      <a href="types.html">
+        <strong>Types &amp; Constants</strong>
+        <p>Structs, enums, flags, and key constants</p>
+      </a>
+      <a href="building.html">
+        <strong>Building</strong>
+        <p>Toolchain, dependencies, and the protobuf linking gotcha</p>
+      </a>
+    </div>
+
+    <h2>Source layout</h2>
+    <table>
+      <thead>
+        <tr><th>Path</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>MQMyUI.cpp</code></td><td>Plugin entry: static service singletons, lifecycle hooks, <code>/myui</code> command</td></tr>
+        <tr><td><code>Core\</code></td><td>Framework services (no UI windows): module system, settings, themes, char/peer data, actors, icons, bar engine, widgets, inventory/AA readers, actions</td></tr>
+        <tr><td><code>Modules\</code></td><td>One ImGui window each (17 modules + the <code>SpellPicker</code> dialog helper)</td></tr>
+        <tr><td><code>Proto\myui.proto</code></td><td>Actor message schema (regenerates <code>myui.pb.*</code> on build)</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Repo:</strong> <code>D:\gitStuff\macroquest\plugins\MQMyUI\</code> &nbsp;·&nbsp;
+       <strong>Workspace:</strong> <code>D:\CLAUDE\MQMyUI\</code></p>
+
+    <div class="page-nav">
+      Next: <a href="architecture.html">Architecture →</a>
+    </div>
+  </main>
+</body>
+</html>
