@@ -699,6 +699,7 @@ namespace
 // by the slider Ctrl+click popup and the cursor-anchored InputPopup.
 char g_editPopupBuf[256] = {};
 ImVec2 g_editPopupPos = ImVec2(0.0f, 0.0f);
+ImGuiID g_editPopupOwner = 0;
 
 // Shared cursor-anchored edit-popup body: a focused input + styled Accept/Cancel
 // buttons, Enter accepts / Esc cancels. Returns 1 = accepted, -1 = cancelled,
@@ -706,9 +707,16 @@ ImVec2 g_editPopupPos = ImVec2(0.0f, 0.0f);
 int EditPopupRun(const char* popupId, float width, ImGuiInputTextFlags extraFlags, const char* hint)
 {
 	int result = 0;
+	const ImGuiID ownerId = ImGui::GetID(popupId);
 	ImGui::SetNextWindowPos(g_editPopupPos, ImGuiCond_Appearing);
 	if (ImGui::BeginPopup(popupId))
 	{
+		if (g_editPopupOwner != ownerId)
+		{
+			ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return 0;
+		}
 		if (ImGui::IsWindowAppearing())
 		{
 			ImGui::SetKeyboardFocusHere();
@@ -855,6 +863,7 @@ bool SliderEdit(const SliderFrame& f, bool asInt, const char* seedText, double* 
 	{
 		ImFormatString(g_editPopupBuf, sizeof(g_editPopupBuf), "%s", seedText);
 		g_editPopupPos = io.MousePos;
+		g_editPopupOwner = ImGui::GetID(f.popupId);
 		ImGui::OpenPopup(f.popupId);
 	}
 	return SliderEditPopup(f.popupId, asInt, parsedOut);
@@ -1270,6 +1279,7 @@ void OpenInputPopup(const char* popupId, const char* initialText)
 {
 	strncpy_s(g_editPopupBuf, sizeof(g_editPopupBuf), initialText ? initialText : "", _TRUNCATE);
 	g_editPopupPos = ImGui::GetIO().MousePos;
+	g_editPopupOwner = ImGui::GetID(popupId);
 	ImGui::OpenPopup(popupId);
 }
 
